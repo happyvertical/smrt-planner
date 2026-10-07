@@ -18,8 +18,8 @@ importers:
         specifier: ^0.55.3
         version: 0.55.3(@mlc-ai/web-llm@0.2.85)(svelte@5.57.1)(typescript@6.0.3)(ws@8.22.0)
       '@happyvertical/smrt-ui':
-        specifier: ^0.54.3
-        version: 0.54.3(svelte@5.57.1)
+        specifier: ^0.55.3
+        version: 0.55.3(svelte@5.57.1)
       '@mlc-ai/web-llm':
         specifier: ^0.2.85
         version: 0.2.85
@@ -675,19 +675,8 @@ packages:
       svelte:
         optional: true
 
-  '@happyvertical/smrt-types@0.54.3':
-    resolution: {integrity: sha512-2ZECLrFjFLucq/rAtZUwxxfJ8xqZho+4UrfM9R1bp/yLHhMGxXH3Z2rW/Jmf9M0WJttBAAXMpSzIFu5H+0uoTg==}
-
   '@happyvertical/smrt-types@0.55.3':
     resolution: {integrity: sha512-hTW7bFz3VsxTImXpIRiOk1azllqqX+XTGEYxbrrgFYR5Xek7IhC6HZFD4GkPFh5xQmYkmKASlTacmQtrl96XDQ==}
-
-  '@happyvertical/smrt-ui@0.54.3':
-    resolution: {integrity: sha512-ara2cFJiSzoSLAtlguH/ABKfWFgij4ZfCwGHGQ4m/CT0pOcfX5QXX5bKXc4nYOIoG2SOcrLMRuCVex51ivLBrA==}
-    peerDependencies:
-      svelte: ^5.57.0
-    peerDependenciesMeta:
-      svelte:
-        optional: true
 
   '@happyvertical/smrt-ui@0.55.3':
     resolution: {integrity: sha512-qkcRFP0HI3cRuUSHLTKXqkElqRSUKtc6TNwUVJWblkyoH7+0UFcZiOgEkl2zosR/6FHwoFcoSKWyQYqSKdXnRg==}
@@ -4089,16 +4078,7 @@ snapshots:
       - ws
       - zod
 
-  '@happyvertical/smrt-types@0.54.3': {}
-
   '@happyvertical/smrt-types@0.55.3': {}
-
-  '@happyvertical/smrt-ui@0.54.3(svelte@5.57.1)':
-    dependencies:
-      '@happyvertical/smrt-types': 0.54.3
-      esm-env: 1.2.2
-    optionalDependencies:
-      svelte: 5.57.1
 
   '@happyvertical/smrt-ui@0.55.3(svelte@5.57.1)':
     dependencies:

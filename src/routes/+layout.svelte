@@ -10,6 +10,7 @@ import { page } from '$app/state';
 import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
 import { exposedModels, getPackage } from '$lib/catalog/index.ts';
 import BrowserAssistant from '$lib/components/BrowserAssistant.svelte';
+import SectionActions from '$lib/components/SectionActions.svelte';
 import { provideDataSource } from '$lib/data/context.ts';
 import { humanize } from '$lib/data/format.ts';
 import { createMemoryDataSource } from '$lib/data/source.ts';
@@ -88,6 +89,27 @@ const recipeGroups: ShellNavGroup[] = $derived.by(() => {
     }
     return { id: `section:${section.id}`, heading: section.label, items };
   });
+});
+
+// Options/Help groups per navigation section, for the layout edit mode's
+// section actions (a nav section can hold several recipes' items).
+const sectionOptionGroups = $derived.by(() => {
+  const added = recipeState.ids.flatMap((id) => {
+    const recipe = recipes.find((r) => r.id === id);
+    return recipe ? [recipe] : [];
+  });
+  const map = new Map<string, { id: string; label: string }[]>();
+  for (const section of buildNavSections(added)) {
+    const groups: { id: string; label: string }[] = [];
+    for (const recipe of section.recipes) {
+      const id = sectionId(recipe);
+      if (!groups.some((g) => g.id === id)) {
+        groups.push({ id, label: recipe.group?.label ?? recipe.label });
+      }
+    }
+    map.set(`section:${section.id}`, groups);
+  }
+  return map;
 });
 
 const packageGroups: ShellNavGroup[] = $derived(
@@ -195,7 +217,11 @@ function flushOnHide() {
   layout={blueprintStore.layout ?? null}
   onlayoutchange={(next) => blueprintStore.setLayout(next)}
   dockToggles={[{ tool: 'assistant', label: 'Assistant', slot: 'leftSidebar.footer' }]}
+  layoutEditing
 >
+  {#snippet sectionActions({ sectionId: navSectionId, label })}
+    <SectionActions {label} groups={sectionOptionGroups.get(navSectionId) ?? []} />
+  {/snippet}
   {#snippet dock(registry)}
     <ShellDockTool id="assistant" label="Assistant">
       {#snippet render()}

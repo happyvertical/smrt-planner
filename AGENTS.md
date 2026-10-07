@@ -39,7 +39,11 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   are NOT part of it. `layout` is smrt-svelte's published `ShellLayout`: the
   store passes it to `AppShell` (`layout` / `onlayoutchange`) and the Planner's
   Layout tab mounts `ShellLayoutEditor`. Nav sections and items carry stable ids so a
-  saved layout survives selection query changes.
+  saved layout survives selection query changes. Nav SECTIONS belong to the app: a recipe only
+  suggests one (`recipe.section`, else `group`, else itself; `recipes/sections.ts` `navSectionOf`),
+  recipes sharing a suggestion share the section (`section:<id>`), and each recipe's main item
+  carries the gear to its own group/recipe options page. `group` is the Planner card + Options/Help
+  pages only. `blueprint/migrate.ts` rewrites pre-section layout ids in the loader.
 - `src/lib/planner/`: the package selection (`?p=a,b`, the only URL state;
   `app.svelte.ts` `appHref` carries it; `selection.svelte.ts`
   is the one store the control panel, navigation and a future chat assistant

@@ -8,7 +8,12 @@ import { buildSections, type RecipeSection } from './sections.ts';
 import type { Recipe, RecipeFile } from './types.ts';
 
 export type { RecipeSection } from './sections.ts';
-export { sectionId } from './sections.ts';
+export {
+  buildNavSections,
+  legacyNavSectionKeys,
+  navSectionOf,
+  sectionId,
+} from './sections.ts';
 export type * from './types.ts';
 
 // Local stand-ins for what happyvertical/smrt#3591 puts in the catalog: the

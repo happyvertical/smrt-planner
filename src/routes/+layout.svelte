@@ -18,9 +18,13 @@ import { appHref, appQuery } from '$lib/planner/app.svelte.ts';
 import { hasAppState, withTab } from '$lib/planner/query.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
 import { plannerTab } from '$lib/planner/tab.svelte.ts';
-import { recipeNav, recipes, sectionId } from '$lib/recipes/index.ts';
+import {
+  buildNavSections,
+  recipeNav,
+  recipes,
+  sectionId,
+} from '$lib/recipes/index.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
-import type { Recipe } from '$lib/recipes/types.ts';
 import type { LayoutProps } from './$types';
 
 let { children }: LayoutProps = $props();
@@ -41,59 +45,48 @@ const nav: ShellNavItem[] = $derived([
   { id: 'planner', href: appHref('/'), label: 'Planner' },
 ]);
 
-// Each added recipe (or group of recipes, such as Products) is a navigation
-// section with its `nav` entries, so the app shows Customers and Sales
-// Orders, not every model in smrt-commerce. Recipes of one group share their
-// entries, so Simple and Clothing give one Products link. Options and Help
-// are icons in each page's header, not entries here.
+// Navigation sections belong to the app: a recipe only suggests one
+// (`recipe.section`, else its group, else itself), and the user overrides it in
+// the Layout tab. Recipes suggesting the same section share it, entries
+// de-duplicated in recipe declaration order. Each recipe's main (first) item
+// carries the gear to ITS options page (keyed by `group`, not by section), shown
+// while that item is current. Help is an icon in page headers, not an entry.
 const recipeGroups: ShellNavGroup[] = $derived.by(() => {
-  const sections = new Map<
-    string,
-    { key: string; heading: string; added: Recipe[] }
-  >();
-  for (const id of recipeState.ids) {
+  const added = recipeState.ids.flatMap((id) => {
     const recipe = recipes.find((r) => r.id === id);
-    if (!recipe) continue;
-    const key = sectionId(recipe);
-    const section = sections.get(key) ?? {
-      key,
-      heading: recipe.group?.label ?? recipe.label,
-      added: [],
-    };
-    section.added.push(recipe);
-    sections.set(key, section);
-  }
-  return [...sections.values()].map(({ key, heading, added }) => {
+    return recipe ? [recipe] : [];
+  });
+  return buildNavSections(added).map((section) => {
     const seen = new Set<string>();
-    const entries = added.flatMap((recipe) =>
-      recipeNav(recipe).filter((entry) => {
-        const key = `${entry.model.id}:${entry.label}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      }),
-    );
-    // Stable ids keep a saved layout valid when the selection query in the
-    // hrefs changes. The section's options gear sits on its main (first) item
-    // and shows only while that section is current.
-    return {
-      id: `section:${key}`,
-      heading,
-      items: entries.map((entry, index) => ({
-        id: `section:${key}:${entry.packageId}:${entry.model.name}:${entry.label}`,
-        href: appHref(`/m/${entry.packageId}/${entry.model.name}/`),
-        label: entry.label,
-        ...(index === 0
-          ? {
-              action: {
-                href: appHref(`/recipes/${key}/`),
-                label: `${heading} options`,
-                visibility: 'active' as const,
-              },
-            }
-          : {}),
-      })),
-    };
+    const items: ShellNavItem[] = [];
+    for (const recipe of section.recipes) {
+      const optionsHref = appHref(`/recipes/${sectionId(recipe)}/`);
+      const optionsLabel = `${recipe.group?.label ?? recipe.label} options`;
+      let main = true;
+      for (const entry of recipeNav(recipe)) {
+        const dedupe = `${entry.model.id}:${entry.label}`;
+        if (seen.has(dedupe)) continue;
+        seen.add(dedupe);
+        // Stable ids keep a saved layout valid when the selection query in the
+        // hrefs changes.
+        items.push({
+          id: `section:${section.id}:${entry.packageId}:${entry.model.name}:${entry.label}`,
+          href: appHref(`/m/${entry.packageId}/${entry.model.name}/`),
+          label: entry.label,
+          ...(main
+            ? {
+                action: {
+                  href: optionsHref,
+                  label: optionsLabel,
+                  visibility: 'active' as const,
+                },
+              }
+            : {}),
+        });
+        main = false;
+      }
+    }
+    return { id: `section:${section.id}`, heading: section.label, items };
   });
 });
 

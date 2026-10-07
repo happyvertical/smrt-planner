@@ -3,6 +3,7 @@ import { recipesById } from '../recipes/index.ts';
 import type { FieldPolicyRow } from '../recipes/policy.ts';
 import { withRequirements } from '../recipes/resolve.ts';
 import type { ExposureSurface } from '../recipes/types.ts';
+import { migrateLegacySections } from './migrate.ts';
 import {
   BLUEPRINT_SCHEMA,
   BLUEPRINT_VERSION,
@@ -162,7 +163,7 @@ export function parseBlueprint(
     const parsed = parseLayout(input.layout);
     if (typeof parsed === 'string')
       return fail(`Invalid blueprint: ${parsed}.`);
-    layout = parsed;
+    layout = migrateLegacySections(parsed);
   }
 
   const blueprint: Blueprint = {

@@ -54,6 +54,20 @@ export interface RecipeGroup {
   summary?: string;
 }
 
+/**
+ * LOCAL, to upstream to `SmrtRecipe` (PR notes): the navigation section a
+ * recipe SUGGESTS its `nav` entries sit under, e.g. `{ id: 'sales', label:
+ * 'Sales' }`. Distinct from {@link RecipeGroup}, which is the Planner card and
+ * the Options/Help pages. The app owns the sections; the user may rename,
+ * add or reorder them in the Layout tab, so `id` must be stable (it keys a
+ * saved layout). Recipes naming the same `id` share one section. Absent: the
+ * recipe's `group`, else the recipe itself.
+ */
+export interface RecipeNavSection {
+  id: string;
+  label: string;
+}
+
 /** A value in a form record: a literal, a `{ref}` to another record's id, or a template. */
 export type RecipeFormValue =
   | string
@@ -172,6 +186,8 @@ export interface Recipe {
   requiresAny?: string[][];
   /** LOCAL. Card this is a sub-switch of; see {@link RecipeGroup}. */
   group?: RecipeGroup;
+  /** LOCAL. Suggested navigation section; see {@link RecipeNavSection}. */
+  section?: RecipeNavSection;
   /** LOCAL. Forms that replace the generic one-model form for `nav` models. */
   forms?: RecipeForm[];
   /** LOCAL. Additions to other recipes' forms; see {@link RecipeFormExtension}. */

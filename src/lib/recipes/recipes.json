@@ -2,6 +2,10 @@
   "recipes": [
     {
       "id": "commerce.customers",
+      "section": {
+        "id": "sales",
+        "label": "Sales"
+      },
       "label": "Customers",
       "summary": "Keep a list of the people and companies you sell to.",
       "synonyms": [
@@ -134,6 +138,10 @@
     },
     {
       "id": "commerce.purchases",
+      "section": {
+        "id": "purchasing",
+        "label": "Purchasing"
+      },
       "label": "Purchases",
       "summary": "Order from your vendors and track what you have bought.",
       "synonyms": [
@@ -175,6 +183,10 @@
     },
     {
       "id": "commerce.sales",
+      "section": {
+        "id": "sales",
+        "label": "Sales"
+      },
       "label": "Sales",
       "summary": "Take customer orders and track them.",
       "synonyms": [
@@ -216,6 +228,10 @@
     },
     {
       "id": "commerce.vendors",
+      "section": {
+        "id": "purchasing",
+        "label": "Purchasing"
+      },
       "label": "Vendors",
       "summary": "Keep a list of the suppliers you buy from.",
       "synonyms": [
@@ -347,6 +363,10 @@
     },
     {
       "id": "inventory.stock",
+      "section": {
+        "id": "catalog",
+        "label": "Catalog"
+      },
       "label": "Inventory",
       "summary": "Keep count of how many of each product you have.",
       "synonyms": [
@@ -491,6 +511,10 @@
     },
     {
       "id": "products.simple",
+      "section": {
+        "id": "catalog",
+        "label": "Catalog"
+      },
       "label": "Simple products",
       "summary": "Items with a name, a price and a description.",
       "synonyms": [
@@ -576,6 +600,10 @@
     },
     {
       "id": "products.clothing",
+      "section": {
+        "id": "catalog",
+        "label": "Catalog"
+      },
       "label": "Clothing",
       "summary": "Products that come in sizes and colors, with a stock-keeping unit for each combination.",
       "synonyms": [

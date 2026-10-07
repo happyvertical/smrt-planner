@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { getModelByQualifiedName } from '../src/lib/catalog/index.ts';
 import type { CatalogField, CatalogModel } from '../src/lib/catalog/types.ts';
 import { appQuery } from '../src/lib/planner/app.svelte.ts';
-import { composeQuery, hasAppState } from '../src/lib/planner/query.ts';
+import {
+  composeQuery,
+  hasAppState,
+  withTab,
+} from '../src/lib/planner/query.ts';
 import { selection } from '../src/lib/planner/selection.svelte.ts';
 import {
   getRecipe,
@@ -379,6 +383,9 @@ describe('url query', () => {
   it('carries only the package selection', () => {
     expect(composeQuery({ packages: [] })).toBe('');
     expect(composeQuery({ packages: ['b', 'a'] })).toBe('?p=a,b');
+    expect(withTab('?p=a,b', 'layout')).toBe('?p=a,b&tab=layout');
+    expect(withTab('?p=a&tab=export', 'recipes')).toBe('?p=a');
+    expect(withTab('', 'export')).toBe('?tab=export');
     expect(hasAppState('?p=a')).toBe(true);
     expect(hasAppState('?r=commerce.sales')).toBe(false);
   });

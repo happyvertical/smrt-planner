@@ -15,8 +15,9 @@ import { humanize } from '$lib/data/format.ts';
 import { createMemoryDataSource } from '$lib/data/source.ts';
 import { PROFILE_TYPE, SAVED_BY_FORMS } from '$lib/forms/stock.ts';
 import { appHref, appQuery } from '$lib/planner/app.svelte.ts';
-import { hasAppState } from '$lib/planner/query.ts';
+import { hasAppState, withTab } from '$lib/planner/query.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
+import { plannerTab } from '$lib/planner/tab.svelte.ts';
 import { recipeNav, recipes, sectionId } from '$lib/recipes/index.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
 import type { Recipe } from '$lib/recipes/types.ts';
@@ -38,7 +39,6 @@ provideDataSource(
 
 const nav: ShellNavItem[] = $derived([
   { id: 'planner', href: appHref('/'), label: 'Planner' },
-  { id: 'blueprint', href: appHref('/blueprint/'), label: 'Blueprint' },
 ]);
 
 // Each added recipe (or group of recipes, such as Products) is a navigation
@@ -133,10 +133,15 @@ const navGroups: ShellNavGroup[] = $derived([
 let ready = false;
 let hydrated = false;
 
+const onPlanner = () => page.route.id === '/';
+
 function syncUrl() {
   // A legacy link that could not be saved keeps its URL: it is the only copy.
   if (blueprintStore.keepLegacyUrl) return;
-  const wanted = appQuery();
+  // The tab belongs to the Planner page only; other pages drop it.
+  const wanted = onPlanner()
+    ? withTab(appQuery(), plannerTab.active)
+    : appQuery();
   if (location.search !== wanted) {
     replaceState(`${location.pathname}${wanted}${location.hash}`, page.state);
   }
@@ -150,6 +155,7 @@ afterNavigate((navigation) => {
     blueprintStore.hydrate(location.search);
   }
   if (hasAppState(location.search)) selection.fromSearch(location.search);
+  if (onPlanner()) plannerTab.fromSearch(location.search);
   // SvelteKit runs the initial 'enter' callbacks before the router counts as
   // started, and replaceState throws until then, so wait one microtask.
   const sync = () => {
@@ -165,6 +171,8 @@ $effect(() => {
   // appQuery reads every part of the shareable state, so this tracks them all.
   void appQuery();
   void blueprintStore.keepLegacyUrl;
+  void plannerTab.active;
+  void page.route.id;
   if (ready) syncUrl();
 });
 
@@ -204,7 +212,7 @@ function flushOnHide() {
   {/snippet}
   {#if blueprintStore.persist === 'memory'}
     <p class="storage-notice" role="status">
-      This browser is not saving your blueprint, so it is kept in memory only. Export it from Blueprint to keep a copy.
+      This browser is not saving your blueprint, so it is kept in memory only. Export it from the Planner's Export tab to keep a copy.
     </p>
   {/if}
   {#if blueprintStore.loadNotice}

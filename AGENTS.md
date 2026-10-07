@@ -37,8 +37,8 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   try/catch localStorage wrapper (versioned key), `validate.ts` the strict
   import check, `legacy.ts` the read-only `?r=`/`?o=` migration. Sample records
   are NOT part of it. `layout` is smrt-svelte's published `ShellLayout`: the
-  store passes it to `AppShell` (`layout` / `onlayoutchange`) and the Blueprint
-  page mounts `ShellLayoutEditor`. Nav sections and items carry stable ids so a
+  store passes it to `AppShell` (`layout` / `onlayoutchange`) and the Planner's
+  Layout tab mounts `ShellLayoutEditor`. Nav sections and items carry stable ids so a
   saved layout survives selection query changes.
 - `src/lib/planner/`: the package selection (`?p=a,b`, the only URL state;
   `app.svelte.ts` `appHref` carries it; `selection.svelte.ts`
@@ -75,7 +75,7 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `data/labels.ts` (with `data/display.ts`) labels related records (Customer/Vendor via their Profile).
 - `src/lib/components/`: generated list/form (`ModelWorkspace`), the collapsed "Connect other tools"
   list (`ConnectTools`), the Help view (`HelpView`), `BrowserAssistant` (the dock slot: consent, progress, then smrt-chat's `AssistantDock`).
-- `src/routes/`: `/` Planner (recipe cards with switches only), `/blueprint/` Export / Import / Reset, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
+- `src/routes/`: `/` Planner with `?tab=recipes|layout|export` tabs (`planner/tab.svelte.ts`; smrt-ui `Tabs`: Recipes cards with switches only, Layout `ShellLayoutEditor`, Export / Import / Reset in `ExportPanel`), `/blueprint/` a client-side redirect to `/?tab=export`, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
   `/packages/` and `/packages/[id]/` the package browser, `/m/[package]/[model]/`.
   All prerendered; `entries()` come from the catalog.
 

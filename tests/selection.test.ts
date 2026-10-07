@@ -58,3 +58,14 @@ describe('selection store', () => {
     expect(selection.ids).toEqual([]);
   });
 });
+
+import { parseTab } from '../src/lib/planner/tab.svelte.ts';
+
+describe('parseTab', () => {
+  it('defaults to recipes and rejects unknown tabs', () => {
+    expect(parseTab('')).toBe('recipes');
+    expect(parseTab('?tab=bogus')).toBe('recipes');
+    expect(parseTab('?p=a&tab=layout')).toBe('layout');
+    expect(parseTab('?tab=export')).toBe('export');
+  });
+});

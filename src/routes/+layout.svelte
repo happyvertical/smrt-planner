@@ -1,6 +1,5 @@
 <script lang="ts">
 import { AppShell } from '@happyvertical/smrt-svelte/app';
-import type { ShellPanelDefaults } from '@happyvertical/smrt-svelte/workspace';
 import {
   ShellDockTool,
   type ShellNavGroup,
@@ -188,22 +187,12 @@ $effect(() => {
 function flushOnHide() {
   if (document.visibilityState === 'hidden') blueprintStore.flush();
 }
-
-// Human-friendly names for the four shell edges (smrt-svelte's defaults are
-// its architectural scopes: App, Tenant, Focus, System).
-const panelConfig: ShellPanelDefaults = {
-  top: { label: 'Header' },
-  left: { label: 'Menu' },
-  right: { label: 'Sidebar' },
-  bottom: { label: 'Status bar' },
-};
 </script>
 
 <svelte:window onpagehide={() => blueprintStore.flush()} />
 <svelte:document onvisibilitychange={flushOnHide} />
 
 <AppShell
-  config={panelConfig}
   title="smrt planner"
   subtitle="Add recipes, watch the app assemble"
   {nav}
@@ -212,7 +201,7 @@ const panelConfig: ShellPanelDefaults = {
   environment="static demo"
   layout={blueprintStore.layout ?? null}
   onlayoutchange={(next) => blueprintStore.setLayout(next)}
-  dockToggles={[{ tool: 'assistant', label: 'Assistant' }]}
+  dockToggles={[{ tool: 'assistant', label: 'Assistant', slot: 'leftSidebar.footer' }]}
 >
   {#snippet dock(registry)}
     <ShellDockTool id="assistant" label="Assistant">

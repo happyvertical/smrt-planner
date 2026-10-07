@@ -57,6 +57,11 @@ const select = (id: string) => {
     gap: var(--smrt-spacing-3);
   }
 
+  /* `display: grid` would otherwise override the inactive pane's `hidden`. */
+  .pane[hidden] {
+    display: none;
+  }
+
   .meta {
     margin: 0;
     color: var(--smrt-color-on-surface-variant);

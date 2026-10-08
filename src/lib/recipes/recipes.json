@@ -177,6 +177,9 @@
             "vendorId": {
               "label": "Vendor",
               "order": 1
+            },
+            "channelId": {
+              "visibility": "hidden"
             }
           }
         },
@@ -199,6 +202,9 @@
             },
             "discount": {
               "visibility": "hidden"
+            },
+            "taxRate": {
+              "help": "A fraction: 0.05 is 5%."
             }
           }
         }
@@ -244,7 +250,11 @@
             },
             "customerId": {
               "label": "Customer",
-              "order": 1
+              "order": 1,
+              "required": true
+            },
+            "channelId": {
+              "visibility": "hidden"
             }
           }
         },
@@ -267,6 +277,9 @@
             },
             "discount": {
               "visibility": "hidden"
+            },
+            "taxRate": {
+              "help": "A fraction: 0.05 is 5%."
             }
           }
         }
@@ -840,7 +853,11 @@
             },
             "customerId": {
               "label": "Customer",
-              "order": 1
+              "order": 1,
+              "required": true
+            },
+            "channelId": {
+              "visibility": "hidden"
             }
           }
         },
@@ -863,6 +880,9 @@
             },
             "discount": {
               "visibility": "hidden"
+            },
+            "taxRate": {
+              "help": "A fraction: 0.05 is 5%."
             }
           }
         }
@@ -909,6 +929,9 @@
             "customerId": {
               "label": "Customer",
               "order": 1
+            },
+            "channelId": {
+              "visibility": "hidden"
             }
           }
         },
@@ -931,6 +954,9 @@
             },
             "discount": {
               "visibility": "hidden"
+            },
+            "taxRate": {
+              "help": "A fraction: 0.05 is 5%."
             }
           }
         }
@@ -1015,6 +1041,9 @@
             },
             "reference": {
               "visibility": "hidden"
+            },
+            "customerId": {
+              "required": true
             }
           }
         },
@@ -1046,6 +1075,9 @@
             },
             "discount": {
               "visibility": "hidden"
+            },
+            "taxRate": {
+              "help": "A fraction: 0.05 is 5%."
             }
           }
         },
@@ -1197,7 +1229,8 @@
             },
             "customerId": {
               "label": "Customer",
-              "order": 1
+              "order": 1,
+              "required": true
             },
             "vendorId": {
               "visibility": "hidden"
@@ -1206,6 +1239,9 @@
               "visibility": "hidden"
             },
             "taxAmount": {
+              "visibility": "hidden"
+            },
+            "channelId": {
               "visibility": "hidden"
             }
           }
@@ -1228,6 +1264,16 @@
               "visibility": "hidden"
             },
             "discount": {
+              "visibility": "hidden"
+            },
+            "taxRate": {
+              "help": "A fraction: 0.05 is 5%."
+            }
+          }
+        },
+        "@happyvertical/smrt-commerce:Contract": {
+          "fields": {
+            "channelId": {
               "visibility": "hidden"
             }
           }
@@ -1275,7 +1321,8 @@
             },
             "customerId": {
               "label": "Customer",
-              "order": 1
+              "order": 1,
+              "required": true
             },
             "vendorId": {
               "visibility": "hidden"
@@ -1284,6 +1331,9 @@
               "visibility": "hidden"
             },
             "taxAmount": {
+              "visibility": "hidden"
+            },
+            "channelId": {
               "visibility": "hidden"
             }
           }
@@ -1307,6 +1357,9 @@
             },
             "discount": {
               "visibility": "hidden"
+            },
+            "taxRate": {
+              "help": "A fraction: 0.05 is 5%."
             }
           }
         }
@@ -1353,7 +1406,8 @@
             },
             "customerId": {
               "label": "Customer",
-              "order": 1
+              "order": 1,
+              "required": true
             },
             "vendorId": {
               "visibility": "hidden"
@@ -1362,6 +1416,9 @@
               "visibility": "hidden"
             },
             "taxAmount": {
+              "visibility": "hidden"
+            },
+            "channelId": {
               "visibility": "hidden"
             }
           }
@@ -1385,6 +1442,9 @@
             },
             "discount": {
               "visibility": "hidden"
+            },
+            "taxRate": {
+              "help": "A fraction: 0.05 is 5%."
             }
           }
         }

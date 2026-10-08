@@ -5,6 +5,7 @@ import { downloadBlueprint } from '$lib/blueprint/file.ts';
 import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
 import type { Blueprint } from '$lib/blueprint/types.ts';
 import { parseBlueprintText } from '$lib/blueprint/validate.ts';
+import { useDataSource } from '$lib/data/context.ts';
 import { humanize } from '$lib/data/format.ts';
 import { recipesById } from '$lib/recipes/index.ts';
 
@@ -45,8 +46,12 @@ function confirmImport() {
   pending = null;
 }
 
+const dataSource = useDataSource();
+
 function confirmReset() {
   blueprintStore.reset();
+  // Rows the visitor added, edited or deleted go with the blueprint.
+  dataSource.reset?.();
   confirmingReset = false;
   // The shell holds its settings in memory too; reload so it starts from its
   // defaults (the blueprint is already saved empty).

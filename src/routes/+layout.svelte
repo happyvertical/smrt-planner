@@ -7,6 +7,7 @@ import {
 } from '@happyvertical/smrt-svelte/workspace';
 import { afterNavigate, replaceState } from '$app/navigation';
 import { page } from '$app/state';
+import { browserStorage } from '$lib/blueprint/storage.ts';
 import {
   blueprintStore,
   SHELL_STORAGE_KEY,
@@ -39,6 +40,8 @@ let { children }: LayoutProps = $props();
 // The seam for live objects: swap this for a collection-backed DataSource.
 provideDataSource(
   createMemoryDataSource({
+    // Added, edited and deleted rows survive a reload; Reset clears them.
+    storage: browserStorage(),
     // Fields the views hide still carry their policy default, e.g. the
     // `contractType` that tells an Order from a PurchaseOrder.
     defaults: (model) => recipeState.apply(model).background,

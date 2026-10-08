@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { catalog, getModelByQualifiedName } from '../src/lib/catalog/index.ts';
 import { blankChild, rowsOf } from '../src/lib/data/columns.ts';
+import { totalsOf } from '../src/lib/data/derived.ts';
 import { createMemoryDataSource } from '../src/lib/data/source.ts';
 import { recipes } from '../src/lib/recipes/index.ts';
 import {
@@ -140,11 +141,13 @@ describe('sample records come with their line items', () => {
     const first = await a.list(lines);
     expect(first).toEqual(await b.list(lines));
     for (const record of await a.list(invoice)) {
-      const sum = rowsOf(first, 'invoiceId', record.id).reduce(
-        (total, r) => total + Number(r.amount),
-        0,
+      const mine = rowsOf(first, 'invoiceId', record.id);
+      // Totals follow the commerce semantics: the amounts before tax, and the
+      // lines' own (taxed) amounts for the total.
+      expect(record.subtotal).toBe(totalsOf(mine).subtotal);
+      expect(record.totalAmount).toBe(
+        mine.reduce((total, r) => total + Number(r.amount), 0),
       );
-      expect(record.subtotal).toBe(sum);
     }
   });
 

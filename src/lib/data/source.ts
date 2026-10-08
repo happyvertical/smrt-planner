@@ -1,5 +1,6 @@
 import type { CatalogModel } from '../catalog/types.ts';
 import { type ChildOf, fakeChildrenOf, syncTotals } from './children.ts';
+import { isLineModel, settleLine, withTotals } from './derived.ts';
 import {
   fakeId,
   fakeRecords,
@@ -86,6 +87,27 @@ export interface DataSource {
    * Returns the rows written, by alias.
    */
   apply(writes: readonly RecordWrite[]): Promise<Record<string, ModelRecord>>;
+  /** Forget every row and stored copy; the next read starts from the samples. */
+  reset?(): void;
+}
+
+/** Prefix of the localStorage keys rows are kept under, one per model. */
+export const DATA_STORAGE_PREFIX = 'smrt-planner:data:v1:';
+const CREATED_KEY = `${DATA_STORAGE_PREFIX}_created`;
+
+/** Remove every stored row. Never throws. */
+export function clearStoredData(storage: Storage | null | undefined): void {
+  if (!storage) return;
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < storage.length; i++) {
+      const key = storage.key(i);
+      if (key?.startsWith(DATA_STORAGE_PREFIX)) keys.push(key);
+    }
+    for (const key of keys) storage.removeItem(key);
+  } catch {
+    // Storage may be unavailable; there is nothing to clear then.
+  }
 }
 
 export interface MemoryDataSourceOptions {
@@ -116,6 +138,13 @@ export interface MemoryDataSourceOptions {
     models: readonly CatalogModel[];
     links: (modelId: string) => ChildOf[];
   };
+  /**
+   * Where rows are kept between visits (a model's rows under one versioned
+   * key). Without it the rows live in memory only. Edits to a model and the
+   * models it owns or belongs to are saved together, so a parent and its
+   * line items are never out of step.
+   */
+  storage?: Storage | null;
 }
 
 /** Deterministic seeded fakes held in memory, lazily per model. */
@@ -126,7 +155,37 @@ export function createMemoryDataSource(
   const rows = options.rowsPerModel ?? 8;
   const empty = new Set(options.empty ?? []);
   const tables = new Map<string, ModelRecord[]>();
+  const storage = options.storage ?? null;
+  const storedKey = (model: CatalogModel) =>
+    `${DATA_STORAGE_PREFIX}${model.id}`;
+  const readStored = (model: CatalogModel): ModelRecord[] | undefined => {
+    if (!storage) return undefined;
+    try {
+      const raw = storage.getItem(storedKey(model));
+      if (raw === null) return undefined;
+      const parsed: unknown = JSON.parse(raw);
+      if (
+        Array.isArray(parsed) &&
+        parsed.every(
+          (r) =>
+            typeof r === 'object' && r !== null && typeof r.id === 'string',
+        )
+      ) {
+        return parsed as ModelRecord[];
+      }
+    } catch {
+      // Unreadable: fall back to the samples; the next write replaces it.
+    }
+    return undefined;
+  };
   let created = 0;
+  if (storage) {
+    try {
+      created = Number(storage.getItem(CREATED_KEY)) || 0;
+    } catch {
+      created = 0;
+    }
+  }
 
   // Parent-to-children wiring, indexed both ways on first use.
   const links = new Map<string, ChildOf[]>();
@@ -171,6 +230,12 @@ export function createMemoryDataSource(
   const table = (model: CatalogModel): ModelRecord[] => {
     const existing = tables.get(model.id);
     if (existing) return existing;
+    const stored = readStored(model);
+    if (stored) {
+      tables.set(model.id, stored);
+      for (const link of linksOf(model.id)) table(link.model);
+      return stored;
+    }
     const owned = ownersOf(model.id);
     // A child's rows come from its parents, never from random fakes.
     const made: ModelRecord[] =
@@ -190,6 +255,59 @@ export function createMemoryDataSource(
       }
     }
     return made;
+  };
+
+  /** Save the model and the tables it is built together with. */
+  const persist = (model: CatalogModel) => {
+    if (!storage) return;
+    const family = [
+      model,
+      ...linksOf(model.id).map((l) => l.model),
+      ...ownersOf(model.id).map((o) => o.parent),
+    ];
+    try {
+      for (const member of family) {
+        const rows = tables.get(member.id);
+        if (rows) storage.setItem(storedKey(member), JSON.stringify(rows));
+      }
+      storage.setItem(CREATED_KEY, String(created));
+    } catch {
+      // Quota or private mode: the rows stay in memory for this visit.
+    }
+  };
+
+  /** A parent's line items, by its id. */
+  const lineLink = (parent: CatalogModel) =>
+    linksOf(parent.id).find((l) => isLineModel(l.model));
+
+  /** Recompute a parent's totals from its lines (they are never typed in). */
+  const resync = (parent: CatalogModel, parentId: unknown) => {
+    const link = lineLink(parent);
+    if (!link) return;
+    const list = table(parent);
+    const index = list.findIndex((r) => r.id === parentId);
+    if (index < 0) return;
+    const lines = table(link.model).filter((r) => r[link.fk] === parentId);
+    list[index] = withTotals(parent, list[index] as ModelRecord, lines);
+  };
+
+  /** Settle a written row, then the parents whose totals depend on it. */
+  const settle = (model: CatalogModel, record: ModelRecord): ModelRecord => {
+    let settled = record;
+    if (isLineModel(model)) {
+      settled = settleLine(record);
+      const list = table(model);
+      const index = list.findIndex((r) => r.id === record.id);
+      if (index >= 0) list[index] = settled;
+    }
+    if (lineLink(model)) {
+      resync(model, record.id);
+      settled = table(model).find((r) => r.id === record.id) ?? settled;
+    }
+    for (const { parent, fk } of ownersOf(model.id)) {
+      if (isLineModel(model)) resync(parent, record[fk]);
+    }
+    return settled;
   };
 
   const present = (model: CatalogModel, record: ModelRecord): ModelRecord => ({
@@ -218,7 +336,9 @@ export function createMemoryDataSource(
         id: nextId(model),
       };
       table(model).push(record);
-      return { ...record };
+      const settled = settle(model, record);
+      persist(model);
+      return { ...settled };
     },
     async update(model, id, values) {
       const list = table(model);
@@ -226,20 +346,33 @@ export function createMemoryDataSource(
       if (index < 0) return undefined;
       const next: ModelRecord = { ...list[index], ...values, id };
       list[index] = next;
-      return { ...next };
+      const settled = settle(model, next);
+      persist(model);
+      return { ...settled };
     },
     async delete(model, id) {
       const list = table(model);
       const index = list.findIndex((r) => r.id === id);
       if (index < 0) return false;
-      list.splice(index, 1);
+      const [gone] = list.splice(index, 1);
+      for (const { parent, fk } of ownersOf(model.id)) {
+        if (isLineModel(model) && gone) resync(parent, gone[fk]);
+      }
+      persist(model);
       return true;
+    },
+    reset() {
+      tables.clear();
+      created = 0;
+      clearStoredData(storage);
     },
     async apply(writes) {
       // Snapshot every table a step touches; restore them all if one throws.
       const snapshots = new Map<string, ModelRecord[]>();
       const counter = created;
+      const touched = new Map<string, CatalogModel>();
       const touch = (model: CatalogModel) => {
+        touched.set(model.id, model);
         const rows = table(model);
         if (!snapshots.has(model.id)) {
           snapshots.set(
@@ -311,6 +444,7 @@ export function createMemoryDataSource(
         created = counter;
         throw error;
       }
+      for (const model of touched.values()) persist(model);
       return written;
     },
   };

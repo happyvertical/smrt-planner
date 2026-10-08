@@ -24,6 +24,8 @@ export interface RecipeFieldHint {
   order?: number;
   /** The planner may not change this field's policy. */
   locked?: boolean;
+  /** The form refuses to save without a value, whatever the catalog says. */
+  required?: boolean;
 }
 
 /** The `@smrt()` surfaces a recipe may narrow. It can never switch one on. */

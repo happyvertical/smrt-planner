@@ -100,8 +100,25 @@ export function fakeId(seed: string): string {
   return `${hex(8)}-${hex(4)}-4${hex(3)}-a${hex(3)}-${hex(12)}`;
 }
 
+const TERMS = [
+  'Net 30',
+  'Net 15',
+  'Net 60',
+  'Due on receipt',
+  '50% deposit, balance on delivery',
+];
+const CHANNELS = ['web', 'retail', 'phone', 'marketplace', 'wholesale'];
+const PERIODS = ['monthly', 'quarterly', 'annual'];
+
+/** Fractions a tax rate takes: 0%, 5%, 8.25%, 13% and 20%. */
+export const TAX_RATES = [0, 0.05, 0.0825, 0.13, 0.2] as const;
+
 function fakeText(field: CatalogField, random: () => number): string {
   const name = field.name.toLowerCase();
+  if (/terms/.test(name)) return pick(random, TERMS);
+  if (/channel/.test(name)) return pick(random, CHANNELS);
+  if (/period/.test(name)) return pick(random, PERIODS);
+  if (/^(unit|uom)$/.test(name)) return pick(random, ['each', 'hour', 'box']);
   if (/email/.test(name)) {
     return `${pick(random, FIRST).toLowerCase()}@example.com`;
   }
@@ -179,6 +196,10 @@ export function fakeValue(
       return Math.floor(random() * 100);
     }
     case 'decimal':
+      if (/taxrate|vatrate/i.test(field.name)) return pick(random, TAX_RATES);
+      if (/discountrate/i.test(field.name)) return pick(random, [0, 0.05, 0.1]);
+      if (/(quantity|qty)/i.test(field.name))
+        return 1 + Math.floor(random() * 5);
       return Math.round(random() * 10000) / 100;
     case 'datetime':
       return new Date(EPOCH - Math.floor(random() * YEAR)).toISOString();

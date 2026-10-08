@@ -72,6 +72,20 @@ const navCrumb = $derived.by(() => {
   };
 });
 
+/** "Section / Entry", or just the name once when both are the same. */
+const breadcrumb = (crumb: { section: string; label: string }) =>
+  crumb.section.trim().toLowerCase() === crumb.label.trim().toLowerCase()
+    ? crumb.label
+    : `${crumb.section} / ${crumb.label}`;
+// The list heading: the menu entry's label unless it is only the model's name.
+const listTitle = $derived(
+  navCrumb &&
+    catalogModel &&
+    navCrumb.label.toLowerCase() !== humanize(catalogModel.name).toLowerCase()
+    ? navCrumb.label
+    : undefined,
+);
+
 // Anchored to this model's fields in the recipe whose Help covers it.
 const helpAnchor = $derived.by(() => {
   const covering =
@@ -132,7 +146,7 @@ const inApp = $derived(
     <div class="bar">
     <nav aria-label="Breadcrumb">
       {#if navCrumb}
-        {navCrumb.section} / {navCrumb.label}
+        {breadcrumb(navCrumb)}
       {:else}
         {model.name}
       {/if}
@@ -161,6 +175,7 @@ const inApp = $derived(
         fields={applied.fields}
         {forms}
         {childTables}
+        title={listTitle}
       />
     {/if}
   </main>

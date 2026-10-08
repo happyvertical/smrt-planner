@@ -30,6 +30,9 @@ export function formatValue(
     return formatMoney(value);
   }
   if (field.enum?.includes(String(value))) return enumLabel(String(value));
+  if (isFractionRate(field) && typeof value === 'number') {
+    return formatPercent(value);
+  }
   switch (field.type) {
     case 'boolean':
       return value ? 'Yes' : 'No';
@@ -62,6 +65,41 @@ export function humanize(name: string): string {
     .toLowerCase();
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
+
+/** English plural of a model's label: "Agreement" -> "Agreements". */
+export function pluralize(label: string): string {
+  if (/[^aeiou]y$/i.test(label)) return `${label.slice(0, -1)}ies`;
+  if (/(s|x|z|ch|sh)$/i.test(label)) return `${label}es`;
+  return `${label}s`;
+}
+
+/** "1 record", "8 records". */
+export function recordCount(count: number): string {
+  return `${count} ${count === 1 ? 'record' : 'records'}`;
+}
+
+/**
+ * A field's label: its humanized name, except a relation, which names the
+ * record it points at ("Product", not "Product id").
+ */
+export function fieldLabel(field: CatalogField): string {
+  const isRelation =
+    field.type === 'foreignKey' || field.type === 'crossPackageRef';
+  const name =
+    isRelation && /[a-z]Id$/.test(field.name)
+      ? field.name.slice(0, -2)
+      : field.name;
+  return humanize(name);
+}
+
+/** A fraction as a percentage: `0.0825` -> `8.25%`. */
+export function formatPercent(fraction: number): string {
+  return `${Number((fraction * 100).toFixed(2))}%`;
+}
+
+/** Rates stored as fractions (0.05 is 5%); other `*Rate` fields are unknown. */
+export const isFractionRate = (field: CatalogField): boolean =>
+  field.type === 'decimal' && /^(tax|discount|vat)Rate$/.test(field.name);
 
 /**
  * Text for an enum value: `qc_hold` is "Qc hold", and a short code such as

@@ -1,5 +1,5 @@
 import type { CatalogField, CatalogModel } from '../catalog/types.ts';
-import { humanize } from '../data/format.ts';
+import { fieldLabel } from '../data/format.ts';
 import type {
   ExposureSurface,
   RecipeFieldHint,
@@ -104,7 +104,7 @@ export function resolveFields(
     let visibility: FieldPolicyVisibility =
       hint.visibility ??
       (!markers || field.ui?.basic === true ? 'basic' : 'advanced');
-    let label = hint.label ?? humanize(field.name);
+    let label = hint.label ?? fieldLabel(field);
     let help: string | null = hint.help ?? null;
     let order = hint.order ?? field.ui?.order ?? index;
     let locked = hint.locked ?? field.ui?.locked ?? false;
@@ -128,8 +128,9 @@ export function resolveFields(
     // The required-field invariant: a required field may only leave the basic
     // tier when a usable default fills it in.
     let visibilityForced: boolean | undefined;
+    const required = hint.required ?? field.required;
     if (
-      field.required &&
+      required &&
       visibility !== 'basic' &&
       !(hasDefault && usableRequiredDefault(value))
     ) {
@@ -145,7 +146,7 @@ export function resolveFields(
       order,
       group: field.ui?.group ?? null,
       locked,
-      required: field.required,
+      required,
       hasDefault,
       default: value,
       ...(visibilityForced ? { visibilityForced } : {}),
@@ -176,6 +177,7 @@ export function viewFields(resolved: readonly ResolvedField[]): ViewField[] {
       const fallback = r.hasDefault ? primitive(r.default) : undefined;
       return {
         ...rest,
+        required: r.required,
         ...(fallback !== undefined ? { default: fallback } : {}),
         label: r.label,
         ...(r.help ? { help: r.help } : {}),

@@ -1,10 +1,23 @@
 <script lang="ts">
 import type { CatalogModel } from '../catalog/types.ts';
-import { type ChildTable, listColumns } from '../data/columns.ts';
+import {
+  blankRecord,
+  type ChildTable,
+  listColumns,
+  missingRequired,
+  recordTitle,
+} from '../data/columns.ts';
 import { useDataSource } from '../data/context.ts';
+import { derivedFieldNames, isLineModel } from '../data/derived.ts';
 import { editableFields, type ModelRecord } from '../data/fakes.ts';
-import { formatValue, humanize } from '../data/format.ts';
-import { relationLabels } from '../data/labels.ts';
+import {
+  fieldLabel,
+  formatValue,
+  humanize,
+  pluralize,
+  recordCount,
+} from '../data/format.ts';
+import { relationLabels, shortId } from '../data/labels.ts';
 import { type ActiveForm, isFieldMap } from '../forms/active.ts';
 import type { ViewField } from '../recipes/policy.ts';
 import type { FieldMapForm as FieldMapFormShape } from '../recipes/types.ts';
@@ -27,6 +40,8 @@ interface ModelWorkspaceProps {
    * record, filtered to it, with the foreign key preset and hidden.
    */
   childTables?: ChildTable[];
+  /** The list's heading (the menu entry's label); defaults to the plural name. */
+  title?: string;
 }
 
 let {
@@ -34,17 +49,26 @@ let {
   fields: shownFields,
   forms = [],
   childTables = [],
+  title,
 }: ModelWorkspaceProps = $props();
 
 const source = useDataSource();
 const fields = $derived<ViewField[]>(
   shownFields ??
-    editableFields(model).map((f) => ({ ...f, label: humanize(f.name) })),
+    editableFields(model).map((f) => ({ ...f, label: fieldLabel(f) })),
 );
 const mapForms = $derived(
   forms.filter((f): f is ActiveForm<FieldMapFormShape> => isFieldMap(f)),
 );
 const columns = $derived(listColumns(fields));
+/** Shown but not typed: a line's amount, a parent's totals. */
+const calculated = $derived(
+  derivedFieldNames(
+    model,
+    childTables.some((c) => isLineModel(c.model)),
+  ),
+);
+const heading = $derived(title ?? pluralize(humanize(model.name)));
 
 let rows = $state<ModelRecord[]>([]);
 /** Labels of the records the rows point at, so a cell shows a name, not an id. */
@@ -57,10 +81,25 @@ let mapForm = $state<ActiveForm<FieldMapFormShape> | undefined>(undefined);
 let draft = $state<Record<string, unknown>>({});
 /** Bumped each time a form opens, so inputs remount with the new draft. */
 let formKey = $state(0);
+/** Required fields the last save found empty, by field name. */
+let errors = $state<Record<string, string>>({});
+/** What names a row to a person: its customer or reference, else a short id. */
+const nameOf = (row: ModelRecord) =>
+  recordTitle(model, fields, row, labels) || shortId(row.id);
+const editTitle = $derived(
+  editing && editing !== 'new'
+    ? recordTitle(
+        model,
+        fields,
+        rows.find((r) => r.id === editing) ?? {},
+        labels,
+      )
+    : '',
+);
 
 async function load() {
   const listed = await source.list(model);
-  labels = await relationLabels(source, columns, listed);
+  labels = await relationLabels(source, fields, listed);
   rows = listed;
   loaded = true;
 }
@@ -86,13 +125,8 @@ function startCreate(form?: ActiveForm<FieldMapFormShape>) {
     return;
   }
   mapForm = undefined;
-  const blank: Record<string, unknown> = {};
-  for (const field of fields) {
-    blank[field.name] =
-      field.default ??
-      (field.type === 'boolean' ? false : field.type === 'text' ? '' : null);
-  }
-  draft = blank;
+  draft = blankRecord(fields);
+  errors = {};
   editing = 'new';
   formKey++;
 }
@@ -106,14 +140,19 @@ function startEdit(row: ModelRecord) {
   }
   mapForm = undefined;
   draft = { ...row };
+  errors = {};
   editing = row.id;
   formKey++;
 }
 
 async function save(event: SubmitEvent) {
   event.preventDefault();
+  errors = missingRequired(fields, draft, calculated);
+  if (Object.keys(errors).length > 0) return;
   const values: Record<string, unknown> = {};
-  for (const field of fields) values[field.name] = draft[field.name];
+  for (const field of fields) {
+    if (!calculated.has(field.name)) values[field.name] = draft[field.name];
+  }
   if (editing === 'new') {
     const created = await source.create(model, values);
     // A record with line items stays open after its first save, so they can
@@ -130,6 +169,14 @@ async function save(event: SubmitEvent) {
   await load();
 }
 
+/** A line item changed: bring the open record's calculated totals up to date. */
+async function refreshDerived() {
+  if (!editing || editing === 'new') return;
+  const fresh = await source.get(model, editing);
+  if (fresh) for (const name of calculated) draft[name] = fresh[name];
+  await load();
+}
+
 async function remove(row: ModelRecord) {
   await source.delete(model, row.id);
   await load();
@@ -138,7 +185,7 @@ async function remove(row: ModelRecord) {
 
 <section>
   <header>
-    <h2>{model.name} <small>{rows.length} sample rows</small></h2>
+    <h2>{heading} <small>{recordCount(rows.length)}</small></h2>
     {#if mapForms.length}
       {#each mapForms as active (active.form.id)}
         <button type="button" onclick={() => startCreate(active)}>
@@ -161,16 +208,32 @@ async function remove(row: ModelRecord) {
       />
     {:else}
     <form onsubmit={save}>
-      <h3>{editing === 'new' ? `New ${model.name}` : `Edit ${model.name}`}</h3>
+      <h3>{editing === 'new' ? `New ${model.name}` : editTitle || model.name}</h3>
       {#each fields as field (field.name)}
-        <FieldInput
-          {field}
-          modelId={model.id}
-          label={field.label}
-          help={field.help}
-          value={draft[field.name]}
-          onchange={(value) => (draft[field.name] = value)}
-        />
+        {#if calculated.has(field.name)}
+          <div class="derived">
+            <span class="derived-label">{field.label}</span>
+            <output data-derived={field.name}>
+              {formatValue(field, draft[field.name] ?? 0, labels)}
+            </output>
+            <small>Calculated from the line items.</small>
+          </div>
+        {:else}
+          <FieldInput
+            {field}
+            modelId={model.id}
+            label={field.label}
+            help={field.help}
+            value={draft[field.name]}
+            onchange={(value) => {
+              draft[field.name] = value;
+              delete errors[field.name];
+            }}
+          />
+          {#if errors[field.name]}
+            <p class="error" role="alert">{errors[field.name]}</p>
+          {/if}
+        {/if}
       {/each}
       <div class="actions">
         <button type="submit">Save</button>
@@ -189,6 +252,7 @@ async function remove(row: ModelRecord) {
           fk={child.fk}
           title={child.title}
           parentId={editing}
+          onchanged={refreshDerived}
         />
       {/each}
     {/if}
@@ -197,7 +261,7 @@ async function remove(row: ModelRecord) {
   {#if editing && childTables.length}
     <!-- The open record (with its line items) stands in for the list. -->
   {:else if !loaded}
-    <p>Loading sample data...</p>
+    <p>Loading...</p>
   {:else if rows.length === 0}
     <p>No rows yet. Create one above.</p>
   {:else}
@@ -218,10 +282,20 @@ async function remove(row: ModelRecord) {
                 <td>{formatValue(column, row[column.name], labels)}</td>
               {/each}
               <td class="row-actions">
-                <button type="button" class="secondary" onclick={() => startEdit(row)}>
+                <button
+                  type="button"
+                  class="secondary"
+                  aria-label={`Edit ${nameOf(row)}`}
+                  onclick={() => startEdit(row)}
+                >
                   Edit
                 </button>
-                <button type="button" class="secondary" onclick={() => remove(row)}>
+                <button
+                  type="button"
+                  class="secondary"
+                  aria-label={`Delete ${nameOf(row)}`}
+                  onclick={() => remove(row)}
+                >
                   Delete
                 </button>
               </td>
@@ -268,6 +342,20 @@ async function remove(row: ModelRecord) {
   .row-actions {
     display: flex;
     gap: var(--smrt-spacing-2);
+  }
+
+  .error {
+    margin: 0;
+    color: var(--smrt-color-error);
+  }
+
+  .derived {
+    display: grid;
+    gap: var(--smrt-spacing-1);
+  }
+
+  .derived-label {
+    font-weight: 500;
   }
 
   .scroll {

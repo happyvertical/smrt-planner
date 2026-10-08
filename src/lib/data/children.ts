@@ -1,4 +1,5 @@
 import type { CatalogModel } from '../catalog/types.ts';
+import { isLineModel, settleLine, withTotals } from './derived.ts';
 import {
   createRandom,
   fakeId,
@@ -36,7 +37,7 @@ export function fakeChildrenOf(
   const count = ledger
     ? 2 * (1 + Math.floor(random() * 2))
     : 1 + Math.floor(random() * MAX_CHILDREN);
-  const lines = hasField(child, 'unitPrice') && hasField(child, 'amount');
+  const lines = isLineModel(child);
   const balance = 1000 * (1 + Math.floor(random() * 90));
   return Array.from({ length: count }, (_, i) => {
     const record: ModelRecord = {
@@ -49,7 +50,7 @@ export function fakeChildrenOf(
       const quantity = 1 + Math.floor(random() * 5);
       if (hasField(child, 'quantity')) record.quantity = quantity;
       if (hasField(child, 'discount')) record.discount = 0;
-      record.amount = quantity * Number(record.unitPrice ?? 0);
+      record.amount = settleLine(record).amount;
     }
     if (ledger) {
       const debit = i % 2 === 0;
@@ -61,8 +62,8 @@ export function fakeChildrenOf(
 }
 
 /**
- * Bring a parent's totals in line with the line items just generated for it:
- * `subtotal` is their sum, `totalAmount` adds the parent's own tax.
+ * Bring a parent's totals in line with the line items just generated for it
+ * (see `withTotals`).
  */
 export function syncTotals(
   parent: ModelRecord,
@@ -70,9 +71,5 @@ export function syncTotals(
   items: readonly ModelRecord[],
 ): void {
   if (!items.length || !items.every((r) => 'unitPrice' in r)) return;
-  const subtotal = items.reduce((sum, r) => sum + Number(r.amount ?? 0), 0);
-  if (hasField(parentModel, 'subtotal')) parent.subtotal = subtotal;
-  if (hasField(parentModel, 'totalAmount')) {
-    parent.totalAmount = subtotal + Number(parent.taxAmount ?? 0);
-  }
+  Object.assign(parent, withTotals(parentModel, parent, items));
 }

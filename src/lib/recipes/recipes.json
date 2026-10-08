@@ -820,6 +820,71 @@
       }
     },
     {
+      "id": "products.ingredients",
+      "section": {
+        "id": "catalog",
+        "label": "Catalog"
+      },
+      "label": "Ingredients",
+      "summary": "Things you buy in to make what you sell, kept as products of the material kind with their own list.",
+      "synonyms": [
+        "materials",
+        "raw materials",
+        "supplies",
+        "stock items"
+      ],
+      "group": {
+        "id": "products",
+        "label": "Products",
+        "summary": "Sell goods: simple items, or clothing that comes in sizes and colors."
+      },
+      "models": [
+        "@happyvertical/smrt-products:Product"
+      ],
+      "nav": [
+        {
+          "label": "Ingredients",
+          "noun": "ingredient",
+          "key": "ingredients",
+          "model": "@happyvertical/smrt-products:Product",
+          "filter": {
+            "field": "productType",
+            "value": "material"
+          }
+        }
+      ],
+      "requires": [
+        "products.simple"
+      ],
+      "options": {
+        "@happyvertical/smrt-products:Product": {
+          "fields": {
+            "productType": {
+              "visibility": "hidden"
+            },
+            "category": {
+              "visibility": "hidden"
+            },
+            "manufacturer": {
+              "visibility": "hidden"
+            },
+            "model": {
+              "visibility": "hidden"
+            },
+            "inStock": {
+              "visibility": "hidden"
+            },
+            "specifications": {
+              "visibility": "hidden"
+            },
+            "tags": {
+              "visibility": "hidden"
+            }
+          }
+        }
+      }
+    },
+    {
       "id": "commerce.estimates",
       "section": {
         "id": "sales",

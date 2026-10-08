@@ -30,6 +30,7 @@ import { relationLabels, shortId } from '../data/labels.ts';
 import { focusFirstInvalid } from '../fields/invalid.ts';
 import { type ActiveForm, isFieldMap } from '../forms/active.ts';
 import type { ViewField } from '../recipes/policy.ts';
+import { inScope, type RowScope } from '../recipes/scope.ts';
 import type { FieldMapForm as FieldMapFormShape } from '../recipes/types.ts';
 import ChildRecords from './ChildRecords.svelte';
 import FieldInput from './FieldInput.svelte';
@@ -54,6 +55,10 @@ interface ModelWorkspaceProps {
   title?: string;
   /** What New creates, e.g. "sales order"; defaults to the model's name. */
   noun?: string;
+  /** The slice of rows this page lists (a filtered nav entry), if any. */
+  scope?: RowScope;
+  /** Values a new row carries so it stays in `scope`. */
+  preset?: Record<string, unknown>;
 }
 
 let {
@@ -63,6 +68,8 @@ let {
   childTables = [],
   title,
   noun,
+  scope,
+  preset,
 }: ModelWorkspaceProps = $props();
 
 const source = useDataSource();
@@ -122,7 +129,9 @@ const editTitle = $derived(
 );
 
 async function load() {
-  const listed = await source.list(model);
+  const listed = (await source.list(model)).filter((row) =>
+    inScope(scope, row),
+  );
   labels = await relationLabels(source, fields, listed);
   rows = listed;
   loaded = true;
@@ -131,6 +140,7 @@ async function load() {
 $effect(() => {
   // Reload (and close any open form) when the model changes.
   model.id;
+  scope;
   editing = null;
   loaded = false;
   void load();
@@ -149,7 +159,7 @@ function startCreate(form?: ActiveForm<FieldMapFormShape>) {
     return;
   }
   mapForm = undefined;
-  draft = blankRecord(fields);
+  draft = { ...blankRecord(fields), ...preset };
   errors = {};
   editing = 'new';
   formKey++;
@@ -236,6 +246,7 @@ async function remove(row: ModelRecord) {
       <FieldMapForm
         active={mapForm}
         id={editing === 'new' ? undefined : editing}
+        {preset}
         onsaved={savedMap}
         oncancel={() => (editing = null)}
       />

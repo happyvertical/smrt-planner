@@ -86,6 +86,7 @@ describe('Planner cards and sub-switches', () => {
     expect(products?.recipes.map((r) => r.id)).toEqual([
       'products.simple',
       'products.clothing',
+      'products.ingredients',
     ]);
     expect(products?.hasSubSwitches).toBe(true);
     expect(inventory?.hasSubSwitches).toBe(false);

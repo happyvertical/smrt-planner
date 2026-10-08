@@ -90,6 +90,7 @@ describe('recipe sections', () => {
     expect(getSection('products')?.recipes.map((r) => r.id)).toEqual([
       'products.simple',
       'products.clothing',
+      'products.ingredients',
     ]);
     expect(getSection('products.simple')).toBeUndefined();
     expect(sectionId(recipesById.get('products.clothing') ?? recipes[0])).toBe(

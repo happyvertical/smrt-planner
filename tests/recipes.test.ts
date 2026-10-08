@@ -88,6 +88,7 @@ describe('recipes.json', () => {
       'inventory.stock',
       'products.simple',
       'products.clothing',
+      'products.ingredients',
       'commerce.estimates',
       'commerce.wholesale',
       'commerce.invoicing',

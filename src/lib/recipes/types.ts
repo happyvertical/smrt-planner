@@ -52,6 +52,14 @@ export interface RecipeNavEntry {
    * -> "stock entry"). Without it, the label's singular is used.
    */
   noun?: string;
+  /**
+   * LOCAL. Narrows the entry to rows whose `field` equals `value` (an
+   * Ingredients entry over Products: `productType` = `material`). Needs a
+   * `key`, which puts the view at `/m/<pkg>/<Model>/<key>/`. New rows from
+   * the view carry the value; the model's plain entry stops listing them
+   * while the filtered entry's recipe is added.
+   */
+  filter?: { field: string; value: string };
 }
 
 /**

@@ -5,4 +5,8 @@ import type { PageProps } from './$types';
 let { data }: PageProps = $props();
 </script>
 
-<ModelPage packageId={data.packageId} modelName={data.modelName} />
+<ModelPage
+  packageId={data.packageId}
+  modelName={data.modelName}
+  view={data.view}
+/>

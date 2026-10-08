@@ -24,9 +24,11 @@ interface FieldMapFormProps {
   /** Called with the saved row of the form's own model. */
   onsaved: (saved: ModelRecord) => void;
   oncancel: () => void;
+  /** Values a NEW row carries, e.g. the filter of the page it was added on. */
+  preset?: Record<string, unknown>;
 }
 
-let { active, id, onsaved, oncancel }: FieldMapFormProps = $props();
+let { active, id, onsaved, oncancel, preset }: FieldMapFormProps = $props();
 
 const source = useDataSource();
 const inputs = $derived(fieldMapInputs(active, catalogModels));
@@ -72,7 +74,7 @@ async function save(event: SubmitEvent) {
   }
   try {
     const written = await source.apply(
-      planFieldMapSave(active, catalogModels, values, id, rows),
+      planFieldMapSave(active, catalogModels, values, id, rows, preset),
     );
     const primary = fieldMapParts(active).records[primaryIndex(active)];
     const saved = primary ? written[primary.as] : undefined;

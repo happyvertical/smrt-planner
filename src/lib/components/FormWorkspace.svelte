@@ -17,6 +17,7 @@ import {
   stockByProduct,
   VARIANT,
 } from '../forms/stock.ts';
+import { inScope, type RowScope } from '../recipes/scope.ts';
 import FieldMapForm from './FieldMapForm.svelte';
 import VariantGridForm from './VariantGridForm.svelte';
 
@@ -24,12 +25,24 @@ interface FormWorkspaceProps {
   model: CatalogModel;
   /** The forms of the added recipes for this model; New offers each. */
   forms: ActiveForm[];
+  /** The slice of rows this page lists (a filtered nav entry), if any. */
+  scope?: RowScope;
+  /** Values a new row carries so it stays in `scope`. */
+  preset?: Record<string, unknown>;
+  /** The list's heading; defaults to the model's plural name. */
+  title?: string;
+  /** What New creates on a filtered page, e.g. "ingredient". */
+  noun?: string;
 }
 
-let { model, forms }: FormWorkspaceProps = $props();
+let { model, forms, scope, preset, title, noun }: FormWorkspaceProps = $props();
 
 const source = useDataSource();
 const showStock = $derived(forms.some((f) => extendsWith(f, STOCK_LEVEL)));
+/** A filtered page adds plain products only; a grid of variants has no place there. */
+const offered = $derived(
+  scope?.equals !== undefined ? forms.filter(isFieldMap) : forms,
+);
 const gridForm = $derived(forms.find(isVariantGrid));
 const mapForm = $derived(forms.find(isFieldMap));
 
@@ -43,7 +56,7 @@ let editing = $state<{ form: ActiveForm; id?: string } | null>(null);
 let formKey = $state(0);
 
 async function load() {
-  rows = await source.list(model);
+  rows = (await source.list(model)).filter((row) => inScope(scope, row));
   // Rows with axes are Clothing even when its recipe is off.
   const variants = await source.list(catalogModels(VARIANT));
   withAxes = new Set(variants.map((v) => String(v.productId)));
@@ -60,6 +73,7 @@ $effect(() => {
   // Reload (and close any open form) when the model or the forms change.
   model.id;
   forms;
+  scope;
   editing = null;
   loaded = false;
   void load();
@@ -93,11 +107,11 @@ async function remove(row: ModelRecord) {
 
 <section>
   <header>
-    <h2>{model.name === 'Product' ? 'Products' : model.name} <small>{recordCount(rows.length)}</small></h2>
+    <h2>{title ?? (model.name === 'Product' ? 'Products' : model.name)} <small>{recordCount(rows.length)}</small></h2>
     <div class="new">
-      {#each forms as active (active.form.id)}
+      {#each offered as active (active.form.id)}
         <button type="button" onclick={() => open(active)}>
-          New {active.form.label.toLowerCase()}
+          New {scope?.equals !== undefined && noun ? noun : active.form.label.toLowerCase()}
         </button>
       {/each}
     </div>
@@ -117,6 +131,7 @@ async function remove(row: ModelRecord) {
         <FieldMapForm
           active={current.form}
           id={current.id}
+          {preset}
           onsaved={saved}
           oncancel={() => (editing = null)}
         />

@@ -68,6 +68,8 @@ export interface RecipeNavTarget {
   key?: string;
   /** Explicit noun for the New button; see `RecipeNavEntry.noun`. */
   noun?: string;
+  /** Row filter of a keyed entry; see `RecipeNavEntry.filter`. */
+  filter?: { field: string; value: string };
   model: CatalogModel;
   /** Catalog package id, for the `/m/<package>/<model>/` route. */
   packageId: string;
@@ -83,12 +85,25 @@ export function recipeNav(recipe: Recipe): RecipeNavTarget[] {
             label: entry.label,
             ...(entry.key ? { key: entry.key } : {}),
             ...(entry.noun ? { noun: entry.noun } : {}),
+            ...(entry.filter ? { filter: entry.filter } : {}),
             model: found.model,
             packageId: found.pkg.id,
           },
         ]
       : [];
   });
+}
+
+/**
+ * In-app path of a nav entry, without the app query: `/m/<pkg>/<Model>/`, and
+ * `/m/<pkg>/<Model>/<key>/` for a keyed entry (the same model shown twice).
+ */
+export function navPath(entry: {
+  packageId: string;
+  model: { name: string };
+  key?: string;
+}): string {
+  return `/m/${entry.packageId}/${entry.model.name}/${entry.key ? `${entry.key}/` : ''}`;
 }
 
 /** A recipe's models resolved to catalog models, in declared order. */

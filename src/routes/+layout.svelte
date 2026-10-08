@@ -30,6 +30,7 @@ import { FEATURE_SECTION, featureNavItems } from '$lib/recipes/features.ts';
 import {
   buildNavSections,
   navItemId,
+  navPath,
   recipeNav,
   recipes,
   sectionId,
@@ -94,7 +95,7 @@ const recipeGroups: ShellNavGroup[] = $derived.by(() => {
         // hrefs changes.
         items.push({
           id,
-          href: appHref(`/m/${entry.packageId}/${entry.model.name}/`),
+          href: appHref(navPath(entry)),
           label: entry.label,
           ...(main
             ? {

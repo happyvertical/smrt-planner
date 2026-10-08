@@ -179,7 +179,7 @@ describe('cookbook preview', () => {
     expect(menu('bakery')).toEqual([
       ['Shop', ['Orders', 'Customers']],
       ['Wholesale', ['Cafe orders', 'Invoices', 'Payments']],
-      ['Kitchen', ['Products', 'Ingredients', 'Batches']],
+      ['Kitchen', ['Products', 'Ingredients', 'Stock', 'Batches']],
       ['Buying', ['Suppliers', 'Purchase orders']],
       ['Accounting', ['Accounts', 'Journals']],
     ]);

@@ -349,12 +349,12 @@
           "commerce.estimates",
           "commerce.invoicing",
           "commerce.purchases",
+          "commerce.sales",
           "commerce.vendors",
           "events.calendar",
           "inventory.stock",
           "ledgers.bookkeeping",
-          "products.simple",
-          "projects.tracker"
+          "products.simple"
         ],
         "features": [],
         "policies": [
@@ -387,6 +387,12 @@
             "fieldName": "terms",
             "scopeType": "app",
             "defaultValue": "\"50% deposit, balance on completion\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Order",
+            "fieldName": "terms",
+            "scopeType": "app",
+            "defaultValue": "\"50% deposit, balance on completion\""
           }
         ],
         "layout": {
@@ -400,7 +406,7 @@
           ],
           "itemOrder": {
             "custom:jobs": [
-              "item:projects:Project",
+              "item:commerce:Order",
               "item:commerce:Customer",
               "item:commerce:Estimate",
               "item:commerce:Agreement"
@@ -424,12 +430,9 @@
             "item:commerce:Contract",
             "item:events:EventSeries",
             "item:inventory:InventoryLocation",
-            "item:inventory:StockMovement",
-            "item:projects:Issue",
-            "item:projects:Label"
+            "item:inventory:StockMovement"
           ],
           "moved": {
-            "item:projects:Project": "custom:jobs",
             "item:commerce:Customer": "custom:jobs",
             "item:commerce:Estimate": "custom:jobs",
             "item:commerce:Agreement": "custom:jobs",
@@ -440,7 +443,8 @@
             "item:commerce:Invoice": "custom:billing",
             "item:commerce:Payment": "custom:billing",
             "item:events:Event": "custom:schedule",
-            "item:events:EventType": "custom:schedule"
+            "item:events:EventType": "custom:schedule",
+            "item:commerce:Order": "custom:jobs"
           },
           "customSections": [
             {
@@ -461,9 +465,6 @@
             }
           ],
           "items": {
-            "item:projects:Project": {
-              "label": "Jobs"
-            },
             "item:commerce:Estimate": {
               "label": "Quotes"
             },
@@ -484,6 +485,9 @@
             },
             "item:events:EventType": {
               "label": "Visit types"
+            },
+            "item:commerce:Order": {
+              "label": "Jobs"
             }
           }
         }

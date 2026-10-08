@@ -15,6 +15,7 @@ import {
 } from '../src/lib/cookbooks/index.ts';
 import { blueprintNavGroups, previewMenu } from '../src/lib/cookbooks/menu.ts';
 import type { CookbookLayout } from '../src/lib/cookbooks/types.ts';
+import { navNoun } from '../src/lib/data/format.ts';
 import { recipesById } from '../src/lib/recipes/index.ts';
 import { recipeState } from '../src/lib/recipes/state.svelte.ts';
 
@@ -215,6 +216,18 @@ describe('cookbook preview', () => {
       'Jobs',
       ['Quotes', 'Work orders', 'Customers'],
     ]);
+  });
+
+  it('gives the welder work orders as Jobs, not a project tracker', () => {
+    const welder = cookbooks.find((c) => c.id === 'welder');
+    if (!welder) throw new Error('welder');
+    expect(welder.blueprint.recipes).toContain('commerce.sales');
+    expect(welder.blueprint.recipes).not.toContain('projects.tracker');
+    const jobs = menu('welder')[0];
+    expect(jobs?.[0]).toBe('Jobs');
+    expect(jobs?.[1]).toEqual(['Jobs', 'Customers', 'Quotes', 'Agreements']);
+    expect(navNoun('Jobs')).toBe('job');
+    expect(JSON.stringify(welder.blueprint.layout)).not.toContain('projects:');
   });
 
   it('lists recipe chips by label', () => {

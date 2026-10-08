@@ -244,7 +244,11 @@ export function fakeValue(
       return Math.floor(random() * 100);
     }
     case 'decimal':
-      if (/taxrate|vatrate/i.test(field.name)) return pick(random, TAX_RATES);
+      if (/taxrate|vatrate/i.test(field.name)) {
+        // A cookbook's default rate (0: untaxed) beats a random one.
+        const rate = getSamplePack().taxRate;
+        return rate ?? pick(random, TAX_RATES);
+      }
       if (/discountrate/i.test(field.name)) return pick(random, [0, 0.05, 0.1]);
       if (/(quantity|qty)/i.test(field.name))
         return 1 + Math.floor(random() * 5);
@@ -364,8 +368,12 @@ function nameThings(
     if (has(model, 'price')) record.price = item.price;
     if (model.id.endsWith(':Product')) {
       if (has(model, 'description')) {
-        record.description =
-          item.description ?? `${item.name}, made in small batches.`;
+        // The generic template belongs to the generic pack only.
+        const fallback =
+          pack.id === GENERIC_PACK.id
+            ? `${item.name}, made in small batches.`
+            : item.name;
+        record.description = item.description ?? fallback;
       }
       if (item.category && has(model, 'category')) {
         record.category = item.category;
@@ -386,7 +394,7 @@ function nameThings(
 
 /**
  * Names a pack supplies for whole models: customers and vendors (their
- * Profiles), events and their types and series. Packs without them leave the
+ * Profiles), events and their types and series, places and their types. Packs without them leave the
  * generic words in place.
  */
 function nameFromPack(
@@ -417,6 +425,8 @@ function nameFromPack(
     Event: pack.eventNames,
     EventType: pack.eventTypes,
     EventSeries: pack.seriesNames,
+    Place: pack.placeNames,
+    PlaceType: pack.placeTypes,
   };
   const list = names[model.id.split(':').pop() ?? ''];
   const name = at(list, index);

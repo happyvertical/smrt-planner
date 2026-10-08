@@ -46,6 +46,11 @@ export interface SamplePack {
   eventNames?: readonly string[];
   eventTypes?: readonly string[];
   seriesNames?: readonly string[];
+  /** Places events happen at, and what kinds of place they are. */
+  placeNames?: readonly string[];
+  placeTypes?: readonly string[];
+  /** Default sales tax rate (fraction) of the cookbook; omitted: random rates. */
+  taxRate?: number;
   locations?: readonly PackLocation[];
   /** Sample rows per model id, where the pack needs more than the default. */
   rowCounts?: Readonly<Record<string, number>>;
@@ -73,6 +78,7 @@ export const GENERIC_PACK: SamplePack = {
 
 const BAKERY: SamplePack = {
   id: 'bakery',
+  taxRate: 0,
   products: [
     {
       name: 'Sourdough loaf',
@@ -156,6 +162,7 @@ const BAKERY: SamplePack = {
     },
     {
       name: 'Cane sugar, 10 kg',
+      description: 'Fine granulated cane sugar.',
       price: 1900,
       category: 'Ingredient',
       productType: 'material',
@@ -163,6 +170,7 @@ const BAKERY: SamplePack = {
     },
     {
       name: 'Instant yeast, 500 g',
+      description: 'Fast-acting, no proofing needed.',
       price: 1100,
       category: 'Ingredient',
       productType: 'material',
@@ -170,6 +178,7 @@ const BAKERY: SamplePack = {
     },
     {
       name: 'Free-range eggs, tray of 30',
+      description: 'Free-range, graded large.',
       price: 1300,
       category: 'Ingredient',
       productType: 'material',
@@ -177,6 +186,7 @@ const BAKERY: SamplePack = {
     },
     {
       name: 'Dark chocolate, 2 kg',
+      description: 'Couverture, 64% cacao.',
       price: 3800,
       category: 'Ingredient',
       productType: 'material',
@@ -222,51 +232,60 @@ const BAKERY: SamplePack = {
 
 const MECHANIC: SamplePack = {
   id: 'mechanic',
+  taxRate: 0.0825,
   products: [
     {
       name: 'Brake pads, front set',
+      description: 'Ceramic pads with hardware kit.',
       price: 8900,
       category: 'Brakes',
       productType: 'product',
     },
     {
       name: 'Oil filter',
+      description: 'Spin-on filter for most cars.',
       price: 1400,
       category: 'Filters',
       productType: 'product',
     },
     {
       name: 'Spark plugs, set of 4',
+      description: 'Iridium plugs, pre-gapped.',
       price: 3600,
       category: 'Ignition',
       productType: 'product',
     },
     {
       name: 'Synthetic engine oil, 5 L',
+      description: 'Full synthetic, 5W-30.',
       price: 4200,
       category: 'Fluids',
       productType: 'product',
     },
     {
       name: 'Air filter',
+      description: 'Pleated paper element.',
       price: 2200,
       category: 'Filters',
       productType: 'product',
     },
     {
       name: 'Wiper blades, pair',
+      description: 'Beam blades, all weather.',
       price: 2400,
       category: 'Body',
       productType: 'product',
     },
     {
       name: 'Brake rotor, front',
+      description: 'Vented, coated against rust.',
       price: 11500,
       category: 'Brakes',
       productType: 'product',
     },
     {
       name: 'Car battery, 12 V',
+      description: 'Maintenance-free, 3-year warranty.',
       price: 14900,
       category: 'Electrical',
       productType: 'product',
@@ -327,6 +346,21 @@ const MECHANIC: SamplePack = {
     'Alignment',
     'Other',
   ],
+  seriesNames: [
+    'Scheduled maintenance',
+    'Seasonal tire change',
+    'Fleet contracts',
+    'Warranty work',
+    'Pre-purchase checks',
+  ],
+  placeNames: [
+    'Service bay 1',
+    'Service bay 2',
+    'Alignment rack',
+    'Customer pickup lot',
+    'Parts counter',
+  ],
+  placeTypes: ['Service bay', 'Rack', 'Lot', 'Counter'],
   locations: [
     { code: 'PARTS', name: 'Parts counter', kind: 'store' },
     { code: 'BAYS', name: 'Bay storage', kind: 'warehouse' },
@@ -340,39 +374,46 @@ const MECHANIC: SamplePack = {
 
 const WELDER: SamplePack = {
   id: 'welder',
+  taxRate: 0,
   products: [
     {
       name: 'Flat bar 50 x 6 mm, 6 m',
+      description: 'Mild steel, cut to length on request.',
       price: 4800,
       category: 'Steel stock',
       productType: 'material',
     },
     {
       name: 'Square tube 40 x 40 mm, 6 m',
+      description: 'Mild steel hollow section.',
       price: 9200,
       category: 'Steel stock',
       productType: 'material',
     },
     {
       name: 'Steel plate 6 mm, 4 x 8 ft',
+      description: 'Hot-rolled mild steel sheet.',
       price: 21500,
       category: 'Steel stock',
       productType: 'material',
     },
     {
       name: 'Angle iron 50 x 50 mm, 6 m',
+      description: 'Equal-leg mild steel angle.',
       price: 7400,
       category: 'Steel stock',
       productType: 'material',
     },
     {
       name: 'Round bar 20 mm, 3 m',
+      description: 'Hot-rolled mild steel round.',
       price: 3900,
       category: 'Steel stock',
       productType: 'material',
     },
     {
       name: 'Argon/CO2 shielding gas cylinder',
+      description: 'Argon and CO2 mix for MIG welding.',
       price: 6800,
       category: 'Gas',
       productType: 'material',
@@ -380,6 +421,7 @@ const WELDER: SamplePack = {
     },
     {
       name: 'MIG wire ER70S-6, 15 kg spool',
+      description: 'Copper-coated solid MIG wire.',
       price: 7900,
       category: 'Consumables',
       productType: 'material',
@@ -387,6 +429,7 @@ const WELDER: SamplePack = {
     },
     {
       name: 'Welding rods E7018, 5 kg',
+      description: 'Low-hydrogen stick electrodes.',
       price: 3400,
       category: 'Consumables',
       productType: 'material',
@@ -448,6 +491,21 @@ const WELDER: SamplePack = {
     'Pickup',
     'Other',
   ],
+  seriesNames: [
+    'Estimates and site measures',
+    'Install crews',
+    'Repair call-outs',
+    'Final inspections',
+    'Delivery runs',
+  ],
+  placeNames: [
+    'Customer site',
+    'Fabrication shop',
+    'Yard and loading dock',
+    'Supplier pickup',
+    'Job site office',
+  ],
+  placeTypes: ['Job site', 'Workshop', 'Yard', 'Supplier'],
   locations: [
     { code: 'RACK', name: 'Steel rack', kind: 'warehouse' },
     { code: 'GAS', name: 'Gas cage', kind: 'cage' },
@@ -461,46 +519,60 @@ const WELDER: SamplePack = {
 
 const YOGA: SamplePack = {
   id: 'yoga-studio',
+  taxRate: 0,
   products: [
     {
       name: 'Cork yoga mat',
+      description: 'Natural cork, non-slip.',
       price: 7800,
       category: 'Mats',
       productType: 'product',
     },
     {
       name: 'Yoga blocks, pair',
+      description: 'Dense foam, light and firm.',
       price: 2400,
       category: 'Props',
       productType: 'product',
     },
     {
       name: 'Cotton yoga strap',
+      description: 'Adjustable D-ring strap.',
       price: 1500,
       category: 'Props',
       productType: 'product',
     },
     {
       name: 'Insulated water bottle',
+      description: 'Keeps water cold all class.',
       price: 3200,
       category: 'Bottles',
       productType: 'product',
     },
-    { name: 'Bolster', price: 6400, category: 'Props', productType: 'product' },
+    {
+      name: 'Bolster',
+      description: 'Firm support for restorative poses.',
+      price: 6400,
+      category: 'Props',
+      productType: 'product',
+    },
     {
       name: 'Lavender eye pillow',
+      description: 'Weighted, with flax and lavender.',
       price: 1800,
       category: 'Wellness',
       productType: 'product',
     },
     {
       name: 'Meditation cushion',
+      description: 'Buckwheat-filled zafu.',
       price: 5200,
       category: 'Wellness',
       productType: 'product',
     },
     {
       name: 'Studio tote bag',
+      description: 'Roomy canvas tote.',
       price: 2800,
       category: 'Apparel',
       productType: 'product',
@@ -568,6 +640,14 @@ const YOGA: SamplePack = {
     'Summer solstice weekend',
     'Teacher training, 200 h',
   ],
+  placeNames: [
+    'Studio A',
+    'Studio B',
+    'Garden terrace',
+    'Lobby lounge',
+    'Retreat hall',
+  ],
+  placeTypes: ['Studio', 'Outdoor', 'Lounge', 'Hall'],
   locations: [
     { code: 'DESK', name: 'Front desk', kind: 'store' },
     { code: 'CLOSET', name: 'Storage closet', kind: 'warehouse' },

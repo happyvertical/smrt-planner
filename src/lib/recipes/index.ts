@@ -66,6 +66,8 @@ export interface RecipeNavTarget {
   label: string;
   /** The entry's fixed id key, if the model appears twice in the nav. */
   key?: string;
+  /** Explicit noun for the New button; see `RecipeNavEntry.noun`. */
+  noun?: string;
   model: CatalogModel;
   /** Catalog package id, for the `/m/<package>/<model>/` route. */
   packageId: string;
@@ -80,6 +82,7 @@ export function recipeNav(recipe: Recipe): RecipeNavTarget[] {
           {
             label: entry.label,
             ...(entry.key ? { key: entry.key } : {}),
+            ...(entry.noun ? { noun: entry.noun } : {}),
             model: found.model,
             packageId: found.pkg.id,
           },

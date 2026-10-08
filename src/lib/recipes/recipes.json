@@ -155,7 +155,7 @@
       ],
       "nav": [
         {
-          "label": "Purchase Orders",
+          "label": "Purchase orders",
           "model": "@happyvertical/smrt-commerce:PurchaseOrder"
         }
       ],
@@ -232,7 +232,7 @@
       ],
       "nav": [
         {
-          "label": "Sales Orders",
+          "label": "Sales orders",
           "model": "@happyvertical/smrt-commerce:Order"
         }
       ],
@@ -447,6 +447,7 @@
       "nav": [
         {
           "label": "Stock levels",
+          "noun": "stock entry",
           "model": "@happyvertical/smrt-inventory:StockLevel"
         },
         {
@@ -913,7 +914,7 @@
       ],
       "nav": [
         {
-          "label": "Wholesale Orders",
+          "label": "Wholesale orders",
           "model": "@happyvertical/smrt-commerce:WholesaleOrder"
         }
       ],
@@ -1398,7 +1399,7 @@
       ],
       "nav": [
         {
-          "label": "Licence Sales",
+          "label": "Licence sales",
           "model": "@happyvertical/smrt-commerce:LicenseSale"
         }
       ],
@@ -1671,11 +1672,11 @@
           "model": "@happyvertical/smrt-events:Event"
         },
         {
-          "label": "Event Types",
+          "label": "Event types",
           "model": "@happyvertical/smrt-events:EventType"
         },
         {
-          "label": "Event Series",
+          "label": "Event series",
           "model": "@happyvertical/smrt-events:EventSeries"
         }
       ],

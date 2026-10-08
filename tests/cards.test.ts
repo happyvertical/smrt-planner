@@ -63,8 +63,8 @@ describe('Planner card locks', () => {
       (c) => c.id === 'commerce.customers',
     );
     if (!customers) throw new Error('no Customers card');
-    expect(mainLockNote(customers, ['Sales Orders'])).toBe(
-      'Customers stays on while Sales Orders needs it.',
+    expect(mainLockNote(customers, ['Sales orders'])).toBe(
+      'Customers stays on while Sales orders needs it.',
     );
   });
 });

@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { CatalogModel } from '../catalog/types.ts';
 import { useDataSource } from '../data/context.ts';
-import { formatMoney } from '../data/format.ts';
+import { formatMoney, recordCount } from '../data/format.ts';
 import type { ModelRecord } from '../data/source.ts';
 import {
   type ActiveForm,
@@ -93,7 +93,7 @@ async function remove(row: ModelRecord) {
 
 <section>
   <header>
-    <h2>{model.name === 'Product' ? 'Products' : model.name} <small>{rows.length} rows</small></h2>
+    <h2>{model.name === 'Product' ? 'Products' : model.name} <small>{recordCount(rows.length)}</small></h2>
     <div class="new">
       {#each forms as active (active.form.id)}
         <button type="button" onclick={() => open(active)}>
@@ -127,7 +127,7 @@ async function remove(row: ModelRecord) {
   {#if !loaded}
     <p>Loading sample data...</p>
   {:else if rows.length === 0}
-    <p>No rows yet. Create one above.</p>
+    <p>No records yet. Create one above.</p>
   {:else}
     <div class="scroll">
       <table>

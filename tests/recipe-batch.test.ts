@@ -173,7 +173,7 @@ describe('suggested nav sections', () => {
     expect(salesNav?.slice().sort()).toEqual([
       'Customers',
       'Estimates',
-      'Sales Orders',
+      'Sales orders',
     ]);
   });
 });

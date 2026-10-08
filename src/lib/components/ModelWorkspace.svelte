@@ -315,7 +315,7 @@ async function remove(row: ModelRecord) {
   {:else if !loaded}
     <p>Loading...</p>
   {:else if rows.length === 0}
-    <p>No rows yet. Create one above.</p>
+    <p>No records yet. Create one above.</p>
   {:else}
     <div class="scroll">
       <table>

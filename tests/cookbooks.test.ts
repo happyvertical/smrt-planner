@@ -179,7 +179,7 @@ describe('cookbook preview', () => {
       ['Shop', ['Orders', 'Customers']],
       ['Wholesale', ['Cafe orders', 'Invoices', 'Payments']],
       ['Kitchen', ['Products', 'Ingredients', 'Batches']],
-      ['Buying', ['Suppliers', 'Purchase Orders']],
+      ['Buying', ['Suppliers', 'Purchase orders']],
       ['Accounting', ['Accounts', 'Journals']],
     ]);
   });

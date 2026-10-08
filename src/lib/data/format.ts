@@ -84,6 +84,11 @@ export function singularize(label: string): string {
   return label;
 }
 
+/** What New creates for a menu entry: its declared noun, else the label's singular. */
+export function navNoun(label: string, noun?: string): string {
+  return (noun?.trim() || singularize(label)).toLowerCase();
+}
+
 /** "1 record", "8 records". */
 export function recordCount(count: number): string {
   return `${count} ${count === 1 ? 'record' : 'records'}`;

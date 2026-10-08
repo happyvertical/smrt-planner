@@ -47,6 +47,11 @@ export interface RecipeNavEntry {
    * for a model that appears twice in the nav; never derived from the label.
    */
   key?: string;
+  /**
+   * What New creates, when the label is not a countable noun ("Stock levels"
+   * -> "stock entry"). Without it, the label's singular is used.
+   */
+  noun?: string;
 }
 
 /**

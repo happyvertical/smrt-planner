@@ -121,7 +121,7 @@ describe('recipes.json', () => {
     expect(modelOf(ORDER).collection).toBe(modelOf(PURCHASE_ORDER).collection);
     expect(
       recipeNav(getRecipe('commerce.sales') ?? recipes[0]).map((n) => n.label),
-    ).toEqual(['Sales Orders']);
+    ).toEqual(['Sales orders']);
   });
 });
 

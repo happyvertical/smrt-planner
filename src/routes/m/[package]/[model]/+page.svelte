@@ -6,7 +6,7 @@ import { catalog, getModel } from '$lib/catalog/index.ts';
 import FormWorkspace from '$lib/components/FormWorkspace.svelte';
 import ModelWorkspace from '$lib/components/ModelWorkspace.svelte';
 import SectionIcons from '$lib/components/SectionIcons.svelte';
-import { humanize, singularize } from '$lib/data/format.ts';
+import { humanize, navNoun } from '$lib/data/format.ts';
 import { activeForms } from '$lib/forms/active.ts';
 import { PRODUCT } from '$lib/forms/stock.ts';
 import { appHref } from '$lib/planner/app.svelte.ts';
@@ -103,8 +103,14 @@ const listTitle = $derived(
 );
 
 // What New creates, from the menu entry: "Sales Orders" -> "sales order".
+// An entry can declare its own noun ("Stock levels" -> "stock entry").
+const declaredNoun = $derived(
+  recipesWithModel
+    .flatMap((r) => recipeNav(r))
+    .find((e) => e.model.id === catalogModel?.id && e.noun)?.noun,
+);
 const noun = $derived(
-  navCrumb ? singularize(navCrumb.label).toLowerCase() : undefined,
+  navCrumb ? navNoun(navCrumb.label, declaredNoun) : undefined,
 );
 
 // Anchored to this model's fields in the recipe whose Help covers it.

@@ -64,17 +64,17 @@ describe('migrateNavItemIds', () => {
     itemOrder: {
       'section:sales': [
         'section:sales:commerce:Customer:Customers',
-        'section:sales:commerce:Order:Sales Orders',
+        'section:sales:commerce:Order:Sales orders',
       ],
       'section:more': ['section:more:commerce:ProductionOrder'],
     },
     hidden: ['section:billing:commerce:Invoice:Invoices', 'section:more'],
     moved: {
-      'section:sales:commerce:Order:Sales Orders': 'custom:shop',
+      'section:sales:commerce:Order:Sales orders': 'custom:shop',
       'section:more:commerce:ProductionOrder': 'section:sales',
     },
     items: {
-      'section:sales:commerce:Order:Sales Orders': { label: 'Work orders' },
+      'section:sales:commerce:Order:Sales orders': { label: 'Work orders' },
     },
     customSections: [{ id: 'custom:shop', label: 'Shop' }],
   };

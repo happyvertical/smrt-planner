@@ -1,5 +1,6 @@
 import type { Blueprint } from '../blueprint/types.ts';
 import type { CatalogModel } from '../catalog/types.ts';
+import { isSettingRow } from '../settings/app-settings.ts';
 import { recipesById } from './index.ts';
 import {
   backgroundDefaults,
@@ -94,7 +95,10 @@ class RecipeState {
       ...this.ids.flatMap((id) => recipesById.get(id)?.models ?? []),
       ...this.features,
     ]);
-    this.rows = this.rows.filter((r) => covered.has(r.objectRef));
+    // App settings rows stay on models not covered yet (see isSettingRow).
+    this.rows = this.rows.filter(
+      (r) => covered.has(r.objectRef) || isSettingRow(r),
+    );
     this.narrowed = Object.fromEntries(
       Object.entries(this.narrowed).filter(([ref]) => covered.has(ref)),
     );

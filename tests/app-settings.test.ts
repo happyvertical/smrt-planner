@@ -67,7 +67,12 @@ describe('app settings', () => {
   it('defaults to USD, no tax and no terms, with no rows', () => {
     const empty = new BlueprintStore().snapshot();
     expect(readSettings(empty)).toEqual(DEFAULT_SETTINGS);
-    expect(writeSettings(empty, DEFAULT_SETTINGS).policies).toEqual([]);
+    // Only Invoice's own CAD default needs an explicit USD row.
+    expect(
+      writeSettings(empty, DEFAULT_SETTINGS).policies.map(
+        (r) => `${r.objectRef}.${r.fieldName}`,
+      ),
+    ).toEqual([`${C}Invoice.currency`]);
   });
 
   it('round-trips written settings and rewrites cleanly', () => {
@@ -145,5 +150,41 @@ describe('app settings', () => {
       true, // only the Invoice USD-over-CAD override remains
     );
     expect(store.settings()).toEqual(DEFAULT_SETTINGS);
+  });
+});
+
+describe('settings follow recipe changes', () => {
+  it('a recipe added later starts with the app currency; removing all keeps it', () => {
+    const store = new BlueprintStore();
+    recipeState.add('commerce.sales');
+    store.setSettings({
+      currency: 'CAD',
+      taxRate: 0.05,
+      paymentTerms: 'Net 30',
+    });
+    expect(defaultOf('Order', 'currency')).toBe('CAD');
+    recipeState.add('commerce.invoicing');
+    expect(defaultOf('Invoice', 'currency')).toBe('CAD');
+    expect(defaultOf('InvoiceLineItem', 'taxRate')).toBe(0.05);
+
+    recipeState.remove('commerce.invoicing', 'commerce.sales');
+    recipeState.ids = [];
+    recipeState.remove();
+    expect(store.settings()).toEqual({
+      currency: 'CAD',
+      taxRate: 0.05,
+      paymentTerms: 'Net 30',
+    });
+    recipeState.add('commerce.invoicing');
+    expect(defaultOf('Invoice', 'currency')).toBe('CAD');
+    expect(defaultOf('Invoice', 'terms')).toBe('Net 30');
+  });
+
+  it('survives an export and import', () => {
+    const store = new BlueprintStore();
+    store.setSettings({ currency: 'EUR', taxRate: 0, paymentTerms: '' });
+    const again = new BlueprintStore();
+    expect(again.importText(JSON.stringify(store.snapshot())).ok).toBe(true);
+    expect(again.settings().currency).toBe('EUR');
   });
 });

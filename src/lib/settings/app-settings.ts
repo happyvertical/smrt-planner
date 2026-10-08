@@ -2,7 +2,6 @@ import type { Blueprint } from '../blueprint/types.ts';
 import { getModelByQualifiedName } from '../catalog/index.ts';
 import { recipesById } from '../recipes/index.ts';
 import { type FieldPolicyRow, resolveFields } from '../recipes/policy.ts';
-import { withRequirements } from '../recipes/resolve.ts';
 
 /**
  * App settings: the few defaults that belong to the visitor's app, not to a
@@ -51,6 +50,17 @@ export const SETTING_TARGETS: Readonly<
     { model: `${C}Customer`, field: 'paymentTerms' },
   ],
 };
+
+/**
+ * A setting's row on a model no added recipe covers yet. Kept (by the store's
+ * pruning and the import check) so a recipe added later starts with the
+ * app's settings, and so removing every recipe never loses them.
+ */
+export function isSettingRow(row: FieldPolicyRow): boolean {
+  return Object.values(SETTING_TARGETS).some((targets) =>
+    targets.some((t) => t.model === row.objectRef && t.field === row.fieldName),
+  );
+}
 
 const KEYS = Object.keys(SETTING_TARGETS) as (keyof AppSettings)[];
 
@@ -126,7 +136,8 @@ const isUnset = (v: unknown) => v === undefined || v === null || v === '';
 
 /**
  * A copy of the blueprint with the settings written as policy rows. A row is
- * written only for a model the blueprint covers and only where the value
+ * written for every model a setting covers (covered or not, so a recipe
+ * added later picks it up) and only where the value
  * differs from what the model starts as; otherwise any row for it is removed,
  * so an unset or default setting leaves no rows. Other keys on a row
  * (visibility, label, ...) are kept.
@@ -135,12 +146,6 @@ export function writeSettings(
   blueprint: Blueprint,
   settings: AppSettings,
 ): Blueprint {
-  const covered = new Set([
-    ...withRequirements(blueprint.recipes, recipesById).flatMap(
-      (id) => recipesById.get(id)?.models ?? [],
-    ),
-    ...blueprint.features,
-  ]);
   let policies = blueprint.policies.map((row) => ({ ...row }));
 
   for (const key of KEYS) {
@@ -154,7 +159,6 @@ export function writeSettings(
     for (const { model, field } of SETTING_TARGETS[key]) {
       const seed = seedDefault(blueprint, model, field);
       const wanted =
-        covered.has(model) &&
         !isUnset(value) &&
         !(isUnset(seed) ? false : seed === value) &&
         !(isUnset(seed) && key === 'taxRate' && value === 0);

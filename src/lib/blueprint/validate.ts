@@ -4,6 +4,7 @@ import { recipesById } from '../recipes/index.ts';
 import type { FieldPolicyRow } from '../recipes/policy.ts';
 import { withRequirements } from '../recipes/resolve.ts';
 import type { ExposureSurface } from '../recipes/types.ts';
+import { isSettingRow } from '../settings/app-settings.ts';
 import { migrateLegacySections, migrateNavItemIds } from './migrate.ts';
 import {
   BLUEPRINT_SCHEMA,
@@ -160,7 +161,7 @@ export function parseBlueprint(
   for (const [index, value] of input.policies.entries()) {
     const row = parseRow(value, `policies[${index}]`);
     if (typeof row === 'string') return fail(`Invalid blueprint: ${row}.`);
-    if (covered.has(row.objectRef)) policies.push(row);
+    if (covered.has(row.objectRef) || isSettingRow(row)) policies.push(row);
   }
 
   let exposure: Record<string, ExposureSurface[]> | undefined;

@@ -21,6 +21,12 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   tarball reads, `extract.ts` manifest -> catalog, `exclusions.ts` the
   documented infrastructure exclusion list). `scripts/generate-catalog.ts` is
   the entry point; Node runs the TypeScript directly.
+  `CATALOG_SOURCE=<path to a built smrt checkout> pnpm catalog:generate` reads
+  `packages/*/dist/manifest.json` (+ `smrt-knowledge.json`) from that checkout
+  instead of the registry, to preview unreleased manifests (e.g. model
+  `description`s); unset, the registry is used. Commit only registry output.
+- `src/lib/recipes/plumbing.ts`: the feature-vs-plumbing rules the Features tab
+  uses to hide link tables, child records and tiny lookups by default.
 - `src/lib/recipes/`: recipes are the unit people add. `types.ts` is the
   `SmrtRecipe` shape (happyvertical/smrt#3590) and `recipes.json` the local
   stand-in for the `recipes` the packages' `smrt-knowledge.json` will carry;

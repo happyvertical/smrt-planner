@@ -47,6 +47,8 @@ interface RawObject {
   collection: string;
   extends?: string;
   extendsTypeArg?: string;
+  /** The class's doc description (emitted by newer scanners only). */
+  description?: string;
   /** The own field that labels a record in pickers (smrt#3611). */
   displayLabelField?: string;
   fields: Record<string, RawField>;
@@ -313,6 +315,9 @@ export function extractPackage(raw: RawPackage): CatalogPackage {
       collection: model.collection,
       ...(model.extends && modelMap.has(`${packageName}:${model.extends}`)
         ? { extends: `${packageName}:${model.extends}` }
+        : {}),
+      ...(model.description?.trim()
+        ? { description: model.description.trim() }
         : {}),
       ...(model.displayLabelField &&
       fields.some((f) => f.name === model.displayLabelField)

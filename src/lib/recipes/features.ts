@@ -1,6 +1,7 @@
 import { exposedModels, getModelByQualifiedName } from '../catalog/index.ts';
 import type { Catalog, CatalogPackage } from '../catalog/types.ts';
 import { humanize } from '../data/format.ts';
+import { isPlumbing } from './plumbing.ts';
 import type { Recipe, RecipeNavSection } from './types.ts';
 
 /**
@@ -18,13 +19,18 @@ export interface FeatureEntry {
   label: string;
   /** Catalog package id, for `/m/<package>/<model>/` and `/packages/<id>/`. */
   packageId: string;
+  /** The model's description, else a field count (see `featureSummary`). */
   description: string;
+  /** `description` is the model's own, not the field-count fallback. */
+  described: boolean;
+  /** Link tables, child records and tiny lookups; hidden unless "Show all". */
+  plumbing: boolean;
   fieldNames: string[];
 }
 
 /** One line for a row: the model's description, else how many fields it has. */
 function describeModel(model: CatalogPackage['models'][number]): string {
-  const description = (model as { description?: string }).description?.trim();
+  const description = model.description?.trim();
   if (description) return description.split(/(?<=[.!?])\s/)[0] ?? description;
   const count = model.fields.filter((f) => !f.system).length;
   return `${count} ${count === 1 ? 'field' : 'fields'}`;
@@ -45,9 +51,26 @@ export function featureEntries(
         label: humanize(model.name),
         packageId: pkg.id,
         description: describeModel(model),
+        described: Boolean(model.description?.trim()),
+        plumbing: isPlumbing(model),
         fieldNames: model.fields.map((f) => f.name),
       })),
   );
+}
+
+/** The row's second line: the description, else "Package · N fields". */
+export function featureSummary(entry: FeatureEntry): string {
+  return entry.described
+    ? entry.description
+    : `${humanize(entry.packageId)} · ${entry.description}`;
+}
+
+/** Entries to list: features only, or everything when `showAll`. */
+export function visibleFeatures(
+  entries: readonly FeatureEntry[],
+  showAll: boolean,
+): FeatureEntry[] {
+  return showAll ? [...entries] : entries.filter((e) => !e.plumbing);
 }
 
 /** Packages that have at least one of the entries, in catalog order. */

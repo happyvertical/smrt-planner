@@ -95,6 +95,8 @@ export interface CatalogModel {
   collection: string;
   /** Qualified name of the model this one extends, when it is an STI child. */
   extends?: string;
+  /** The class's description from the manifest, when the scanner emits one. */
+  description?: string;
   /**
    * The manifest's `displayLabelField` (happyvertical/smrt#3611): the own
    * field that labels a record in pickers. Undeclared means the first of `name`,

@@ -14,7 +14,9 @@ import {
   type FeatureEntry,
   featureEntries,
   featurePackages,
+  featureSummary,
   filterFeatures,
+  visibleFeatures,
 } from '$lib/recipes/features.ts';
 import { recipes } from '$lib/recipes/index.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
@@ -26,14 +28,20 @@ const all = featureEntries(catalog, recipes);
 
 let query = $state('');
 let packageId = $state<string | null>(null);
+let showAll = $state(false);
 let notice = $state('');
 
 // Chips offer only packages that have a result for the current search.
-const chips = $derived(featurePackages(filterFeatures(all, query)));
+const pool = $derived(visibleFeatures(all, showAll));
+const chips = $derived(featurePackages(filterFeatures(pool, query)));
 const active = $derived(
   packageId && chips.includes(packageId) ? packageId : null,
 );
-const results = $derived(filterFeatures(all, query, active));
+const results = $derived(filterFeatures(pool, query, active));
+// Plumbing the current search and package filter would match, now hidden.
+const hidden = $derived(
+  showAll ? 0 : filterFeatures(all, query, active).length - results.length,
+);
 
 // Switching never navigates: the feature joins the menu whenever the visitor
 // likes, and the status line announces what changed.
@@ -78,7 +86,20 @@ function toggle(entry: FeatureEntry, on: boolean) {
     </div>
   {/if}
 
-  <h2 class="count">{results.length} {results.length === 1 ? 'feature' : 'features'}</h2>
+  <div class="bar">
+    <h2 class="count">
+      {results.length} {results.length === 1 ? 'feature' : 'features'}{hidden
+        ? ` (${hidden} hidden)`
+        : ''}
+    </h2>
+    <Switch
+      checked={showAll}
+      label="Show all"
+      onchange={(event) => {
+        showAll = event.currentTarget.checked;
+      }}
+    />
+  </div>
 
   {#if results.length}
     <ul class="rows" aria-label="Features">
@@ -87,8 +108,11 @@ function toggle(entry: FeatureEntry, on: boolean) {
         <li class:selected={on}>
           <span class="icon" aria-hidden="true"><Icon path={DATABASE} size={22} /></span>
           <div class="text">
-            <a href={appHref(`/packages/${entry.packageId}/`)}>{entry.label}</a>
-            <span class="meta">{humanize(entry.packageId)} · {entry.description}</span>
+            <span class="name">
+              <a href={appHref(`/packages/${entry.packageId}/`)}>{entry.label}</a>
+              {#if entry.plumbing}<span class="tag">plumbing</span>{/if}
+            </span>
+            <span class="meta">{featureSummary(entry)}</span>
           </div>
           <Switch
             checked={on}
@@ -171,6 +195,27 @@ function toggle(entry: FeatureEntry, on: boolean) {
     display: grid;
     flex: 1;
     min-width: 0;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--smrt-spacing-3);
+  }
+
+  .name {
+    display: flex;
+    align-items: baseline;
+    gap: var(--smrt-spacing-2);
+  }
+
+  .tag {
+    padding: 0 var(--smrt-spacing-2);
+    border: 1px solid var(--smrt-color-outline-variant);
+    border-radius: var(--smrt-radius-large);
+    color: var(--smrt-color-on-surface-variant);
+    font-size: var(--smrt-font-size-label-small, 0.6875rem);
   }
 
   .text a {

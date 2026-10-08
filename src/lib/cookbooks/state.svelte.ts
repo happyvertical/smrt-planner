@@ -1,4 +1,5 @@
 import { browserStorage } from '../blueprint/storage.ts';
+import { setSamplePack } from '../data/packs.ts';
 
 /** Which cookbook the visitor last applied; a UI note, not part of the blueprint. */
 export const COOKBOOK_KEY = 'smrt-planner:cookbook';
@@ -13,6 +14,8 @@ class CookbookState {
     } catch {
       this.active = null;
     }
+    // The sample data follows the cookbook the visitor last applied.
+    setSamplePack(this.active);
   }
 
   select(id: string, storage: Storage | null = browserStorage()): void {

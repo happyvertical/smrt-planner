@@ -15,7 +15,7 @@ import {
   fakeId,
   fakeRecords,
   type ModelRecord,
-  SAMPLE_ROW_COUNTS,
+  sampleRowCount,
 } from './fakes.ts';
 
 import { fakeAllocations } from './payments.ts';
@@ -343,7 +343,7 @@ export function createMemoryDataSource(
     const made: ModelRecord[] =
       empty.has(model.id) || owned.length || allocation
         ? []
-        : fakeRecords(model, SAMPLE_ROW_COUNTS[model.id] ?? rows, seed);
+        : fakeRecords(model, sampleRowCount(model.id, rows), seed);
     // Registered before the other side is built so each finds this table.
     tables.set(model.id, made);
     for (const link of linksOf(model.id)) table(link.model);

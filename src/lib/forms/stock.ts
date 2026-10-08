@@ -1,4 +1,5 @@
 import { fakeId, hashString } from '../data/fakes.ts';
+import { getSamplePack } from '../data/packs.ts';
 import type {
   MemoryDataSourceOptions,
   ModelRecord,
@@ -20,14 +21,8 @@ export const LOCATION = '@happyvertical/smrt-inventory:InventoryLocation';
  */
 export const SAVED_BY_FORMS = [VARIANT, SKU, STOCK_LEVEL, LOCATION];
 
-/** The sample places stock is held; every sample SKU is counted at the first. */
-const SAMPLE_LOCATIONS = [
-  { code: 'MAIN', name: 'Main floor', kind: 'store' },
-  { code: 'STORE', name: 'Storage room', kind: 'warehouse' },
-];
-
 /**
- * Sample locations, one SKU per sample product and a stock level for each SKU
+ * Sample locations (the active pack's), one SKU per sample product and a stock level for each SKU
  * at the main location and (for about two in three) at the second, with a
  * reorder point. The rows point at one another, so they are built together;
  * a form still adds its own on top. Variants stay empty.
@@ -39,7 +34,7 @@ export function stockSamples(
     [LOCATION]: {
       from: [],
       make: () =>
-        SAMPLE_LOCATIONS.map((l, i) => ({
+        (getSamplePack().locations ?? []).map((l, i) => ({
           id: fakeId(`${LOCATION}:sample:${i}`),
           ...l,
           placeId: '',
@@ -62,11 +57,18 @@ export function stockSamples(
     },
     [STOCK_LEVEL]: {
       from: [models(SKU), models(LOCATION)],
-      make: ([skus, locations]) =>
-        (skus ?? []).flatMap((sku) =>
+      make: ([skus, locations]) => {
+        const pack = getSamplePack();
+        const placed = new Map(pack.products.map((p) => [p.name, p.at]));
+        return (skus ?? []).flatMap((sku) =>
           (locations ?? []).flatMap((location, j) => {
             const h = hashString(`${sku.id}:${location.id}`);
-            if (j > 0 && h % 3 === 0) return [];
+            // A pack may say where a product is counted; otherwise it is
+            // at the first location and, for two in three, the second.
+            const home = placed.get(String(sku.name));
+            if (home !== undefined) {
+              if (home !== j) return [];
+            } else if (j > 0 && h % 3 === 0) return [];
             const reorderPoint = 10 + (h % 4) * 5;
             return [
               {
@@ -81,7 +83,8 @@ export function stockSamples(
               },
             ];
           }),
-        ),
+        );
+      },
     },
   };
 }

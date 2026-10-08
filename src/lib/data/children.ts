@@ -6,8 +6,9 @@ import {
   fakeRecord,
   hashString,
   type ModelRecord,
-  PRODUCT_CATALOG,
+  packLine,
 } from './fakes.ts';
+import { getSamplePack } from './packs.ts';
 
 /** A child model and the field holding its parent's id (see `childLinks`). */
 export interface ChildOf {
@@ -53,8 +54,17 @@ export function fakeChildrenOf(
       const productField = child.fields.find(
         (f) => f.related?.endsWith(':Product') && f.name in record,
       );
-      const item = PRODUCT_CATALOG[(index % 5) % PRODUCT_CATALOG.length];
-      if (productField && item) {
+      const { products } = getSamplePack();
+      const item = products[(index % 5) % products.length];
+      const described = packLine(index);
+      if (described) {
+        // Labour and fabrication are not products: no product to point at.
+        if (hasField(child, 'description')) {
+          record.description = described.description;
+        }
+        record.unitPrice = described.price;
+        if (productField) record[productField.name] = '';
+      } else if (productField && item) {
         if (hasField(child, 'description')) record.description = item.name;
         record.unitPrice = item.price;
       }

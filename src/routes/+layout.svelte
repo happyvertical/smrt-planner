@@ -16,6 +16,7 @@ import { catalog, exposedModels, getPackage } from '$lib/catalog/index.ts';
 import BrowserAssistant from '$lib/components/BrowserAssistant.svelte';
 import PlannerEditBridge from '$lib/components/PlannerEditBridge.svelte';
 import SectionActions from '$lib/components/SectionActions.svelte';
+import { cookbookState } from '$lib/cookbooks/state.svelte.ts';
 import { provideDataSource } from '$lib/data/context.ts';
 import { humanize } from '$lib/data/format.ts';
 import { createMemoryDataSource } from '$lib/data/source.ts';
@@ -38,6 +39,9 @@ import { recipeState } from '$lib/recipes/state.svelte.ts';
 import type { LayoutProps } from './$types';
 
 let { children }: LayoutProps = $props();
+
+// Sample data follows the cookbook last applied (nothing in the SSR render).
+cookbookState.load();
 
 // The seam for live objects: swap this for a collection-backed DataSource.
 provideDataSource(

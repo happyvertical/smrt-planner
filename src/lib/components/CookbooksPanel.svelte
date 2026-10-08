@@ -16,9 +16,11 @@ import {
 } from '$lib/cookbooks/index.ts';
 import { previewMenu } from '$lib/cookbooks/menu.ts';
 import { cookbookState } from '$lib/cookbooks/state.svelte.ts';
+import { useDataSource } from '$lib/data/context.ts';
 import { fractionToPercent } from '$lib/fields/percent.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
 
+const dataSource = useDataSource();
 let selectedId = $state<string | null>(null);
 let confirming = $state(false);
 let error = $state('');
@@ -59,6 +61,8 @@ function commit() {
   if (!selected) return;
   const result = applyCookbook(selected, blueprintStore);
   if (result.ok) {
+    // Sample records are regenerated from the cookbook's own sample data.
+    dataSource.reset?.();
     cookbookState.select(selected.id);
     error = '';
     notice = `Now using the ${selected.name} cookbook.`;
@@ -166,7 +170,7 @@ function commit() {
 <ConfirmDialog
   open={confirming}
   title={selected ? `Use the ${selected.name} cookbook?` : 'Use this cookbook?'}
-  message="Replaces your current recipes and menu. Your records stay."
+  message="Replaces your current recipes, menu and sample records."
   confirmLabel="Replace"
   destructive
   onconfirm={commit}

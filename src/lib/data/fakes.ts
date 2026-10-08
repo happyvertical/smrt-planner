@@ -1,5 +1,11 @@
 import type { CatalogField, CatalogModel } from '../catalog/types.ts';
 import { isLineModel } from './derived.ts';
+import {
+  GENERIC_PACK,
+  getSamplePack,
+  type PackLine,
+  type SamplePack,
+} from './packs.ts';
 
 /** A row of sample data. `id` is always present. */
 export interface ModelRecord {
@@ -78,16 +84,8 @@ const NOUNS = [
  * their names from here by row index, and a line item pointing at product `n`
  * reads as that product, so a picked product and a sample line agree.
  */
-export const PRODUCT_CATALOG: readonly { name: string; price: number }[] = [
-  { name: 'Canvas tote', price: 2400 },
-  { name: 'Ceramic mug', price: 1800 },
-  { name: 'Linen apron', price: 3600 },
-  { name: 'Beeswax candle', price: 1500 },
-  { name: 'Walnut cutting board', price: 5800 },
-  { name: 'Wool throw blanket', price: 8900 },
-  { name: 'Enamel camp cup', price: 1200 },
-  { name: 'Leather notebook', price: 2900 },
-];
+export const PRODUCT_CATALOG: readonly { name: string; price: number }[] =
+  GENERIC_PACK.products;
 
 const FIRST = ['Ada', 'Grace', 'Alan', 'Linus', 'Mae', 'Jun', 'Priya', 'Omar'];
 const LAST = ['Nguyen', 'Garcia', 'Okafor', 'Silva', 'Kim', 'Haddad', 'Rossi'];
@@ -105,6 +103,22 @@ const YEAR = 365 * 24 * 60 * 60 * 1000;
 
 function pick<T>(random: () => number, list: readonly T[]): T {
   return list[Math.floor(random() * list.length)] as T;
+}
+
+/** Pick by weight; values without a weight count 0, and all-zero falls back to uniform. */
+function pickWeighted(
+  random: () => number,
+  values: readonly string[],
+  weights: Readonly<Record<string, number>>,
+): string {
+  const total = values.reduce((sum, v) => sum + (weights[v] ?? 0), 0);
+  if (total <= 0) return pick(random, values);
+  let at = random() * total;
+  for (const value of values) {
+    at -= weights[value] ?? 0;
+    if (at < 0) return value;
+  }
+  return values[values.length - 1] as string;
 }
 
 /** A UUID-shaped id derived from a seed string. */
@@ -132,7 +146,7 @@ export const TAX_RATES = [0, 0.05, 0.0825, 0.13, 0.2] as const;
 
 function fakeText(field: CatalogField, random: () => number): string {
   const name = field.name.toLowerCase();
-  if (/terms/.test(name)) return pick(random, TERMS);
+  if (/terms/.test(name)) return pick(random, getSamplePack().terms ?? TERMS);
   if (/channel/.test(name)) return pick(random, CHANNELS);
   if (/period/.test(name)) return pick(random, PERIODS);
   if (/^(unit|uom)$/.test(name)) return pick(random, ['each', 'hour', 'box']);
@@ -148,7 +162,7 @@ function fakeText(field: CatalogField, random: () => number): string {
   if (
     /(description|summary|body|notes?|content|comment|message|bio)/.test(name)
   ) {
-    return pick(random, SENTENCES);
+    return pick(random, getSamplePack().notes ?? SENTENCES);
   }
   if (/(firstname|first_name)/.test(name)) return pick(random, FIRST);
   if (/(lastname|last_name|surname)/.test(name)) return pick(random, LAST);
@@ -175,6 +189,15 @@ export const SAMPLE_ROW_COUNTS: Readonly<Record<string, number>> = {
   '@happyvertical/smrt-commerce:Vendor': 5,
 };
 
+/** Sample rows for a model: the pack's count, else the shared one, else `fallback`. */
+export function sampleRowCount(modelId: string, fallback: number): number {
+  return (
+    getSamplePack().rowCounts?.[modelId] ??
+    SAMPLE_ROW_COUNTS[modelId] ??
+    fallback
+  );
+}
+
 /**
  * Which row of the target a sample relation points at. Rows are seeded with
  * ids from `(model, index)`, so pointing at index `n` points at a real row.
@@ -198,7 +221,15 @@ export function fakeValue(
   context: { modelId: string; index: number },
 ): unknown {
   // A declared enumeration: only its values are valid.
-  if (field.enum && field.enum.length > 0) return pick(random, field.enum);
+  if (field.enum && field.enum.length > 0) {
+    const weights =
+      getSamplePack().weights?.[
+        `${context.modelId.split(':').pop()}.${field.name}`
+      ];
+    return weights
+      ? pickWeighted(random, field.enum, weights)
+      : pick(random, field.enum);
+  }
   switch (field.type) {
     case 'boolean':
       return random() < 0.7;
@@ -324,20 +355,82 @@ function nameThings(
   ) {
     record.status = 'completed';
   }
-  const item = PRODUCT_CATALOG[index % PRODUCT_CATALOG.length];
+  const pack = getSamplePack();
+  nameFromPack(model, record, index, pack);
+  const item = pack.products[index % pack.products.length];
   if (!item) return;
   if (/:(Product|Sku)$/.test(model.id)) {
     if (has(model, 'name')) record.name = item.name;
     if (has(model, 'price')) record.price = item.price;
-    if (has(model, 'description') && model.id.endsWith(':Product')) {
-      record.description = `${item.name}, made in small batches.`;
+    if (model.id.endsWith(':Product')) {
+      if (has(model, 'description')) {
+        record.description =
+          item.description ?? `${item.name}, made in small batches.`;
+      }
+      if (item.category && has(model, 'category')) {
+        record.category = item.category;
+      }
+      if (item.productType && has(model, 'productType')) {
+        record.productType = item.productType;
+      }
     }
     return;
   }
   if (isLineModel(model) && has(model, 'description')) {
-    const line = PRODUCT_CATALOG[Math.floor(random() * PRODUCT_CATALOG.length)];
-    if (line) record.description = line.name;
+    const lines =
+      pack.lines ?? pack.products.map((p) => ({ description: p.name }));
+    const line = lines[Math.floor(random() * lines.length)];
+    if (line) record.description = line.description;
   }
+}
+
+/**
+ * Names a pack supplies for whole models: customers and vendors (their
+ * Profiles), events and their types and series. Packs without them leave the
+ * generic words in place.
+ */
+function nameFromPack(
+  model: CatalogModel,
+  record: ModelRecord,
+  index: number,
+  pack: SamplePack,
+): void {
+  const at = <T>(list: readonly T[] | undefined, i: number): T | undefined =>
+    list?.length ? list[i % list.length] : undefined;
+  if (model.id.endsWith(':Profile') && has(model, 'name')) {
+    // Customers use Profiles 0-7 and Vendors 8-12 (see SAMPLE_ROW_COUNTS).
+    const name =
+      index < 8 ? at(pack.customers, index) : at(pack.vendors, index - 8);
+    if (name) {
+      record.name = name;
+      if (has(model, 'email')) {
+        const local = name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '.')
+          .replace(/^\.+|\.+$/g, '');
+        record.email = `${local}@example.com`;
+      }
+    }
+    return;
+  }
+  const names: Record<string, readonly string[] | undefined> = {
+    Event: pack.eventNames,
+    EventType: pack.eventTypes,
+    EventSeries: pack.seriesNames,
+  };
+  const list = names[model.id.split(':').pop() ?? ''];
+  const name = at(list, index);
+  if (name && has(model, 'name')) record.name = name;
+}
+
+/**
+ * The line a sample line item reads as when the pack describes lines apart
+ * from products (labour, fabrication, passes); `undefined` for packs whose
+ * lines are their products.
+ */
+export function packLine(index: number): PackLine | undefined {
+  const lines = getSamplePack().lines;
+  return lines?.length ? lines[index % lines.length] : undefined;
 }
 
 /** A single seeded record for a model. */

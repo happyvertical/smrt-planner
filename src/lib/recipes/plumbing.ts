@@ -122,3 +122,110 @@ export function childModels(catalog: Catalog, modelId: string): CatalogModel[] {
     );
   });
 }
+
+/** The slice of a recipe the child lookup reads. */
+export interface RecipeScope {
+  models: readonly string[];
+  nav: readonly { model: string }[];
+}
+
+/** A child model and the foreign key that points it at its parent. */
+export interface ChildLink {
+  model: CatalogModel;
+  /** The child's field holding the parent record's id. */
+  fk: string;
+}
+
+function linkTo(
+  candidate: CatalogModel,
+  parents: Set<string>,
+): ChildLink | undefined {
+  const field = candidate.fields.find(
+    (f) =>
+      REF_TYPES.has(f.type) &&
+      f.related &&
+      parents.has(qualify(f.related, candidate.id)),
+  );
+  return field ? { model: candidate, fk: field.name } : undefined;
+}
+
+/**
+ * The records that live inside a model's own record view. When the model is in
+ * a recipe, a child is a model the recipe lists but gives no menu entry (so it
+ * has no page of its own) whose foreign key targets the model or a class it
+ * extends: `ContractLineItem` under every Contract subtype, `InvoiceLineItem`
+ * and `PaymentAllocation` under Invoice, `JournalEntry` under Journal. A model
+ * in no recipe (a Feature) falls back to {@link childModels}.
+ */
+export function childLinks(
+  catalog: Catalog,
+  recipes: readonly RecipeScope[],
+  modelId: string,
+): ChildLink[] {
+  const all = catalog.packages.flatMap((p) => p.models);
+  const byId = new Map(all.map((m) => [m.id, m]));
+  const parents = new Set(lineage(byId, modelId));
+  if (!parents.size) return [];
+  const scoped = recipes.filter((r) => r.models.includes(modelId));
+  if (!scoped.length) {
+    return childModels(catalog, modelId).flatMap((m) => {
+      const link = linkTo(m, parents);
+      return link ? [link] : [];
+    });
+  }
+  const found = new Map<string, ChildLink>();
+  for (const recipe of scoped) {
+    const navIds = new Set(recipe.nav.map((e) => e.model));
+    for (const id of recipe.models) {
+      const candidate = byId.get(id);
+      if (!candidate || navIds.has(id) || parents.has(id) || found.has(id)) {
+        continue;
+      }
+      const link = linkTo(candidate, parents);
+      if (link) found.set(id, link);
+    }
+  }
+  return [...found.values()];
+}
+
+/** Does any recipe give the model a menu entry of its own? */
+export function hasNavPage(
+  recipes: readonly RecipeScope[],
+  modelId: string,
+): boolean {
+  return recipes.some((r) => r.nav.some((e) => e.model === modelId));
+}
+
+/**
+ * Title of a child table: the child's name without the parent's prefix,
+ * pluralised ("ContractLineItem" under Agreement/Contract is "Line items").
+ */
+export function childTitle(
+  childName: string,
+  parentNames: readonly string[],
+): string {
+  let name = childName;
+  for (const parent of parentNames) {
+    if (name.length > parent.length && name.startsWith(parent)) {
+      name = name.slice(parent.length);
+      break;
+    }
+  }
+  const spaced = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase();
+  const plural = /[^aeiou]y$/.test(spaced)
+    ? `${spaced.slice(0, -1)}ies`
+    : /(s|x|ch|sh)$/.test(spaced)
+      ? `${spaced}es`
+      : `${spaced}s`;
+  return plural.charAt(0).toUpperCase() + plural.slice(1);
+}
+
+/** Names of the model and its STI ancestors, for {@link childTitle}. */
+export function lineageNames(catalog: Catalog, modelId: string): string[] {
+  const all = catalog.packages.flatMap((p) => p.models);
+  const byId = new Map(all.map((m) => [m.id, m]));
+  return lineage(byId, modelId).flatMap((id) => {
+    const m = byId.get(id);
+    return m ? [m.name] : [];
+  });
+}

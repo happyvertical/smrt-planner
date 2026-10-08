@@ -1,13 +1,14 @@
 <script lang="ts">
 import type { CatalogModel } from '../catalog/types.ts';
+import { type ChildTable, listColumns } from '../data/columns.ts';
 import { useDataSource } from '../data/context.ts';
 import { editableFields, type ModelRecord } from '../data/fakes.ts';
 import { formatValue, humanize } from '../data/format.ts';
 import { relationLabels } from '../data/labels.ts';
-import { isRelation } from '../fields/renderer.ts';
 import { type ActiveForm, isFieldMap } from '../forms/active.ts';
 import type { ViewField } from '../recipes/policy.ts';
 import type { FieldMapForm as FieldMapFormShape } from '../recipes/types.ts';
+import ChildRecords from './ChildRecords.svelte';
 import FieldInput from './FieldInput.svelte';
 import FieldMapForm from './FieldMapForm.svelte';
 
@@ -21,9 +22,19 @@ interface ModelWorkspaceProps {
    * rows it saves (a Customer's Profile) are edited together.
    */
   forms?: ActiveForm[];
+  /**
+   * Records that live inside this one (line items): shown under an open
+   * record, filtered to it, with the foreign key preset and hidden.
+   */
+  childTables?: ChildTable[];
 }
 
-let { model, fields: shownFields, forms = [] }: ModelWorkspaceProps = $props();
+let {
+  model,
+  fields: shownFields,
+  forms = [],
+  childTables = [],
+}: ModelWorkspaceProps = $props();
 
 const source = useDataSource();
 const fields = $derived<ViewField[]>(
@@ -33,22 +44,7 @@ const fields = $derived<ViewField[]>(
 const mapForms = $derived(
   forms.filter((f): f is ActiveForm<FieldMapFormShape> => isFieldMap(f)),
 );
-const columns = $derived.by((): ViewField[] => {
-  const shown = fields.filter((f) => f.type !== 'json');
-  // A few leading fields, then the numeric/boolean/date ones (prices,
-  // quantities, flags) and the choices (enums, relations) so a row reads like
-  // a record, not a wall of text.
-  const lead = shown.slice(0, 3);
-  const rest = shown
-    .slice(3)
-    .filter(
-      (f) =>
-        ['integer', 'decimal', 'boolean', 'datetime'].includes(f.type) ||
-        (f.enum?.length ?? 0) > 0 ||
-        isRelation(f),
-    );
-  return [...lead, ...rest].slice(0, 6);
-});
+const columns = $derived(listColumns(fields));
 
 let rows = $state<ModelRecord[]>([]);
 /** Labels of the records the rows point at, so a cell shows a name, not an id. */
@@ -118,9 +114,19 @@ async function save(event: SubmitEvent) {
   event.preventDefault();
   const values: Record<string, unknown> = {};
   for (const field of fields) values[field.name] = draft[field.name];
-  if (editing === 'new') await source.create(model, values);
-  else if (editing) await source.update(model, editing, values);
-  editing = null;
+  if (editing === 'new') {
+    const created = await source.create(model, values);
+    // A record with line items stays open after its first save, so they can
+    // be added to it right away.
+    editing = childTables.length ? created.id : null;
+    if (editing) {
+      draft = { ...created };
+      formKey++;
+    }
+  } else if (editing) {
+    await source.update(model, editing, values);
+    editing = null;
+  }
   await load();
 }
 
@@ -169,15 +175,28 @@ async function remove(row: ModelRecord) {
       <div class="actions">
         <button type="submit">Save</button>
         <button type="button" class="secondary" onclick={() => (editing = null)}>
-          Cancel
+          {childTables.length ? 'Back to list' : 'Cancel'}
         </button>
       </div>
     </form>
     {/if}
     {/key}
+    {#if editing !== 'new'}
+      {#each childTables as child (child.model.id)}
+        <ChildRecords
+          model={child.model}
+          fields={child.fields}
+          fk={child.fk}
+          title={child.title}
+          parentId={editing}
+        />
+      {/each}
+    {/if}
   {/if}
 
-  {#if !loaded}
+  {#if editing && childTables.length}
+    <!-- The open record (with its line items) stands in for the list. -->
+  {:else if !loaded}
     <p>Loading sample data...</p>
   {:else if rows.length === 0}
     <p>No rows yet. Create one above.</p>

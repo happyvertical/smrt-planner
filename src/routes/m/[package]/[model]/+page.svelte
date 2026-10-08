@@ -11,7 +11,12 @@ import { appHref } from '$lib/planner/app.svelte.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
 import { FEATURE_SECTION } from '$lib/recipes/features.ts';
 import { recipeNav, recipes, sectionId } from '$lib/recipes/index.ts';
-import { childModels } from '$lib/recipes/plumbing.ts';
+import {
+  childLinks,
+  childTitle,
+  hasNavPage,
+  lineageNames,
+} from '$lib/recipes/plumbing.ts';
 import { navSectionOf } from '$lib/recipes/sections.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
 import type { PageProps } from './$types';
@@ -81,14 +86,36 @@ const helpAnchor = $derived.by(() => {
     );
   return covering ? `${covering.id}-fields-${data.modelName}` : undefined;
 });
-// Line items and other dependent records ride along with their parent.
-const children = $derived(
-  catalogModel
-    ? childModels(catalog, catalogModel.id).map((child) =>
-        recipeState.apply(child),
-      )
-    : [],
-);
+// Line items and other dependent records live inside their parent's record
+// view, filtered to it; they have no list page of their own.
+const childTables = $derived.by(() => {
+  if (!catalogModel) return [];
+  const parentNames = lineageNames(catalog, catalogModel.id);
+  return childLinks(catalog, recipes, catalogModel.id).map((link) => {
+    const view = recipeState.apply(link.model);
+    return {
+      model: view.model,
+      fields: view.fields,
+      fk: link.fk,
+      title: childTitle(link.model.name, parentNames),
+    };
+  });
+});
+// A child in a recipe without a menu entry (and not added as a feature) is
+// reached through its parents, not as a page.
+const embeddedIn = $derived.by(() => {
+  if (!catalogModel) return [];
+  if (hasNavPage(recipes, catalogModel.id)) return [];
+  if (recipeState.hasFeature(catalogModel.id)) return [];
+  if (!recipesWithModel.length) return [];
+  return recipes.flatMap((recipe) =>
+    recipeNav(recipe).filter((entry) =>
+      childLinks(catalog, [recipe], entry.model.id).some(
+        (link) => link.model.id === catalogModel.id,
+      ),
+    ),
+  );
+});
 const inApp = $derived(
   selection.has(data.packageId) ||
     (catalogModel ? recipeState.hasFeature(catalogModel.id) : false) ||
@@ -118,15 +145,24 @@ const inApp = $derived(
     {/if}
     </div>
 
-    {#if forms.length && model.id === PRODUCT}
+    {#if embeddedIn.length}
+      <p>
+        {humanize(model.name)} records live inside their parent record. Open
+        one of:
+        {#each embeddedIn as entry, i (entry.model.id)}
+          {i ? ', ' : ''}<a href={appHref(`/m/${entry.packageId}/${entry.model.name}/`)}>{entry.label}</a>
+        {/each}
+      </p>
+    {:else if forms.length && model.id === PRODUCT}
       <FormWorkspace {model} {forms} />
     {:else}
-      <ModelWorkspace {model} fields={applied.fields} {forms} />
+      <ModelWorkspace
+        {model}
+        fields={applied.fields}
+        {forms}
+        {childTables}
+      />
     {/if}
-
-    {#each children as child (child.model.id)}
-      <ModelWorkspace model={child.model} fields={child.fields} />
-    {/each}
   </main>
 {/if}
 

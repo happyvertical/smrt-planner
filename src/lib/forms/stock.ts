@@ -1,4 +1,9 @@
-import type { ModelRecord, RecordWrite } from '../data/source.ts';
+import { fakeId, hashString } from '../data/fakes.ts';
+import type {
+  MemoryDataSourceOptions,
+  ModelRecord,
+  RecordWrite,
+} from '../data/source.ts';
 import type { ModelLookup } from './shared.ts';
 
 export const PRODUCT = '@happyvertical/smrt-products:Product';
@@ -14,6 +19,72 @@ export const LOCATION = '@happyvertical/smrt-inventory:InventoryLocation';
  * there.
  */
 export const SAVED_BY_FORMS = [VARIANT, SKU, STOCK_LEVEL, LOCATION];
+
+/** The sample places stock is held; every sample SKU is counted at the first. */
+const SAMPLE_LOCATIONS = [
+  { code: 'MAIN', name: 'Main floor', kind: 'store' },
+  { code: 'STORE', name: 'Storage room', kind: 'warehouse' },
+];
+
+/**
+ * Sample locations, one SKU per sample product and a stock level for each SKU
+ * at the main location and (for about two in three) at the second, with a
+ * reorder point. The rows point at one another, so they are built together;
+ * a form still adds its own on top. Variants stay empty.
+ */
+export function stockSamples(
+  models: ModelLookup,
+): NonNullable<MemoryDataSourceOptions['samples']> {
+  return {
+    [LOCATION]: {
+      from: [],
+      make: () =>
+        SAMPLE_LOCATIONS.map((l, i) => ({
+          id: fakeId(`${LOCATION}:sample:${i}`),
+          ...l,
+          placeId: '',
+          active: true,
+        })),
+    },
+    [SKU]: {
+      from: [models(PRODUCT)],
+      make: ([products]) =>
+        (products ?? []).map((p, i) => ({
+          id: fakeId(`${SKU}:sample:${p.id}`),
+          productId: p.id,
+          code: `SKU-${String(i + 1).padStart(3, '0')}`,
+          barcode: '',
+          name: String(p.name ?? ''),
+          attributes: '',
+          parentSkuId: '',
+          active: true,
+        })),
+    },
+    [STOCK_LEVEL]: {
+      from: [models(SKU), models(LOCATION)],
+      make: ([skus, locations]) =>
+        (skus ?? []).flatMap((sku) =>
+          (locations ?? []).flatMap((location, j) => {
+            const h = hashString(`${sku.id}:${location.id}`);
+            if (j > 0 && h % 3 === 0) return [];
+            const reorderPoint = 10 + (h % 4) * 5;
+            return [
+              {
+                id: fakeId(`${STOCK_LEVEL}:sample:${sku.id}:${location.id}`),
+                skuId: sku.id,
+                locationId: location.id,
+                state: 'available',
+                // Some rows sit at or under the reorder point.
+                qty: h % 5 === 0 ? reorderPoint - 3 : reorderPoint + (h % 40),
+                reorderPoint,
+                reorderQuantity: reorderPoint * 3,
+              },
+            ];
+          }),
+        ),
+    },
+  };
+}
 
 /**
  * Units on hand per product: each product's Skus' stock levels summed. A

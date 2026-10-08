@@ -19,7 +19,8 @@ import SectionActions from '$lib/components/SectionActions.svelte';
 import { provideDataSource } from '$lib/data/context.ts';
 import { humanize } from '$lib/data/format.ts';
 import { createMemoryDataSource } from '$lib/data/source.ts';
-import { PROFILE_TYPE, SAVED_BY_FORMS } from '$lib/forms/stock.ts';
+import { catalogModels } from '$lib/forms/shared.ts';
+import { PROFILE_TYPE, stockSamples, VARIANT } from '$lib/forms/stock.ts';
 import { appHref, appQuery } from '$lib/planner/app.svelte.ts';
 import { hasAppState, withTab } from '$lib/planner/query.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
@@ -46,9 +47,11 @@ provideDataSource(
     // Fields the views hide still carry their policy default, e.g. the
     // `contractType` that tells an Order from a PurchaseOrder.
     defaults: (model) => recipeState.apply(model).background,
-    // Rows that only make sense under a product a form creates start empty,
-    // as do Profile types: a form adds the one it needs.
-    empty: [...SAVED_BY_FORMS, PROFILE_TYPE],
+    // Variants only make sense under a product a form creates, so they start
+    // empty, as do Profile types: a form adds the one it needs. Locations, SKUs
+    // and stock are sampled together (one SKU per product).
+    empty: [VARIANT, PROFILE_TYPE],
+    samples: stockSamples(catalogModels),
     // Every sample parent comes with line items: the same parent-to-children
     // lookup the record view uses, so what it shows is what was seeded.
     children: {

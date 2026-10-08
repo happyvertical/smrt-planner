@@ -104,7 +104,7 @@ export interface DataSource {
 }
 
 /** Prefix of the localStorage keys rows are kept under, one per model. */
-export const DATA_STORAGE_PREFIX = 'smrt-planner:data:v2:';
+export const DATA_STORAGE_PREFIX = 'smrt-planner:data:v3:';
 const CREATED_KEY = `${DATA_STORAGE_PREFIX}_created`;
 
 /** Remove every stored row. Never throws. */
@@ -139,6 +139,19 @@ export interface MemoryDataSourceOptions {
    * stock), where random rows would point at nothing.
    */
   empty?: readonly string[];
+  /**
+   * Models whose sample rows are built from other models' rows instead of
+   * random fakes (stock levels from the SKUs and locations they count): the
+   * parent tables in `from` order, then the rows made from them. The model
+   * must not also be a generated child.
+   */
+  samples?: Record<
+    string,
+    {
+      from: readonly CatalogModel[];
+      make: (parents: ModelRecord[][], seed: number) => ModelRecord[];
+    }
+  >;
   /**
    * Parent-to-children wiring. With it, every sample parent comes with one to
    * four child rows (line items, allocations, entries) whose foreign key is
@@ -314,6 +327,15 @@ export function createMemoryDataSource(
       tables.set(model.id, stored);
       for (const link of linksOf(model.id)) table(link.model);
       return stored;
+    }
+    const sample = empty.has(model.id)
+      ? undefined
+      : options.samples?.[model.id];
+    if (sample) {
+      const made: ModelRecord[] = [];
+      tables.set(model.id, made);
+      made.push(...sample.make(sample.from.map(table), seed));
+      return made;
     }
     const allocation = allocationSpecOf(model);
     const owned = allocation ? [] : ownersOf(model.id);

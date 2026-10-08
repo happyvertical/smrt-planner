@@ -48,6 +48,7 @@ const percent = $derived(Math.round(session.progress.progress * 100));
         transport={session.transport}
         {registry}
         contextMode="server"
+        conversations="single"
         composerPlaceholder="Describe your business, e.g. I sell clothes online"
       />
     </div>

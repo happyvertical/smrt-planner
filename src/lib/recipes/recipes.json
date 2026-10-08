@@ -1480,7 +1480,6 @@
       ],
       "models": [
         "@happyvertical/smrt-projects:Project",
-        "@happyvertical/smrt-projects:Repository",
         "@happyvertical/smrt-projects:Issue",
         "@happyvertical/smrt-projects:Label",
         "@happyvertical/smrt-projects:Comment"
@@ -1489,10 +1488,6 @@
         {
           "label": "Projects",
           "model": "@happyvertical/smrt-projects:Project"
-        },
-        {
-          "label": "Repositories",
-          "model": "@happyvertical/smrt-projects:Repository"
         },
         {
           "label": "Issues",
@@ -1535,28 +1530,6 @@
             }
           }
         },
-        "@happyvertical/smrt-projects:Repository": {
-          "fields": {
-            "fullName": {
-              "visibility": "hidden"
-            },
-            "baseUrl": {
-              "visibility": "hidden"
-            },
-            "tokenConfigKey": {
-              "visibility": "hidden"
-            },
-            "providerType": {
-              "visibility": "hidden"
-            },
-            "lastSyncedAt": {
-              "visibility": "hidden"
-            },
-            "defaultBranch": {
-              "visibility": "hidden"
-            }
-          }
-        },
         "@happyvertical/smrt-projects:Issue": {
           "fields": {
             "nodeId": {
@@ -1573,6 +1546,12 @@
             },
             "commentsCount": {
               "visibility": "hidden"
+            },
+            "repositoryId": {
+              "visibility": "hidden"
+            },
+            "number": {
+              "visibility": "hidden"
             }
           }
         },
@@ -1582,6 +1561,13 @@
               "visibility": "hidden"
             },
             "url": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-projects:Label": {
+          "fields": {
+            "repositoryId": {
               "visibility": "hidden"
             }
           }

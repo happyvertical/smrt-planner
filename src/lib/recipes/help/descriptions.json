@@ -276,15 +276,8 @@
     "owner": "Who owns or runs the project.",
     "url": "A link to the project elsewhere."
   },
-  "@happyvertical/smrt-projects:Repository": {
-    "owner": "The person or organisation that owns the repository.",
-    "name": "The repository's name.",
-    "description": "What the repository holds.",
-    "isPrivate": "Turn this on if only your team can see it."
-  },
   "@happyvertical/smrt-projects:Issue": {
-    "repositoryId": "The repository this issue belongs to.",
-    "number": "The issue's number within its repository.",
+    "projectId": "The project this issue belongs to.",
     "title": "A short summary of the issue.",
     "body": "The full description.",
     "state": "open or closed.",
@@ -293,7 +286,7 @@
     "assignees": "The people working on it."
   },
   "@happyvertical/smrt-projects:Label": {
-    "repositoryId": "The repository this label belongs to.",
+    "projectId": "The project this label belongs to.",
     "name": "The label's name, for example bug.",
     "color": "The label's colour.",
     "description": "What the label means."

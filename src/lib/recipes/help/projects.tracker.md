@@ -1,7 +1,7 @@
 ## Overview
 
-Projects tracks the work you are planning: projects, the repositories that hold
-your code, and the issues in them with their labels and comments.
+Projects tracks the work you are planning: projects, the issues in them, and
+the labels and comments that organise them.
 
 ## Tasks
 
@@ -12,8 +12,7 @@ your code, and the issues in them with their labels and comments.
 
 ### Log an issue
 
-1. Open **Repositories** and add the repository the work belongs to.
-2. Open **Issues**, choose **New** and pick the **{field:repositoryId}**.
-3. Write a **{field:title}** and a **{field:body}**.
-4. Close it by setting **{field:state}** to closed. Comments appear under the
+1. Open **Issues**, choose **New** and pick the **{field:projectId}**.
+2. Write a **{field:title}** and a **{field:body}**.
+3. Close it by setting **{field:state}** to closed. Comments appear under the
    issue.

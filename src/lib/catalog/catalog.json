@@ -47735,8 +47735,14 @@
             {
               "name": "repositoryId",
               "type": "foreignKey",
-              "required": true,
+              "required": false,
               "related": "@happyvertical/smrt-projects:Repository"
+            },
+            {
+              "name": "projectId",
+              "type": "foreignKey",
+              "required": false,
+              "related": "@happyvertical/smrt-projects:Project"
             },
             {
               "name": "number",
@@ -47813,6 +47819,10 @@
             }
           ],
           "rest": [
+            {
+              "method": "POST",
+              "path": "/issues/findByProject"
+            },
             {
               "method": "POST",
               "path": "/issues/findByRepository"
@@ -47908,6 +47918,10 @@
               "name": "issuecollection_findbynumber"
             },
             {
+              "operation": "findByProject",
+              "name": "issuecollection_findbyproject"
+            },
+            {
               "operation": "findByRepository",
               "name": "issuecollection_findbyrepository"
             },
@@ -47976,6 +47990,10 @@
             {
               "operation": "findByNumber",
               "name": "issuecollection_findByNumber"
+            },
+            {
+              "operation": "findByProject",
+              "name": "issuecollection_findByProject"
             },
             {
               "operation": "findByRepository",
@@ -48098,6 +48116,15 @@
               "aiCallable": true
             },
             {
+              "name": "findByProject",
+              "async": true,
+              "parameters": [
+                "projectId: string"
+              ],
+              "returnType": "Promise<Issue[]>",
+              "aiCallable": true
+            },
+            {
               "name": "findByRepository",
               "async": true,
               "parameters": [
@@ -48187,6 +48214,13 @@
               "aiCallable": false
             },
             {
+              "name": "hasRepository",
+              "async": false,
+              "parameters": [],
+              "returnType": "boolean",
+              "aiCallable": false
+            },
+            {
               "name": "incorporateFeedback",
               "async": true,
               "parameters": [
@@ -48252,6 +48286,7 @@
             }
           ],
           "references": [
+            "@happyvertical/smrt-projects:Project",
             "@happyvertical/smrt-projects:Repository"
           ],
           "exposed": true
@@ -48269,6 +48304,12 @@
               "type": "foreignKey",
               "required": false,
               "related": "@happyvertical/smrt-projects:Repository"
+            },
+            {
+              "name": "projectId",
+              "type": "foreignKey",
+              "required": false,
+              "related": "@happyvertical/smrt-projects:Project"
             },
             {
               "name": "name",
@@ -48406,6 +48447,7 @@
             }
           ],
           "references": [
+            "@happyvertical/smrt-projects:Project",
             "@happyvertical/smrt-projects:Repository"
           ],
           "exposed": true
@@ -49386,8 +49428,14 @@
             {
               "name": "repositoryId",
               "type": "foreignKey",
-              "required": true,
+              "required": false,
               "related": "@happyvertical/smrt-projects:Repository"
+            },
+            {
+              "name": "projectId",
+              "type": "foreignKey",
+              "required": false,
+              "related": "@happyvertical/smrt-projects:Project"
             },
             {
               "name": "number",
@@ -49941,6 +49989,13 @@
               "aiCallable": false
             },
             {
+              "name": "hasRepository",
+              "async": false,
+              "parameters": [],
+              "returnType": "boolean",
+              "aiCallable": false
+            },
+            {
               "name": "incorporateFeedback",
               "async": true,
               "parameters": [
@@ -50052,6 +50107,7 @@
             }
           ],
           "references": [
+            "@happyvertical/smrt-projects:Project",
             "@happyvertical/smrt-projects:Repository"
           ],
           "exposed": true
@@ -52675,6 +52731,14 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/attributionexceptions"
+            },
+            {
+              "method": "GET",
+              "path": "/attributionexceptions/[id]"
+            },
+            {
               "method": "POST",
               "path": "/attributionexceptions/findOpen"
             },
@@ -52685,14 +52749,6 @@
             {
               "method": "POST",
               "path": "/attributionexceptions/findByTarget"
-            },
-            {
-              "method": "GET",
-              "path": "/attributionexceptions"
-            },
-            {
-              "method": "GET",
-              "path": "/attributionexceptions/[id]"
             }
           ],
           "mcp": [
@@ -52916,6 +52972,18 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/attributionpolicies"
+            },
+            {
+              "method": "GET",
+              "path": "/attributionpolicies/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/attributionpolicies"
+            },
+            {
               "method": "POST",
               "path": "/attributionpolicies/findByPolicyKey"
             },
@@ -52930,18 +52998,6 @@
             {
               "method": "POST",
               "path": "/attributionpolicies/createAmendment"
-            },
-            {
-              "method": "GET",
-              "path": "/attributionpolicies"
-            },
-            {
-              "method": "GET",
-              "path": "/attributionpolicies/[id]"
-            },
-            {
-              "method": "POST",
-              "path": "/attributionpolicies"
             }
           ],
           "mcp": [
@@ -55498,6 +55554,14 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/executedagreements"
+            },
+            {
+              "method": "GET",
+              "path": "/executedagreements/[id]"
+            },
+            {
               "method": "POST",
               "path": "/executedagreements/findByExecution"
             },
@@ -55512,14 +55576,6 @@
             {
               "method": "POST",
               "path": "/executedagreements/effectiveForSource"
-            },
-            {
-              "method": "GET",
-              "path": "/executedagreements"
-            },
-            {
-              "method": "GET",
-              "path": "/executedagreements/[id]"
             }
           ],
           "mcp": [
@@ -55727,6 +55783,22 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/leads"
+            },
+            {
+              "method": "GET",
+              "path": "/leads/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/leads"
+            },
+            {
+              "method": "PATCH",
+              "path": "/leads/[id]"
+            },
+            {
               "method": "POST",
               "path": "/leads/findByStatus"
             },
@@ -55749,22 +55821,6 @@
             {
               "method": "POST",
               "path": "/leads/activitiesIncludingMerged"
-            },
-            {
-              "method": "GET",
-              "path": "/leads"
-            },
-            {
-              "method": "GET",
-              "path": "/leads/[id]"
-            },
-            {
-              "method": "POST",
-              "path": "/leads"
-            },
-            {
-              "method": "PATCH",
-              "path": "/leads/[id]"
             }
           ],
           "mcp": [
@@ -56109,18 +56165,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/opportunities/findByLead"
-            },
-            {
-              "method": "POST",
-              "path": "/opportunities/findOpen"
-            },
-            {
-              "method": "POST",
-              "path": "/opportunities/moveToStage"
-            },
-            {
               "method": "GET",
               "path": "/opportunities"
             },
@@ -56135,6 +56179,18 @@
             {
               "method": "PATCH",
               "path": "/opportunities/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/opportunities/findByLead"
+            },
+            {
+              "method": "POST",
+              "path": "/opportunities/findOpen"
+            },
+            {
+              "method": "POST",
+              "path": "/opportunities/moveToStage"
             }
           ],
           "mcp": [
@@ -56335,14 +56391,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/opportunityconversions/findByOpportunity"
-            },
-            {
-              "method": "POST",
-              "path": "/opportunityconversions/recordConversion"
-            },
-            {
               "method": "GET",
               "path": "/opportunityconversions"
             },
@@ -56353,6 +56401,14 @@
             {
               "method": "POST",
               "path": "/opportunityconversions"
+            },
+            {
+              "method": "POST",
+              "path": "/opportunityconversions/findByOpportunity"
+            },
+            {
+              "method": "POST",
+              "path": "/opportunityconversions/recordConversion"
             }
           ],
           "mcp": [
@@ -56470,22 +56526,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/pipelinedefinitions/findByKey"
-            },
-            {
-              "method": "POST",
-              "path": "/pipelinedefinitions/findDefault"
-            },
-            {
-              "method": "POST",
-              "path": "/pipelinedefinitions/getStages"
-            },
-            {
-              "method": "POST",
-              "path": "/pipelinedefinitions/ensureDefaultPipeline"
-            },
-            {
               "method": "GET",
               "path": "/pipelinedefinitions"
             },
@@ -56500,6 +56540,22 @@
             {
               "method": "PATCH",
               "path": "/pipelinedefinitions/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/pipelinedefinitions/findByKey"
+            },
+            {
+              "method": "POST",
+              "path": "/pipelinedefinitions/findDefault"
+            },
+            {
+              "method": "POST",
+              "path": "/pipelinedefinitions/getStages"
+            },
+            {
+              "method": "POST",
+              "path": "/pipelinedefinitions/ensureDefaultPipeline"
             }
           ],
           "mcp": [
@@ -56706,14 +56762,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/pipelinestages/findByPipeline"
-            },
-            {
-              "method": "POST",
-              "path": "/pipelinestages/findByKey"
-            },
-            {
               "method": "GET",
               "path": "/pipelinestages"
             },
@@ -56728,6 +56776,14 @@
             {
               "method": "PATCH",
               "path": "/pipelinestages/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/pipelinestages/findByPipeline"
+            },
+            {
+              "method": "POST",
+              "path": "/pipelinestages/findByKey"
             }
           ],
           "mcp": [
@@ -56899,6 +56955,18 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/referrals"
+            },
+            {
+              "method": "GET",
+              "path": "/referrals/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/referrals"
+            },
+            {
               "method": "POST",
               "path": "/referrals/findByReferrer"
             },
@@ -56913,18 +56981,6 @@
             {
               "method": "POST",
               "path": "/referrals/sweepExpired"
-            },
-            {
-              "method": "GET",
-              "path": "/referrals"
-            },
-            {
-              "method": "GET",
-              "path": "/referrals/[id]"
-            },
-            {
-              "method": "POST",
-              "path": "/referrals"
             }
           ],
           "mcp": [
@@ -57258,18 +57314,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/referralagreements/findByReferrerAndProgram"
-            },
-            {
-              "method": "POST",
-              "path": "/referralagreements/activeFor"
-            },
-            {
-              "method": "POST",
-              "path": "/referralagreements/createAmendment"
-            },
-            {
               "method": "GET",
               "path": "/referralagreements"
             },
@@ -57280,6 +57324,18 @@
             {
               "method": "POST",
               "path": "/referralagreements"
+            },
+            {
+              "method": "POST",
+              "path": "/referralagreements/findByReferrerAndProgram"
+            },
+            {
+              "method": "POST",
+              "path": "/referralagreements/activeFor"
+            },
+            {
+              "method": "POST",
+              "path": "/referralagreements/createAmendment"
             }
           ],
           "mcp": [
@@ -57654,22 +57710,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/referrallinks/findByReferrer"
-            },
-            {
-              "method": "POST",
-              "path": "/referrallinks/findByCode"
-            },
-            {
-              "method": "POST",
-              "path": "/referrallinks/createWithUniqueCode"
-            },
-            {
-              "method": "POST",
-              "path": "/referrallinks/recordClick"
-            },
-            {
               "method": "GET",
               "path": "/referrallinks"
             },
@@ -57684,6 +57724,22 @@
             {
               "method": "PATCH",
               "path": "/referrallinks/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/referrallinks/findByReferrer"
+            },
+            {
+              "method": "POST",
+              "path": "/referrallinks/findByCode"
+            },
+            {
+              "method": "POST",
+              "path": "/referrallinks/createWithUniqueCode"
+            },
+            {
+              "method": "POST",
+              "path": "/referrallinks/recordClick"
             }
           ],
           "mcp": [
@@ -57894,18 +57950,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/referralprograms/findByKey"
-            },
-            {
-              "method": "POST",
-              "path": "/referralprograms/findByStatus"
-            },
-            {
-              "method": "POST",
-              "path": "/referralprograms/findActive"
-            },
-            {
               "method": "GET",
               "path": "/referralprograms"
             },
@@ -57920,6 +57964,18 @@
             {
               "method": "PATCH",
               "path": "/referralprograms/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/referralprograms/findByKey"
+            },
+            {
+              "method": "POST",
+              "path": "/referralprograms/findByStatus"
+            },
+            {
+              "method": "POST",
+              "path": "/referralprograms/findActive"
             }
           ],
           "mcp": [
@@ -58129,16 +58185,16 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/referraltermsnapshots/findByReferral"
-            },
-            {
               "method": "GET",
               "path": "/referraltermsnapshots"
             },
             {
               "method": "GET",
               "path": "/referraltermsnapshots/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/referraltermsnapshots/findByReferral"
             }
           ],
           "mcp": [
@@ -58276,18 +58332,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/referraltouches/findByReferrer"
-            },
-            {
-              "method": "POST",
-              "path": "/referraltouches/findBySubject"
-            },
-            {
-              "method": "POST",
-              "path": "/referraltouches/findByTargetWindow"
-            },
-            {
               "method": "GET",
               "path": "/referraltouches"
             },
@@ -58298,6 +58342,18 @@
             {
               "method": "POST",
               "path": "/referraltouches"
+            },
+            {
+              "method": "POST",
+              "path": "/referraltouches/findByReferrer"
+            },
+            {
+              "method": "POST",
+              "path": "/referraltouches/findBySubject"
+            },
+            {
+              "method": "POST",
+              "path": "/referraltouches/findByTargetWindow"
             }
           ],
           "mcp": [
@@ -58444,18 +58500,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/referrers/findByProfile"
-            },
-            {
-              "method": "POST",
-              "path": "/referrers/findByStatus"
-            },
-            {
-              "method": "POST",
-              "path": "/referrers/findActive"
-            },
-            {
               "method": "GET",
               "path": "/referrers"
             },
@@ -58470,6 +58514,18 @@
             {
               "method": "PATCH",
               "path": "/referrers/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/referrers/findByProfile"
+            },
+            {
+              "method": "POST",
+              "path": "/referrers/findByStatus"
+            },
+            {
+              "method": "POST",
+              "path": "/referrers/findActive"
             }
           ],
           "mcp": [
@@ -58683,14 +58739,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/salesactivities/findBySubject"
-            },
-            {
-              "method": "POST",
-              "path": "/salesactivities/findOpenTasks"
-            },
-            {
               "method": "GET",
               "path": "/salesactivities"
             },
@@ -58701,6 +58749,14 @@
             {
               "method": "POST",
               "path": "/salesactivities"
+            },
+            {
+              "method": "POST",
+              "path": "/salesactivities/findBySubject"
+            },
+            {
+              "method": "POST",
+              "path": "/salesactivities/findOpenTasks"
             }
           ],
           "mcp": [
@@ -58827,14 +58883,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/salesrepresentatives/findByProfile"
-            },
-            {
-              "method": "POST",
-              "path": "/salesrepresentatives/findActive"
-            },
-            {
               "method": "GET",
               "path": "/salesrepresentatives"
             },
@@ -58849,6 +58897,14 @@
             {
               "method": "PATCH",
               "path": "/salesrepresentatives/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/salesrepresentatives/findByProfile"
+            },
+            {
+              "method": "POST",
+              "path": "/salesrepresentatives/findActive"
             }
           ],
           "mcp": [
@@ -68042,20 +68098,20 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/groups"
-            },
-            {
-              "method": "GET",
-              "path": "/groups/[id]"
-            },
-            {
               "method": "POST",
               "path": "/groups/findByTenant"
             },
             {
               "method": "POST",
               "path": "/groups/findBySlug"
+            },
+            {
+              "method": "GET",
+              "path": "/groups"
+            },
+            {
+              "method": "GET",
+              "path": "/groups/[id]"
             }
           ],
           "mcp": [
@@ -68153,14 +68209,6 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/groupmembers"
-            },
-            {
-              "method": "GET",
-              "path": "/groupmembers/[id]"
-            },
-            {
               "method": "POST",
               "path": "/groupmembers/findByGroup"
             },
@@ -68191,6 +68239,14 @@
             {
               "method": "POST",
               "path": "/groupmembers/getUserIds"
+            },
+            {
+              "method": "GET",
+              "path": "/groupmembers"
+            },
+            {
+              "method": "GET",
+              "path": "/groupmembers/[id]"
             }
           ],
           "mcp": [
@@ -68394,14 +68450,6 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/grouproles"
-            },
-            {
-              "method": "GET",
-              "path": "/grouproles/[id]"
-            },
-            {
               "method": "POST",
               "path": "/grouproles/findByGroup"
             },
@@ -68424,6 +68472,14 @@
             {
               "method": "POST",
               "path": "/grouproles/getRoleIds"
+            },
+            {
+              "method": "GET",
+              "path": "/grouproles"
+            },
+            {
+              "method": "GET",
+              "path": "/grouproles/[id]"
             }
           ],
           "mcp": [
@@ -68604,14 +68660,6 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/memberships"
-            },
-            {
-              "method": "GET",
-              "path": "/memberships/[id]"
-            },
-            {
               "method": "POST",
               "path": "/memberships/findByUser"
             },
@@ -68638,6 +68686,14 @@
             {
               "method": "POST",
               "path": "/memberships/findByStatus"
+            },
+            {
+              "method": "GET",
+              "path": "/memberships"
+            },
+            {
+              "method": "GET",
+              "path": "/memberships/[id]"
             }
           ],
           "mcp": [
@@ -68849,14 +68905,6 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/membershipoverrides"
-            },
-            {
-              "method": "GET",
-              "path": "/membershipoverrides/[id]"
-            },
-            {
               "method": "POST",
               "path": "/membershipoverrides/findByMembership"
             },
@@ -68891,6 +68939,14 @@
             {
               "method": "POST",
               "path": "/membershipoverrides/denyPermission"
+            },
+            {
+              "method": "GET",
+              "path": "/membershipoverrides"
+            },
+            {
+              "method": "GET",
+              "path": "/membershipoverrides/[id]"
             }
           ],
           "mcp": [
@@ -69143,14 +69199,6 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/permissions"
-            },
-            {
-              "method": "GET",
-              "path": "/permissions/[id]"
-            },
-            {
               "method": "POST",
               "path": "/permissions/findByCategory"
             },
@@ -69169,6 +69217,14 @@
             {
               "method": "POST",
               "path": "/permissions/findOrCreate"
+            },
+            {
+              "method": "GET",
+              "path": "/permissions"
+            },
+            {
+              "method": "GET",
+              "path": "/permissions/[id]"
             }
           ],
           "mcp": [
@@ -69532,14 +69588,6 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/roles"
-            },
-            {
-              "method": "GET",
-              "path": "/roles/[id]"
-            },
-            {
               "method": "POST",
               "path": "/roles/findSystemRoles"
             },
@@ -69562,6 +69610,14 @@
             {
               "method": "POST",
               "path": "/roles/seedSystemRoles"
+            },
+            {
+              "method": "GET",
+              "path": "/roles"
+            },
+            {
+              "method": "GET",
+              "path": "/roles/[id]"
             }
           ],
           "mcp": [
@@ -69765,14 +69821,6 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/rolepermissions"
-            },
-            {
-              "method": "GET",
-              "path": "/rolepermissions/[id]"
-            },
-            {
               "method": "POST",
               "path": "/rolepermissions/findByRole"
             },
@@ -69803,6 +69851,14 @@
             {
               "method": "POST",
               "path": "/rolepermissions/seedDefaultRolePersonalizationPermissions"
+            },
+            {
+              "method": "GET",
+              "path": "/rolepermissions"
+            },
+            {
+              "method": "GET",
+              "path": "/rolepermissions/[id]"
             }
           ],
           "mcp": [
@@ -70049,14 +70105,6 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/sessions/[id]"
-            },
-            {
-              "method": "DELETE",
-              "path": "/sessions/[id]"
-            },
-            {
               "method": "POST",
               "path": "/sessions/createSession"
             },
@@ -70115,6 +70163,14 @@
             {
               "method": "POST",
               "path": "/sessions/getSessionData"
+            },
+            {
+              "method": "GET",
+              "path": "/sessions/[id]"
+            },
+            {
+              "method": "DELETE",
+              "path": "/sessions/[id]"
             }
           ],
           "mcp": [
@@ -70653,14 +70709,6 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/tenants"
-            },
-            {
-              "method": "GET",
-              "path": "/tenants/[id]"
-            },
-            {
               "method": "POST",
               "path": "/tenants/findByStatus"
             },
@@ -70727,6 +70775,14 @@
             {
               "method": "POST",
               "path": "/tenants/getTree"
+            },
+            {
+              "method": "GET",
+              "path": "/tenants"
+            },
+            {
+              "method": "GET",
+              "path": "/tenants/[id]"
             }
           ],
           "mcp": [
@@ -71185,14 +71241,6 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/tenantintegrations"
-            },
-            {
-              "method": "GET",
-              "path": "/tenantintegrations/[id]"
-            },
-            {
               "method": "POST",
               "path": "/tenantintegrations/listForTenant"
             },
@@ -71203,6 +71251,14 @@
             {
               "method": "POST",
               "path": "/tenantintegrations/findOrInit"
+            },
+            {
+              "method": "GET",
+              "path": "/tenantintegrations"
+            },
+            {
+              "method": "GET",
+              "path": "/tenantintegrations/[id]"
             }
           ],
           "mcp": [
@@ -71417,14 +71473,6 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/tenantpermissionoverrides"
-            },
-            {
-              "method": "GET",
-              "path": "/tenantpermissionoverrides/[id]"
-            },
-            {
               "method": "POST",
               "path": "/tenantpermissionoverrides/findByTenant"
             },
@@ -71487,6 +71535,14 @@
             {
               "method": "POST",
               "path": "/tenantpermissionoverrides/copyOverrides"
+            },
+            {
+              "method": "GET",
+              "path": "/tenantpermissionoverrides"
+            },
+            {
+              "method": "GET",
+              "path": "/tenantpermissionoverrides/[id]"
             }
           ],
           "mcp": [
@@ -71889,14 +71945,6 @@
           ],
           "rest": [
             {
-              "method": "GET",
-              "path": "/users"
-            },
-            {
-              "method": "GET",
-              "path": "/users/[id]"
-            },
-            {
               "method": "POST",
               "path": "/users/findByEmail"
             },
@@ -71923,6 +71971,14 @@
             {
               "method": "POST",
               "path": "/users/getOrCreateFromOidc"
+            },
+            {
+              "method": "GET",
+              "path": "/users"
+            },
+            {
+              "method": "GET",
+              "path": "/users/[id]"
             }
           ],
           "mcp": [

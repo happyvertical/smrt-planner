@@ -67,8 +67,9 @@ const snakeCase = (name: string) =>
 
 /**
  * The single-table-inheritance discriminator: an enumerated `...Type` field of
- * a subclass (or one listing the model's own snake_case name), like
- * `contractType` on a ProductionOrder. It tells the classes of a shared table
+ * a subclass that lists the model's own snake_case name, like `contractType`
+ * on a ProductionOrder. A root class's own enumeration (a Product's
+ * `productType`: product, material) is data, not a discriminator. It tells the classes of a shared table
  * apart, so a form never offers it.
  */
 export function isDiscriminatorField(
@@ -79,7 +80,8 @@ export function isDiscriminatorField(
     /Type$/.test(field.name) &&
     Array.isArray(field.enum) &&
     field.enum.length > 0 &&
-    (Boolean(model.extends) || field.enum.includes(snakeCase(model.name)))
+    Boolean(model.extends) &&
+    field.enum.includes(snakeCase(model.name))
   );
 }
 

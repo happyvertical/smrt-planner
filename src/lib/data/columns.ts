@@ -98,6 +98,21 @@ export function missingRequired(
   return errors;
 }
 
+/**
+ * One line for near the Save button: which fields still need a value.
+ * Empty when nothing is missing, so it clears itself as the errors do.
+ */
+export function errorSummary(
+  fields: readonly { name: string; label: string }[],
+  errors: Readonly<Record<string, string>>,
+): string {
+  const labels = fields.filter((f) => errors[f.name]).map((f) => f.label);
+  if (labels.length === 0) return '';
+  return `Cannot save yet: ${labels.join(', ')} ${
+    labels.length === 1 ? 'is' : 'are'
+  } required.`;
+}
+
 const REFERENCE_FIELD = /^(reference|number|description)$/i;
 
 /**

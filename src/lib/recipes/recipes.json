@@ -204,7 +204,7 @@
               "visibility": "hidden"
             },
             "taxRate": {
-              "help": "A fraction: 0.05 is 5%."
+              "help": "Type a percentage: 5 means 5%."
             }
           }
         }
@@ -279,7 +279,7 @@
               "visibility": "hidden"
             },
             "taxRate": {
-              "help": "A fraction: 0.05 is 5%."
+              "help": "Type a percentage: 5 means 5%."
             }
           }
         }
@@ -882,7 +882,7 @@
               "visibility": "hidden"
             },
             "taxRate": {
-              "help": "A fraction: 0.05 is 5%."
+              "help": "Type a percentage: 5 means 5%."
             }
           }
         }
@@ -956,7 +956,7 @@
               "visibility": "hidden"
             },
             "taxRate": {
-              "help": "A fraction: 0.05 is 5%."
+              "help": "Type a percentage: 5 means 5%."
             }
           }
         }
@@ -1077,7 +1077,7 @@
               "visibility": "hidden"
             },
             "taxRate": {
-              "help": "A fraction: 0.05 is 5%."
+              "help": "Type a percentage: 5 means 5%."
             }
           }
         },
@@ -1267,7 +1267,7 @@
               "visibility": "hidden"
             },
             "taxRate": {
-              "help": "A fraction: 0.05 is 5%."
+              "help": "Type a percentage: 5 means 5%."
             }
           }
         },
@@ -1359,7 +1359,7 @@
               "visibility": "hidden"
             },
             "taxRate": {
-              "help": "A fraction: 0.05 is 5%."
+              "help": "Type a percentage: 5 means 5%."
             }
           }
         }
@@ -1444,7 +1444,7 @@
               "visibility": "hidden"
             },
             "taxRate": {
-              "help": "A fraction: 0.05 is 5%."
+              "help": "Type a percentage: 5 means 5%."
             }
           }
         }

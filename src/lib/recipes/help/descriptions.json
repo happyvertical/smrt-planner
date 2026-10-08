@@ -176,7 +176,7 @@
     "description": "What is being sold or bought on this line.",
     "quantity": "How many.",
     "unitPrice": "The price of one, before tax.",
-    "taxRate": "The tax rate for this line, as a decimal (0.05 is 5%).",
+    "taxRate": "The tax rate for this line, as a percentage (5 means 5%).",
     "amount": "The line total.",
     "productId": "The product this line is for, if it is one you list."
   },
@@ -212,7 +212,7 @@
     "description": "What is being billed on this line.",
     "quantity": "How many.",
     "unitPrice": "The price of one, before tax.",
-    "taxRate": "The tax rate for this line, as a decimal (0.05 is 5%).",
+    "taxRate": "The tax rate for this line, as a percentage (5 means 5%).",
     "amount": "The line total."
   },
   "@happyvertical/smrt-commerce:Payment": {

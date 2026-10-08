@@ -1,8 +1,11 @@
 <script lang="ts">
+import { FieldLabel } from '@happyvertical/smrt-ui/forms';
+import { tick } from 'svelte';
 import type { CatalogModel } from '../catalog/types.ts';
 import {
   blankRecord,
   type ChildTable,
+  errorSummary,
   listColumns,
   missingRequired,
   recordTitle,
@@ -18,6 +21,7 @@ import {
   recordCount,
 } from '../data/format.ts';
 import { relationLabels, shortId } from '../data/labels.ts';
+import { focusFirstInvalid } from '../fields/invalid.ts';
 import { type ActiveForm, isFieldMap } from '../forms/active.ts';
 import type { ViewField } from '../recipes/policy.ts';
 import type { FieldMapForm as FieldMapFormShape } from '../recipes/types.ts';
@@ -83,6 +87,7 @@ let draft = $state<Record<string, unknown>>({});
 let formKey = $state(0);
 /** Required fields the last save found empty, by field name. */
 let errors = $state<Record<string, string>>({});
+const summary = $derived(errorSummary(fields, errors));
 /** What names a row to a person: its customer or reference, else a short id. */
 const nameOf = (row: ModelRecord) =>
   recordTitle(model, fields, row, labels) || shortId(row.id);
@@ -147,8 +152,13 @@ function startEdit(row: ModelRecord) {
 
 async function save(event: SubmitEvent) {
   event.preventDefault();
+  const form = event.currentTarget;
   errors = missingRequired(fields, draft, calculated);
-  if (Object.keys(errors).length > 0) return;
+  if (Object.keys(errors).length > 0) {
+    await tick();
+    focusFirstInvalid(form);
+    return;
+  }
   const values: Record<string, unknown> = {};
   for (const field of fields) {
     if (!calculated.has(field.name)) values[field.name] = draft[field.name];
@@ -207,12 +217,12 @@ async function remove(row: ModelRecord) {
         oncancel={() => (editing = null)}
       />
     {:else}
-    <form onsubmit={save}>
+    <form onsubmit={save} novalidate>
       <h3>{editing === 'new' ? `New ${model.name}` : editTitle || model.name}</h3>
       {#each fields as field (field.name)}
         {#if calculated.has(field.name)}
           <div class="derived">
-            <span class="derived-label">{field.label}</span>
+            <FieldLabel label={field.label} />
             <output data-derived={field.name}>
               {formatValue(field, draft[field.name] ?? 0, labels)}
             </output>
@@ -221,6 +231,7 @@ async function remove(row: ModelRecord) {
         {:else}
           <FieldInput
             {field}
+        error={errors[field.name]}
             modelId={model.id}
             label={field.label}
             help={field.help}
@@ -230,11 +241,11 @@ async function remove(row: ModelRecord) {
               delete errors[field.name];
             }}
           />
-          {#if errors[field.name]}
-            <p class="error" role="alert">{errors[field.name]}</p>
-          {/if}
         {/if}
       {/each}
+      {#if summary}
+        <p class="error" role="alert" data-error-summary>{summary}</p>
+      {/if}
       <div class="actions">
         <button type="submit">Save</button>
         <button type="button" class="secondary" onclick={() => (editing = null)}>
@@ -352,10 +363,6 @@ async function remove(row: ModelRecord) {
   .derived {
     display: grid;
     gap: var(--smrt-spacing-1);
-  }
-
-  .derived-label {
-    font-weight: 500;
   }
 
   .scroll {

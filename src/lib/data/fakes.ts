@@ -220,6 +220,71 @@ export function editableFields(model: CatalogModel): CatalogField[] {
   return model.fields.filter((f) => !f.system);
 }
 
+const DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Where a date field sits in a record's timeline, by its name: it begins
+ * (created, issued, start), something happens to it (updated, paid, shipped:
+ * never in the future), it falls due, then it ends (expiry, end).
+ */
+type DateStage = 'start' | 'event' | 'due' | 'end';
+
+function dateStage(name: string): DateStage | null {
+  const n = name.toLowerCase();
+  if (/^last/.test(n)) return null;
+  if (
+    /(expir|enddate|endat|endsat|endedat|ends|until|closed|cancel|periodend|effectiveto|windowend|trialends|void|revoked)/.test(
+      n,
+    )
+  )
+    return 'end';
+  if (/(due|deadline|schedul|renew|nextrun|estimated|expected|payable)/.test(n))
+    return 'due';
+  if (
+    /(updated|modified|paid|ship|deliver|settled|resolved|completed|approved|confirmed|received|accepted|reviewed|verified|published|posted|viewed|decided|finalized)/.test(
+      n,
+    )
+  )
+    return 'event';
+  if (
+    /(issue|startdate|startat|startsat|startedat|periodstart|effectivedate|effectivefrom|windowstart|sentat|occurredat|requestedat|submittedat|^date$|^timestamp$|publish_date|balancefrom)/.test(
+      n,
+    )
+  )
+    return 'start';
+  return null;
+}
+
+/**
+ * Makes a record's dates agree with each other: issued/start first, then what
+ * happens to it, then due, then expiry/end. Deterministic, as every offset
+ * comes from the record's own random stream.
+ */
+function orderDates(
+  model: CatalogModel,
+  record: ModelRecord,
+  random: () => number,
+): void {
+  const dated = model.fields
+    .filter((f) => !f.system && f.type === 'datetime' && !f.enum)
+    .flatMap((field) => {
+      const stage = dateStage(field.name);
+      return stage ? [{ field, stage }] : [];
+    });
+  if (dated.length === 0) return;
+  const first = dated.find((d) => d.stage === 'start');
+  const anchor = first
+    ? Date.parse(String(record[first.field.name]))
+    : EPOCH - Math.floor(random() * YEAR);
+  const event = Math.min(anchor + (1 + Math.floor(random() * 20)) * DAY, EPOCH);
+  const due = Math.max(event, anchor) + (14 + Math.floor(random() * 32)) * DAY;
+  const end = due + (30 + Math.floor(random() * 150)) * DAY;
+  const at = { start: anchor, event, due, end };
+  for (const { field, stage } of dated) {
+    record[field.name] = new Date(at[stage]).toISOString();
+  }
+}
+
 /** A single seeded record for a model. */
 export function fakeRecord(
   model: CatalogModel,
@@ -235,6 +300,11 @@ export function fakeRecord(
       index,
     });
   }
+  orderDates(
+    model,
+    record,
+    createRandom(hashString(`${seed}:${model.id}:${index}:dates`)),
+  );
   return record;
 }
 

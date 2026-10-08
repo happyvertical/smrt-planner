@@ -1,6 +1,9 @@
 <script lang="ts">
+import { tick } from 'svelte';
+import { errorSummary, missingRequired } from '../data/columns.ts';
 import { useDataSource } from '../data/context.ts';
 import type { ModelRecord } from '../data/source.ts';
+import { focusFirstInvalid } from '../fields/invalid.ts';
 import type { ActiveForm } from '../forms/active.ts';
 import {
   blankFieldMap,
@@ -35,6 +38,16 @@ let values = $state<Record<string, unknown>>(
 // svelte-ignore state_referenced_locally
 let loaded = $state(id === undefined);
 let error = $state('');
+let errors = $state<Record<string, string>>({});
+const requiredFields = $derived(
+  inputs.map(({ field, catalogField }) => ({
+    ...catalogField,
+    name: field.id,
+    label: field.label,
+    required: field.required ?? catalogField.required,
+  })),
+);
+const summary = $derived(errorSummary(requiredFields, errors));
 /** The rows an edited row's records point at; see `planFieldMapSave`. */
 let rows: Record<string, ModelRecord | undefined> = {};
 
@@ -49,7 +62,14 @@ if (id !== undefined) void load(id);
 
 async function save(event: SubmitEvent) {
   event.preventDefault();
+  const form = event.currentTarget;
   error = '';
+  errors = missingRequired(requiredFields, values);
+  if (Object.keys(errors).length > 0) {
+    await tick();
+    focusFirstInvalid(form);
+    return;
+  }
   try {
     const written = await source.apply(
       planFieldMapSave(active, catalogModels, values, id, rows),
@@ -67,7 +87,7 @@ async function save(event: SubmitEvent) {
 {#if !loaded}
   <p>Loading...</p>
 {:else}
-  <form onsubmit={save}>
+  <form onsubmit={save} novalidate>
     <h3>{id === undefined ? `New ${active.form.label.toLowerCase()}` : `Edit ${active.form.label.toLowerCase()}`}</h3>
     {#each inputs as { field, catalogField, modelId } (field.id)}
       <FieldInput
@@ -76,10 +96,15 @@ async function save(event: SubmitEvent) {
         label={field.label}
         help={field.help}
         idPrefix={active.form.id}
+        error={errors[field.id]}
         value={values[field.id]}
-        onchange={(value) => (values[field.id] = value)}
+        onchange={(value) => {
+          values[field.id] = value;
+          delete errors[field.id];
+        }}
       />
     {/each}
+    {#if summary}<p class="error" role="alert" data-error-summary>{summary}</p>{/if}
     {#if error}<p class="error" role="alert">{error}</p>{/if}
     <div class="actions">
       <button type="submit">Save</button>

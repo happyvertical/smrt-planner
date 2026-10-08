@@ -53,7 +53,7 @@ describe('New button nouns', () => {
 
 describe('Member fields', () => {
   it.each([
-    ['yoga-studio', ['creditLimit', 'taxExempt', 'customerType']],
+    ['yoga-studio', ['creditLimit', 'taxExempt', 'customerType', 'taxId']],
     ['mechanic', ['creditLimit', 'customerType']],
   ])('%s hides the wholesale fields of a customer', (id, hidden) => {
     const names = viewFields(
@@ -251,5 +251,17 @@ describe('Data resets', () => {
     store.hydrate('', fake);
     expect(recipeState.has('commerce.customers')).toBe(true);
     recipeState.clear();
+  });
+});
+
+describe('Identifier fields', () => {
+  it('fills a tax id with a number, never a company name', () => {
+    const customer = model(`${C}Customer`);
+    for (const row of fakeRecords(customer, 8, 7)) {
+      const taxId = (row as Record<string, unknown>).taxId;
+      if (taxId !== undefined && taxId !== null) {
+        expect(String(taxId)).toMatch(/^\d{2}-\d{7}$/);
+      }
+    }
   });
 });

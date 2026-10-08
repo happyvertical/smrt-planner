@@ -575,6 +575,12 @@
             "fieldName": "terms",
             "scopeType": "app",
             "defaultValue": "\"Due on receipt\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Customer",
+            "fieldName": "taxId",
+            "scopeType": "app",
+            "visibility": "hidden"
           }
         ],
         "layout": {

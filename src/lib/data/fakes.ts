@@ -180,6 +180,10 @@ function fakeText(
   }
   if (/(firstname|first_name)/.test(name)) return pick(random, FIRST);
   if (/(lastname|last_name|surname)/.test(name)) return pick(random, LAST);
+  // Tax and business registration numbers are identifiers, never names.
+  if (/(tax_?id|vat|^ein$|abn|gst|registration)/.test(name)) {
+    return `${Math.floor(random() * 90 + 10)}-${Math.floor(random() * 9_000_000 + 1_000_000)}`;
+  }
   if (/(code|sku|barcode|number|reference)/.test(name)) {
     return `${pick(random, WORDS).slice(0, 3).toUpperCase()}-${Math.floor(random() * 9000 + 1000)}`;
   }

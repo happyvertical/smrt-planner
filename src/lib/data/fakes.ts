@@ -1,4 +1,5 @@
 import type { CatalogField, CatalogModel } from '../catalog/types.ts';
+import { isLineModel } from './derived.ts';
 
 /** A row of sample data. `id` is always present. */
 export interface ModelRecord {
@@ -72,6 +73,22 @@ const NOUNS = [
   'Trading',
   'Labs',
 ];
+/**
+ * Things a shop sells, with a price in cents. Sample products and SKUs take
+ * their names from here by row index, and a line item pointing at product `n`
+ * reads as that product, so a picked product and a sample line agree.
+ */
+export const PRODUCT_CATALOG: readonly { name: string; price: number }[] = [
+  { name: 'Canvas tote', price: 2400 },
+  { name: 'Ceramic mug', price: 1800 },
+  { name: 'Linen apron', price: 3600 },
+  { name: 'Beeswax candle', price: 1500 },
+  { name: 'Walnut cutting board', price: 5800 },
+  { name: 'Wool throw blanket', price: 8900 },
+  { name: 'Enamel camp cup', price: 1200 },
+  { name: 'Leather notebook', price: 2900 },
+];
+
 const FIRST = ['Ada', 'Grace', 'Alan', 'Linus', 'Mae', 'Jun', 'Priya', 'Omar'];
 const LAST = ['Nguyen', 'Garcia', 'Okafor', 'Silva', 'Kim', 'Haddad', 'Rossi'];
 const SENTENCES = [
@@ -83,7 +100,7 @@ const SENTENCES = [
 ];
 
 /** Fixed clock so seeded timestamps never change between runs. */
-const EPOCH = Date.UTC(2026, 0, 1);
+export const EPOCH = Date.UTC(2026, 0, 1);
 const YEAR = 365 * 24 * 60 * 60 * 1000;
 
 function pick<T>(random: () => number, list: readonly T[]): T {
@@ -220,7 +237,7 @@ export function editableFields(model: CatalogModel): CatalogField[] {
   return model.fields.filter((f) => !f.system);
 }
 
-const DAY = 24 * 60 * 60 * 1000;
+export const DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Where a date field sits in a record's timeline, by its name: it begins
@@ -285,6 +302,44 @@ function orderDates(
   }
 }
 
+const has = (model: CatalogModel, name: string) =>
+  model.fields.some((f) => f.name === name);
+
+/**
+ * Products and SKUs are called things ("Canvas tote"), not companies, and a
+ * line item describes the item it sells rather than quoting a status.
+ */
+function nameThings(
+  model: CatalogModel,
+  record: ModelRecord,
+  index: number,
+  random: () => number,
+): void {
+  // Most payments went through; the rest are pending, failed or refunded.
+  const status = model.fields.find((f) => f.name === 'status');
+  if (
+    model.id.endsWith(':Payment') &&
+    status?.enum?.includes('completed') &&
+    random() < 0.6
+  ) {
+    record.status = 'completed';
+  }
+  const item = PRODUCT_CATALOG[index % PRODUCT_CATALOG.length];
+  if (!item) return;
+  if (/:(Product|Sku)$/.test(model.id)) {
+    if (has(model, 'name')) record.name = item.name;
+    if (has(model, 'price')) record.price = item.price;
+    if (has(model, 'description') && model.id.endsWith(':Product')) {
+      record.description = `${item.name}, made in small batches.`;
+    }
+    return;
+  }
+  if (isLineModel(model) && has(model, 'description')) {
+    const line = PRODUCT_CATALOG[Math.floor(random() * PRODUCT_CATALOG.length)];
+    if (line) record.description = line.name;
+  }
+}
+
 /** A single seeded record for a model. */
 export function fakeRecord(
   model: CatalogModel,
@@ -305,6 +360,7 @@ export function fakeRecord(
     record,
     createRandom(hashString(`${seed}:${model.id}:${index}:dates`)),
   );
+  nameThings(model, record, index, random);
   return record;
 }
 

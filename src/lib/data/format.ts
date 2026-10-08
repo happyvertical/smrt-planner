@@ -73,6 +73,17 @@ export function pluralize(label: string): string {
   return `${label}s`;
 }
 
+/**
+ * Singular of a menu label's last word: "Sales Orders" -> "Sales Order",
+ * "Currencies" -> "Currency". A label that is not plural is left as it is.
+ */
+export function singularize(label: string): string {
+  if (/[^aeiou]ies$/i.test(label)) return `${label.slice(0, -3)}y`;
+  if (/(ss|x|z|ch|sh)es$/i.test(label)) return label.slice(0, -2);
+  if (/[^s]s$/i.test(label)) return label.slice(0, -1);
+  return label;
+}
+
 /** "1 record", "8 records". */
 export function recordCount(count: number): string {
   return `${count} ${count === 1 ? 'record' : 'records'}`;

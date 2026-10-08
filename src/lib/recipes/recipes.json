@@ -180,6 +180,9 @@
             },
             "channelId": {
               "visibility": "hidden"
+            },
+            "expiryDate": {
+              "visibility": "hidden"
             }
           }
         },
@@ -254,6 +257,9 @@
               "required": true
             },
             "channelId": {
+              "visibility": "hidden"
+            },
+            "expiryDate": {
               "visibility": "hidden"
             }
           }
@@ -931,6 +937,9 @@
               "order": 1
             },
             "channelId": {
+              "visibility": "hidden"
+            },
+            "expiryDate": {
               "visibility": "hidden"
             }
           }

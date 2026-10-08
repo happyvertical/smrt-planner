@@ -77,18 +77,132 @@ export function withTotals<T extends Record<string, unknown>>(
   return next as T;
 }
 
+/** A record that tracks what has been paid against it (an Invoice). */
+export function tracksPayments(model: CatalogModel): boolean {
+  return ['totalAmount', 'amountPaid', 'status'].every((n) => has(model, n));
+}
+
+const isRef = (f: { type: string }) =>
+  f.type === 'foreignKey' || f.type === 'crossPackageRef';
+
+/** The field of a payment allocation that points at its payment. */
+export function allocationPaymentField(model: CatalogModel) {
+  return model.fields.find((f) => isRef(f) && /^payment/i.test(f.name));
+}
+
+/** The field of a payment allocation that points at the invoice it pays. */
+export function allocationInvoiceField(model: CatalogModel) {
+  return model.fields.find((f) => isRef(f) && /^invoice/i.test(f.name));
+}
+
+/** A payment applied to an invoice: one payment, one invoice, an amount. */
+export function isAllocationModel(model: CatalogModel): boolean {
+  return (
+    has(model, 'amount') &&
+    Boolean(allocationPaymentField(model)) &&
+    Boolean(allocationInvoiceField(model))
+  );
+}
+
+/** What counts as money in: only a completed payment pays an invoice. */
+export const PAID_PAYMENT_STATUS = 'completed';
+
+export interface Settlement {
+  amountPaid: number;
+  status: string;
+  paidDate: string | null;
+}
+
 /**
- * The fields a form shows but does not let anyone type: a line's `amount`, and
- * a parent's totals when it has line items.
+ * An invoice's payment state from the allocations of completed payments
+ * (`counted`): `amountPaid` is their sum, the status is paid once the total is
+ * covered, otherwise overdue after the due date and sent before it. A draft or
+ * cancelled invoice keeps its status; `paidDate` is set only when fully paid,
+ * to the last allocation.
+ */
+export function settleInvoice(
+  invoice: Row,
+  counted: readonly { amount: number; at: string }[],
+  now: number,
+): Settlement {
+  const amountPaid = counted.reduce((sum, a) => sum + num(a.amount), 0);
+  const total = num(invoice.totalAmount);
+  const current = String(invoice.status ?? 'draft');
+  const fullyPaid = total > 0 && amountPaid >= total;
+  let status = current;
+  if (fullyPaid) status = 'paid';
+  else if (current !== 'draft' && current !== 'cancelled') {
+    const due = Date.parse(String(invoice.dueDate ?? ''));
+    if (Number.isFinite(due) && due < now) status = 'overdue';
+    else status = current === 'viewed' ? 'viewed' : 'sent';
+  }
+  const last = counted
+    .map((a) => a.at)
+    .sort()
+    .at(-1);
+  return {
+    amountPaid,
+    status,
+    paidDate: fullyPaid ? (last ?? String(invoice.issueDate ?? '')) : null,
+  };
+}
+
+/**
+ * The fields a form shows but does not let anyone type: a line's `amount`, a
+ * parent's totals when it has line items, and what an invoice has paid (and
+ * when) when it has payment allocations.
  */
 export function derivedFieldNames(
   model: CatalogModel,
   hasLineChildren: boolean,
+  hasPaymentChildren = false,
 ): ReadonlySet<string> {
   const names = new Set<string>();
   if (isLineModel(model)) names.add('amount');
   if (hasLineChildren) {
     for (const name of TOTAL_FIELDS) if (has(model, name)) names.add(name);
   }
+  if (hasPaymentChildren && tracksPayments(model)) {
+    for (const name of ['amountPaid', 'paidDate']) {
+      if (has(model, name)) names.add(name);
+    }
+  }
   return names;
+}
+
+/** Does the field of a line item point at a product? */
+export function isProductField(field: {
+  name: string;
+  type: string;
+  related?: string;
+}): boolean {
+  return (
+    isRef(field) &&
+    (field.related?.endsWith(':Product') === true ||
+      /^product(Id)?$/i.test(field.name))
+  );
+}
+
+/**
+ * What picking a product fills in on a line item: its name as the description
+ * and its price as the unit price, for the fields the line has. Both stay
+ * editable. A product with no name or price fills nothing.
+ */
+export function productPrefill(
+  line: CatalogModel,
+  product: Row | undefined,
+): Record<string, unknown> {
+  const fill: Record<string, unknown> = {};
+  if (!product) return fill;
+  if (
+    has(line, 'description') &&
+    typeof product.name === 'string' &&
+    product.name
+  ) {
+    fill.description = product.name;
+  }
+  if (has(line, 'unitPrice') && typeof product.price === 'number') {
+    fill.unitPrice = product.price;
+  }
+  return fill;
 }

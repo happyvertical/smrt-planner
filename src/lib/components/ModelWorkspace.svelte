@@ -5,13 +5,19 @@ import type { CatalogModel } from '../catalog/types.ts';
 import {
   blankRecord,
   type ChildTable,
+  cellValue,
   errorSummary,
   listColumns,
   missingRequired,
   recordTitle,
 } from '../data/columns.ts';
 import { useDataSource } from '../data/context.ts';
-import { derivedFieldNames, isLineModel } from '../data/derived.ts';
+import {
+  derivedFieldNames,
+  isAllocationModel,
+  isLineModel,
+  TOTAL_FIELDS,
+} from '../data/derived.ts';
 import { editableFields, type ModelRecord } from '../data/fakes.ts';
 import {
   fieldLabel,
@@ -46,6 +52,8 @@ interface ModelWorkspaceProps {
   childTables?: ChildTable[];
   /** The list's heading (the menu entry's label); defaults to the plural name. */
   title?: string;
+  /** What New creates, e.g. "sales order"; defaults to the model's name. */
+  noun?: string;
 }
 
 let {
@@ -54,6 +62,7 @@ let {
   forms = [],
   childTables = [],
   title,
+  noun,
 }: ModelWorkspaceProps = $props();
 
 const source = useDataSource();
@@ -70,8 +79,18 @@ const calculated = $derived(
   derivedFieldNames(
     model,
     childTables.some((c) => isLineModel(c.model)),
+    childTables.some((c) => isAllocationModel(c.model)),
   ),
 );
+/** Subtotal, tax and total, shown as one summary. */
+const totalFields = $derived(
+  fields.filter(
+    (f) =>
+      calculated.has(f.name) &&
+      (TOTAL_FIELDS as readonly string[]).includes(f.name),
+  ),
+);
+const newNoun = $derived(noun ?? humanize(model.name).toLowerCase());
 const heading = $derived(title ?? pluralize(humanize(model.name)));
 
 let rows = $state<ModelRecord[]>([]);
@@ -183,7 +202,11 @@ async function save(event: SubmitEvent) {
 async function refreshDerived() {
   if (!editing || editing === 'new') return;
   const fresh = await source.get(model, editing);
-  if (fresh) for (const name of calculated) draft[name] = fresh[name];
+  if (fresh) {
+    for (const name of calculated) draft[name] = fresh[name];
+    // What is paid moves the status too (paid, overdue).
+    if (calculated.has('amountPaid')) draft.status = fresh.status;
+  }
   await load();
 }
 
@@ -203,7 +226,7 @@ async function remove(row: ModelRecord) {
         </button>
       {/each}
     {:else}
-      <button type="button" onclick={() => startCreate()}>New {model.name}</button>
+      <button type="button" onclick={() => startCreate()}>New {newNoun}</button>
     {/if}
   </header>
 
@@ -218,15 +241,33 @@ async function remove(row: ModelRecord) {
       />
     {:else}
     <form onsubmit={save} novalidate>
-      <h3>{editing === 'new' ? `New ${model.name}` : editTitle || model.name}</h3>
+      <h3>{editing === 'new' ? `New ${newNoun}` : editTitle || model.name}</h3>
       {#each fields as field (field.name)}
-        {#if calculated.has(field.name)}
+        {#if totalFields.includes(field)}
+          {#if field === totalFields[0]}
+            <div class="derived totals" data-derived-group="totals">
+              <dl>
+                {#each totalFields as total (total.name)}
+                  <div>
+                    <dt>{total.label}</dt>
+                    <dd>
+                      <output data-derived={total.name}>
+                        {formatValue(total, draft[total.name] ?? 0, labels)}
+                      </output>
+                    </dd>
+                  </div>
+                {/each}
+              </dl>
+              <small>Calculated from the line items.</small>
+            </div>
+          {/if}
+        {:else if calculated.has(field.name)}
           <div class="derived">
             <FieldLabel label={field.label} />
             <output data-derived={field.name}>
-              {formatValue(field, draft[field.name] ?? 0, labels)}
+              {formatValue(field, draft[field.name] ?? 0, labels) || '—'}
             </output>
-            <small>Calculated from the line items.</small>
+            <small>Calculated from the payments applied to this record.</small>
           </div>
         {:else}
           <FieldInput
@@ -290,7 +331,7 @@ async function remove(row: ModelRecord) {
           {#each rows as row (row.id)}
             <tr>
               {#each columns as column (column.name)}
-                <td>{formatValue(column, row[column.name], labels)}</td>
+                <td>{formatValue(column, cellValue(column, row), labels)}</td>
               {/each}
               <td class="row-actions">
                 <button
@@ -363,6 +404,23 @@ async function remove(row: ModelRecord) {
   .derived {
     display: grid;
     gap: var(--smrt-spacing-1);
+  }
+
+  .totals dl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--smrt-spacing-2) var(--smrt-spacing-6);
+    margin: 0 0 var(--smrt-spacing-1);
+  }
+
+  .totals dt {
+    color: var(--smrt-color-on-surface-variant);
+    font-size: 0.875rem;
+  }
+
+  .totals dd {
+    margin: 0;
+    font-weight: 600;
   }
 
   .scroll {

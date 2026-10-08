@@ -1,9 +1,11 @@
 <script lang="ts">
 import { FieldLabel } from '@happyvertical/smrt-ui/forms';
 import { tick } from 'svelte';
-import type { CatalogModel } from '../catalog/types.ts';
+import { getModelByQualifiedName } from '../catalog/index.ts';
+import type { CatalogField, CatalogModel } from '../catalog/types.ts';
 import {
   blankChild,
+  cellValue,
   errorSummary,
   listColumns,
   missingRequired,
@@ -11,7 +13,13 @@ import {
   rowsOf,
 } from '../data/columns.ts';
 import { useDataSource } from '../data/context.ts';
-import { derivedFieldNames, lineAmounts } from '../data/derived.ts';
+import {
+  derivedFieldNames,
+  isLineModel,
+  isProductField,
+  lineAmounts,
+  productPrefill,
+} from '../data/derived.ts';
 import type { ModelRecord } from '../data/fakes.ts';
 import { formatValue } from '../data/format.ts';
 import { relationLabels, shortId } from '../data/labels.ts';
@@ -40,7 +48,14 @@ let {
 }: ChildRecordsProps = $props();
 
 const source = useDataSource();
-const fields = $derived(allFields.filter((f) => f.name !== fk));
+// The product comes first on a line item: picking it fills in the rest.
+const fields = $derived(
+  [...allFields.filter((f) => f.name !== fk)].sort(
+    (a, b) =>
+      Number(isLine && isProductField(b)) - Number(isLine && isProductField(a)),
+  ),
+);
+const isLine = $derived(isLineModel(model));
 const columns = $derived(listColumns(fields));
 const calculated = $derived(derivedFieldNames(model, false));
 /** The line's amount as it will be saved, live as quantity and price change. */
@@ -88,6 +103,16 @@ function startEdit(row: ModelRecord) {
   draft = { ...row };
   editing = row.id;
   formKey++;
+}
+
+/** A field changed; picking a product on a line fills description and price. */
+async function changed(field: CatalogField, value: unknown) {
+  draft[field.name] = value;
+  delete errors[field.name];
+  if (!isLine || !isProductField(field) || typeof value !== 'string') return;
+  const target = field.related && getModelByQualifiedName(field.related)?.model;
+  const product = target ? await source.get(target, value) : undefined;
+  Object.assign(draft, productPrefill(model, product));
 }
 
 async function save(event: SubmitEvent) {
@@ -146,10 +171,7 @@ async function remove(row: ModelRecord) {
               label={field.label}
               help={field.help}
               value={draft[field.name]}
-              onchange={(value) => {
-                draft[field.name] = value;
-                delete errors[field.name];
-              }}
+              onchange={(value) => changed(field, value)}
             />
           {/if}
         {/each}
@@ -185,7 +207,7 @@ async function remove(row: ModelRecord) {
           {#each rows as row (row.id)}
             <tr>
               {#each columns as column (column.name)}
-                <td>{formatValue(column, row[column.name], labels)}</td>
+                <td>{formatValue(column, cellValue(column, row), labels)}</td>
               {/each}
               <td class="row-actions">
                 <button

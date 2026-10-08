@@ -4,7 +4,7 @@ import { catalog, getModel } from '$lib/catalog/index.ts';
 import FormWorkspace from '$lib/components/FormWorkspace.svelte';
 import ModelWorkspace from '$lib/components/ModelWorkspace.svelte';
 import SectionIcons from '$lib/components/SectionIcons.svelte';
-import { humanize } from '$lib/data/format.ts';
+import { humanize, singularize } from '$lib/data/format.ts';
 import { activeForms } from '$lib/forms/active.ts';
 import { PRODUCT } from '$lib/forms/stock.ts';
 import { appHref } from '$lib/planner/app.svelte.ts';
@@ -84,6 +84,11 @@ const listTitle = $derived(
     navCrumb.label.toLowerCase() !== humanize(catalogModel.name).toLowerCase()
     ? navCrumb.label
     : undefined,
+);
+
+// What New creates, from the menu entry: "Sales Orders" -> "sales order".
+const noun = $derived(
+  navCrumb ? singularize(navCrumb.label).toLowerCase() : undefined,
 );
 
 // Anchored to this model's fields in the recipe whose Help covers it.
@@ -176,6 +181,7 @@ const inApp = $derived(
         {forms}
         {childTables}
         title={listTitle}
+        {noun}
       />
     {/if}
   </main>

@@ -6,6 +6,7 @@ import {
   fakeRecord,
   hashString,
   type ModelRecord,
+  PRODUCT_CATALOG,
 } from './fakes.ts';
 
 /** A child model and the field holding its parent's id (see `childLinks`). */
@@ -40,13 +41,23 @@ export function fakeChildrenOf(
   const lines = isLineModel(child);
   const balance = 1000 * (1 + Math.floor(random() * 90));
   return Array.from({ length: count }, (_, i) => {
+    const index = hashString(`${parent.id}:${i}`) % 997;
     const record: ModelRecord = {
-      ...fakeRecord(child, hashString(`${parent.id}:${i}`) % 997, seed),
+      ...fakeRecord(child, index, seed),
       id: fakeId(`${child.id}:${parent.id}:${i}`),
       [fk]: parent.id,
     };
     if (hasField(child, 'sortOrder')) record.sortOrder = i;
     if (lines) {
+      // A line pointing at a product reads as that product, at its price.
+      const productField = child.fields.find(
+        (f) => f.related?.endsWith(':Product') && f.name in record,
+      );
+      const item = PRODUCT_CATALOG[(index % 5) % PRODUCT_CATALOG.length];
+      if (productField && item) {
+        if (hasField(child, 'description')) record.description = item.name;
+        record.unitPrice = item.price;
+      }
       const quantity = 1 + Math.floor(random() * 5);
       if (hasField(child, 'quantity')) record.quantity = quantity;
       if (hasField(child, 'discount')) record.discount = 0;

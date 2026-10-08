@@ -1,29 +1,84 @@
 import type { CatalogModel } from '../catalog/types.ts';
 import { isRelation } from '../fields/renderer.ts';
 import type { ViewField } from '../recipes/policy.ts';
-import { displayLabel } from './display.ts';
+import { recordName } from './display.ts';
 import { labelKey } from './format.ts';
 
+/** A list column: a field, or a value worked out from the row (Amount due). */
+export interface ListColumn extends ViewField {
+  derive?: (row: Readonly<Record<string, unknown>>) => unknown;
+}
+
+const num = (v: unknown) =>
+  typeof v === 'number' && Number.isFinite(v) ? v : 0;
+
+/** Lower is shown first: what names a row, who it is for, its state, its money, its dates. */
+function columnRank(f: ViewField): number {
+  const name = f.name;
+  if (f.type === 'json') return 99;
+  if (/^(name|title|label|code)$|Number$|^number$/.test(name)) return 0;
+  if (name === 'reference' && f.type === 'text') return 0.5;
+  if (name === 'description' && f.type === 'text') return 0.6;
+  if (isRelation(f)) {
+    if (/^(customer|vendor|profile)/i.test(name)) return 1;
+    // The contract and ledger links are bookkeeping, not what a row is about.
+    return /^(contract|.*(journal|account))/i.test(name) ? 7 : 2;
+  }
+  if ((f.enum?.length ?? 0) > 0 && /(status|state|stage)$/i.test(name))
+    return 3;
+  if (/^(totalAmount|amount|total)$/.test(name)) return 4;
+  if (f.type === 'datetime') {
+    if (/^due/i.test(name)) return 5;
+    if (/(issue|paid|allocated|^date$)/i.test(name)) return 5.2;
+  }
+  return 6;
+}
+
 /**
- * The columns of a list: a few leading fields, then the numeric/boolean/date
- * ones (prices, quantities, flags) and the choices (enums, relations) so a row
- * reads like a record, not a wall of text.
+ * The columns of a list: what names the row, who it is for, its status, its
+ * money and its dates first; then the other numeric/boolean/date fields and
+ * choices so a row reads like a record, not a wall of text. A record that
+ * tracks payments (`totalAmount` and `amountPaid`) also gets "Amount due".
  */
 export function listColumns(
   fields: readonly ViewField[],
   max = 6,
-): ViewField[] {
+): ListColumn[] {
   const shown = fields.filter((f) => f.type !== 'json');
-  const lead = shown.slice(0, 3);
-  const rest = shown
-    .slice(3)
-    .filter(
-      (f) =>
-        ['integer', 'decimal', 'boolean', 'datetime'].includes(f.type) ||
-        (f.enum?.length ?? 0) > 0 ||
-        isRelation(f),
-    );
-  return [...lead, ...rest].slice(0, max);
+  const lead = new Set(shown.slice(0, 3));
+  const candidates = shown.filter(
+    (f) =>
+      lead.has(f) ||
+      columnRank(f) < 6 ||
+      ['integer', 'decimal', 'boolean', 'datetime'].includes(f.type) ||
+      (f.enum?.length ?? 0) > 0 ||
+      isRelation(f),
+  );
+  const ranked = candidates
+    .map((f, i) => ({ f, i, rank: columnRank(f) }))
+    .sort((x, y) => x.rank - y.rank || x.i - y.i)
+    .map((x): ListColumn => x.f);
+  const total = shown.find((f) => f.name === 'totalAmount');
+  if (total && shown.some((f) => f.name === 'amountPaid')) {
+    const due: ListColumn = {
+      ...total,
+      name: 'amountDue',
+      label: 'Amount due',
+      required: false,
+      derive: (row) => num(row.totalAmount) - num(row.amountPaid),
+    };
+    const at = ranked.findIndex((f) => f.name === 'totalAmount');
+    ranked.splice(at < 0 ? ranked.length : at + 1, 0, due);
+  }
+  return ranked.slice(0, max);
+}
+
+/** The value a list cell shows for a row. */
+export function cellValue(
+  column: ListColumn,
+  row: Readonly<Record<string, unknown>>,
+): unknown {
+  return column.derive ? column.derive(row) : row[column.name];
 }
 
 /** The rows whose foreign key points at the parent record. */
@@ -113,11 +168,10 @@ export function errorSummary(
   } required.`;
 }
 
-const REFERENCE_FIELD = /^(reference|number|description)$/i;
-
 /**
- * What names a record to a person: its label field, else the record it points
- * at first (an agreement's customer), plus its reference or description.
+ * What names a record to a person (see `recordName`): its label, else its
+ * number and who it is for ("WIL-1133 · Lantern Collective"), else the record
+ * it points at plus its reference.
  */
 export function recordTitle(
   model: CatalogModel,
@@ -125,20 +179,15 @@ export function recordTitle(
   row: Readonly<Record<string, unknown>>,
   labels: ReadonlyMap<string, string>,
 ): string {
-  const own = displayLabel(model, row);
-  const related = fields
-    .filter(isRelation)
-    .map((f) =>
-      f.related && typeof row[f.name] === 'string'
-        ? labels.get(labelKey(f.related, row[f.name]))
-        : undefined,
-    )
-    .find((label): label is string => Boolean(label));
-  const reference = fields
-    .filter((f) => REFERENCE_FIELD.test(f.name))
-    .map((f) => row[f.name])
-    .find((v): v is string => typeof v === 'string' && v.trim() !== '');
-  return [own ?? related, reference].filter(Boolean).join(' · ');
+  return (
+    recordName(
+      model,
+      row,
+      (field, id) =>
+        field.related ? labels.get(labelKey(field.related, id)) : undefined,
+      fields,
+    ) ?? ''
+  );
 }
 
 /** A child table shown inside its parent's record view. */

@@ -13,6 +13,7 @@ import {
 } from '$lib/blueprint/store.svelte.ts';
 import { exposedModels, getPackage } from '$lib/catalog/index.ts';
 import BrowserAssistant from '$lib/components/BrowserAssistant.svelte';
+import PlannerEditBridge from '$lib/components/PlannerEditBridge.svelte';
 import SectionActions from '$lib/components/SectionActions.svelte';
 import { provideDataSource } from '$lib/data/context.ts';
 import { humanize } from '$lib/data/format.ts';
@@ -45,9 +46,8 @@ provideDataSource(
   }),
 );
 
-const nav: ShellNavItem[] = $derived([
-  { id: 'planner', href: appHref('/'), label: 'Planner' },
-]);
+// No Planner entry: the shell's Edit layout toggle goes to the Planner page.
+const nav: ShellNavItem[] = [];
 
 // Navigation sections belong to the app: a recipe only suggests one
 // (`recipe.section`, else its group, else itself), and the user overrides it in
@@ -241,6 +241,7 @@ function flushOnHide() {
   {#if blueprintStore.loadNotice}
     <p class="storage-notice" role="status">{blueprintStore.loadNotice}</p>
   {/if}
+  <PlannerEditBridge />
   {@render children()}
 </AppShell>
 

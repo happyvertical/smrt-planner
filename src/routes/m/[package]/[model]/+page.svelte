@@ -1,4 +1,6 @@
 <script lang="ts">
+import { useShellLayout } from '@happyvertical/smrt-svelte/workspace';
+import { page } from '$app/state';
 import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
 import { catalog, getModel } from '$lib/catalog/index.ts';
 import FormWorkspace from '$lib/components/FormWorkspace.svelte';
@@ -50,7 +52,21 @@ const iconLabel = $derived(
 );
 // Breadcrumbs follow the app's own navigation, not catalog packages: the menu
 // section the model sits in (the user's renamed label wins) and its menu label.
+const shellLayout = useShellLayout();
+// The menu as the visitor sees it (renamed sections and entries, from a
+// cookbook or edit mode): the entry linking to this page wins.
+const shellCrumb = $derived.by(() => {
+  const here = page.url.pathname;
+  const path = (href: string) => new URL(href, page.url).pathname;
+  for (const group of shellLayout.applied.groups) {
+    const item = group.items.find((i) => path(i.href) === here);
+    if (item) return { section: group.heading, label: item.label };
+  }
+  const item = shellLayout.applied.nav.find((i) => path(i.href) === here);
+  return item ? { section: item.label, label: item.label } : undefined;
+});
 const navCrumb = $derived.by(() => {
+  if (shellCrumb) return shellCrumb;
   if (!catalogModel) return undefined;
   const recipe = recipesWithModel.find((r) => recipeState.has(r.id));
   if (!recipe) {

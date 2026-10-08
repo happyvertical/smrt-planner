@@ -28,6 +28,7 @@ import { FEATURE_SECTION, featureNavItems } from '$lib/recipes/features.ts';
 import {
   buildNavSections,
   recipeNav,
+  recipeNavItemId,
   recipes,
   sectionId,
 } from '$lib/recipes/index.ts';
@@ -85,7 +86,12 @@ const recipeGroups: ShellNavGroup[] = $derived.by(() => {
         // Stable ids keep a saved layout valid when the selection query in the
         // hrefs changes.
         items.push({
-          id: `section:${section.id}:${entry.packageId}:${entry.model.name}:${entry.label}`,
+          id: recipeNavItemId(
+            section.id,
+            entry.packageId,
+            entry.model.name,
+            entry.label,
+          ),
           href: appHref(`/m/${entry.packageId}/${entry.model.name}/`),
           label: entry.label,
           ...(main
@@ -204,7 +210,15 @@ afterNavigate((navigation) => {
     blueprintStore.hydrate(location.search);
   }
   if (hasAppState(location.search)) selection.fromSearch(location.search);
-  if (onPlanner()) plannerTab.fromSearch(location.search);
+  if (onPlanner()) {
+    // A visitor with nothing built yet lands on the Cookbooks tab.
+    plannerTab.fromSearch(
+      location.search,
+      recipeState.ids.length || recipeState.features.length
+        ? 'recipes'
+        : 'cookbooks',
+    );
+  }
   // SvelteKit runs the initial 'enter' callbacks before the router counts as
   // started, and replaceState throws until then, so wait one microtask.
   const sync = () => {

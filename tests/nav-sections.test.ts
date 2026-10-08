@@ -57,6 +57,17 @@ describe('suggested nav sections', () => {
 describe('migrateLegacySections', () => {
   const keys = legacyNavSectionKeys(recipes);
 
+  it('does not treat a current section id as a legacy key', () => {
+    // `billing` is both the invoicing group id and its section; shipping's old
+    // `billing` key must not rewrite it to `operations`.
+    expect(keys.billing).toBeUndefined();
+    const layout = {
+      version: 1,
+      moved: { 'section:billing:commerce:Invoice:Invoices': 'section:sales' },
+    } as const;
+    expect(migrateLegacySections({ ...layout })).toEqual(layout);
+  });
+
   it('maps old ids to the suggested sections', () => {
     expect(keys['commerce.customers']).toBe('sales');
     expect(keys.products).toBe('catalog');

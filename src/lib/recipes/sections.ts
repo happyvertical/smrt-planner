@@ -71,11 +71,28 @@ export function buildNavSections(
 export function legacyNavSectionKeys(
   recipes: readonly Recipe[],
 ): Record<string, string> {
+  // A key that is still a nav section today (`billing`: the invoicing group id
+  // AND its section) is not legacy, whatever another recipe's old key meant.
+  const current = new Set(recipes.map((recipe) => navSectionOf(recipe).id));
   const map: Record<string, string> = {};
   for (const recipe of recipes) {
     const old = sectionId(recipe);
     const now = navSectionOf(recipe).id;
-    if (old !== now) map[old] = now;
+    if (old !== now && !current.has(old)) map[old] = now;
   }
   return map;
+}
+
+/**
+ * The stable layout id of a recipe's nav item: it names the section, package,
+ * model and label, never the href, so a saved layout (or a cookbook's) stays
+ * valid when the selection query in the hrefs changes.
+ */
+export function recipeNavItemId(
+  navSectionId: string,
+  packageId: string,
+  modelName: string,
+  label: string,
+): string {
+  return `section:${navSectionId}:${packageId}:${modelName}:${label}`;
 }

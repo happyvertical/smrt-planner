@@ -12,6 +12,7 @@ export {
   buildNavSections,
   legacyNavSectionKeys,
   navSectionOf,
+  recipeNavItemId,
   sectionId,
 } from './sections.ts';
 export type * from './types.ts';

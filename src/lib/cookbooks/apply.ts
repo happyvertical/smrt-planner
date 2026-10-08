@@ -1,0 +1,46 @@
+import { isShellLayoutEmpty } from '@happyvertical/smrt-svelte/workspace/layout';
+import type { BlueprintStore } from '../blueprint/store.svelte.ts';
+import type { Blueprint, BlueprintResult } from '../blueprint/types.ts';
+import { parseBlueprint } from '../blueprint/validate.ts';
+import type { Cookbook } from './types.ts';
+
+/** Nothing built yet: no recipes, features, saved options, narrowing or layout. */
+export function isBlueprintEmpty(blueprint: Blueprint): boolean {
+  return (
+    blueprint.recipes.length === 0 &&
+    blueprint.features.length === 0 &&
+    blueprint.policies.length === 0 &&
+    Object.keys(blueprint.exposure ?? {}).length === 0 &&
+    isShellLayoutEmpty(blueprint.layout)
+  );
+}
+
+/** Applying replaces the current recipes and menu, so it asks first unless empty. */
+export function needsConfirm(store: Pick<BlueprintStore, 'snapshot'>): boolean {
+  return !isBlueprintEmpty(store.snapshot());
+}
+
+/**
+ * Replace the blueprint with the cookbook's: recipes, features, options,
+ * exposure and layout. Goes through the same strict check an import does, and
+ * applies nothing on failure. Records are not part of a blueprint, so they stay.
+ */
+export function applyCookbook(
+  cookbook: Cookbook,
+  store: Pick<BlueprintStore, 'replace'>,
+): BlueprintResult {
+  const result = parseBlueprint(cookbook.blueprint);
+  if (result.ok) store.replace(result.blueprint);
+  return result;
+}
+
+/** Does the current blueprint still hold everything the cookbook added? */
+export function holdsCookbook(
+  cookbook: Cookbook,
+  current: Pick<Blueprint, 'recipes' | 'features'>,
+): boolean {
+  return (
+    cookbook.blueprint.recipes.every((id) => current.recipes.includes(id)) &&
+    cookbook.blueprint.features.every((id) => current.features.includes(id))
+  );
+}

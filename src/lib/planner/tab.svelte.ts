@@ -1,6 +1,7 @@
 import { TAB_PARAM } from './query.ts';
 
 export const PLANNER_TABS = [
+  'cookbooks',
   'recipes',
   'features',
   'layout',
@@ -8,18 +9,21 @@ export const PLANNER_TABS = [
 ] as const;
 export type PlannerTab = (typeof PLANNER_TABS)[number];
 
-/** `recipes` unless the query names another known tab. */
-export function parseTab(search: string): PlannerTab {
+/** `fallback` (Recipes) unless the query names another known tab. */
+export function parseTab(
+  search: string,
+  fallback: PlannerTab = 'recipes',
+): PlannerTab {
   const value = new URLSearchParams(search).get(TAB_PARAM);
-  return PLANNER_TABS.find((tab) => tab === value) ?? 'recipes';
+  return PLANNER_TABS.find((tab) => tab === value) ?? fallback;
 }
 
 /** The Planner page's active tab; the address bar mirrors it (`?tab=`). */
 class PlannerTabState {
   active = $state<PlannerTab>('recipes');
 
-  fromSearch(search: string) {
-    this.active = parseTab(search);
+  fromSearch(search: string, fallback: PlannerTab = 'recipes') {
+    this.active = parseTab(search, fallback);
   }
 }
 

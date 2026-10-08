@@ -50,6 +50,21 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   recipes sharing a suggestion share the section (`section:<id>`), and each recipe's main item
   carries the gear to its own group/recipe options page. `group` is the Planner card + Options/Help
   pages only. `blueprint/migrate.ts` rewrites pre-section layout ids in the loader.
+- `src/lib/cookbooks/`: curated starting blueprints. `cookbooks.json` holds each
+  cookbook (`{ id, name, icon, summary, settings, blueprint }`); `blueprint` is the
+  same document the Export tab saves and must pass `parseBlueprint` (tests check it,
+  its layout ids against the nav the app generates, and that `settings` are what new
+  records default to). Menu words come from `layout.customSections` (sections) and
+  `layout.items[<navItemId>].label` (entries; smrt-svelte renders it once its build
+  carries `items`, `CookbookLayout` in `types.ts` is the local type until then);
+  nav item ids are `recipeNavItemId` (`section:<nav>:<pkg>:<Model>:<label>`, features
+  `section:more:<pkg>:<Model>`). Defaults are app-scope `defaultValue` policy rows
+  (`terms`, `paymentTerms`, `currency`, line-item `taxRate`), written only where the
+  catalog default differs, plus `terms` and `paymentTerms` always. `menu.ts` previews
+  a blueprint's menu (same `applyShellLayout`), `apply.ts` replaces the blueprint
+  (confirm when non-empty), `state.svelte.ts` remembers the last applied id in
+  localStorage (not in the blueprint). Nothing about records changes. Add a
+  cookbook by adding an entry; use only existing recipe ids.
 - `src/lib/planner/`: the package selection (`?p=a,b`, the only URL state;
   `app.svelte.ts` `appHref` carries it; `selection.svelte.ts`
   is the one store the control panel, navigation and a future chat assistant
@@ -85,7 +100,7 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `data/labels.ts` (with `data/display.ts`) labels related records (Customer/Vendor via their Profile).
 - `src/lib/components/`: generated list/form (`ModelWorkspace`), the collapsed "Connect other tools"
   list (`ConnectTools`), the Help view (`HelpView`), `BrowserAssistant` (the dock slot: consent, progress, then smrt-chat's `AssistantDock`).
-- `src/routes/`: `/` Planner with `?tab=recipes|layout|export` tabs (`planner/tab.svelte.ts`; smrt-ui `Tabs`: Recipes cards with switches only, Layout `ShellLayoutEditor`, Export / Import / Reset in `ExportPanel`), `/blueprint/` a client-side redirect to `/?tab=export`, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
+- `src/routes/`: `/` Planner with `?tab=cookbooks|recipes|features|layout|export` tabs (`planner/tab.svelte.ts`; a visitor with nothing built lands on Cookbooks; smrt-ui `Tabs`: Cookbooks cards + preview, Recipes cards with switches only, Layout `ShellLayoutEditor`, Export / Import / Reset in `ExportPanel`), `/blueprint/` a client-side redirect to `/?tab=export`, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
   `/packages/` and `/packages/[id]/` the package browser, `/m/[package]/[model]/`.
   All prerendered; `entries()` come from the catalog.
 

@@ -1,0 +1,602 @@
+{
+  "cookbooks": [
+    {
+      "id": "bakery",
+      "name": "Bakery",
+      "icon": "bread",
+      "summary": "Retail and cafe wholesale orders, ingredient stock, batches and suppliers.",
+      "settings": {
+        "currency": "USD",
+        "paymentTerms": "Net 15",
+        "taxRate": 0
+      },
+      "blueprint": {
+        "$schema": "https://s-m-r-t.dev/schemas/blueprint/v1.json",
+        "version": 1,
+        "recipes": [
+          "commerce.customers",
+          "commerce.invoicing",
+          "commerce.purchases",
+          "commerce.sales",
+          "commerce.vendors",
+          "commerce.wholesale",
+          "inventory.stock",
+          "ledgers.bookkeeping",
+          "products.simple"
+        ],
+        "features": [
+          "@happyvertical/smrt-commerce:ProductionOrder"
+        ],
+        "policies": [
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Customer",
+            "fieldName": "paymentTerms",
+            "scopeType": "app",
+            "defaultValue": "\"Net 15\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Invoice",
+            "fieldName": "currency",
+            "scopeType": "app",
+            "defaultValue": "\"USD\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Invoice",
+            "fieldName": "terms",
+            "scopeType": "app",
+            "defaultValue": "\"Net 15\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Order",
+            "fieldName": "terms",
+            "scopeType": "app",
+            "defaultValue": "\"Net 15\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:WholesaleOrder",
+            "fieldName": "terms",
+            "scopeType": "app",
+            "defaultValue": "\"Net 15\""
+          }
+        ],
+        "layout": {
+          "version": 1,
+          "sectionOrder": [
+            "custom:shop",
+            "custom:wholesale",
+            "custom:kitchen",
+            "custom:buying",
+            "section:accounting"
+          ],
+          "itemOrder": {
+            "custom:shop": [
+              "section:sales:commerce:Order:Sales Orders",
+              "section:sales:commerce:Customer:Customers"
+            ],
+            "custom:wholesale": [
+              "section:sales:commerce:WholesaleOrder:Wholesale Orders",
+              "section:billing:commerce:Invoice:Invoices",
+              "section:billing:commerce:Payment:Payments"
+            ],
+            "custom:kitchen": [
+              "section:catalog:products:Product:Products",
+              "section:catalog:inventory:StockLevel:Stock levels",
+              "section:more:commerce:ProductionOrder"
+            ],
+            "custom:buying": [
+              "section:purchasing:commerce:Vendor:Vendors",
+              "section:purchasing:commerce:PurchaseOrder:Purchase Orders"
+            ]
+          },
+          "hidden": [
+            "section:catalog:inventory:InventoryLocation:Locations",
+            "section:catalog:inventory:StockMovement:Stock movements"
+          ],
+          "moved": {
+            "section:sales:commerce:Order:Sales Orders": "custom:shop",
+            "section:sales:commerce:Customer:Customers": "custom:shop",
+            "section:sales:commerce:WholesaleOrder:Wholesale Orders": "custom:wholesale",
+            "section:billing:commerce:Invoice:Invoices": "custom:wholesale",
+            "section:billing:commerce:Payment:Payments": "custom:wholesale",
+            "section:catalog:products:Product:Products": "custom:kitchen",
+            "section:catalog:inventory:StockLevel:Stock levels": "custom:kitchen",
+            "section:more:commerce:ProductionOrder": "custom:kitchen",
+            "section:purchasing:commerce:Vendor:Vendors": "custom:buying",
+            "section:purchasing:commerce:PurchaseOrder:Purchase Orders": "custom:buying"
+          },
+          "customSections": [
+            {
+              "id": "custom:shop",
+              "label": "Shop"
+            },
+            {
+              "id": "custom:wholesale",
+              "label": "Wholesale"
+            },
+            {
+              "id": "custom:kitchen",
+              "label": "Kitchen"
+            },
+            {
+              "id": "custom:buying",
+              "label": "Buying"
+            }
+          ],
+          "items": {
+            "section:sales:commerce:Order:Sales Orders": {
+              "label": "Orders"
+            },
+            "section:sales:commerce:WholesaleOrder:Wholesale Orders": {
+              "label": "Cafe orders"
+            },
+            "section:catalog:inventory:StockLevel:Stock levels": {
+              "label": "Ingredients"
+            },
+            "section:more:commerce:ProductionOrder": {
+              "label": "Batches"
+            },
+            "section:purchasing:commerce:Vendor:Vendors": {
+              "label": "Suppliers"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "mechanic",
+      "name": "Mechanic",
+      "icon": "car",
+      "summary": "Quotes, work orders, parts, appointments and billing for a repair shop.",
+      "settings": {
+        "currency": "USD",
+        "paymentTerms": "Due on receipt",
+        "taxRate": 0.0825
+      },
+      "blueprint": {
+        "$schema": "https://s-m-r-t.dev/schemas/blueprint/v1.json",
+        "version": 1,
+        "recipes": [
+          "commerce.customers",
+          "commerce.estimates",
+          "commerce.invoicing",
+          "commerce.purchases",
+          "commerce.sales",
+          "commerce.vendors",
+          "events.calendar",
+          "inventory.stock",
+          "ledgers.bookkeeping",
+          "products.simple"
+        ],
+        "features": [],
+        "policies": [
+          {
+            "objectRef": "@happyvertical/smrt-commerce:ContractLineItem",
+            "fieldName": "taxRate",
+            "scopeType": "app",
+            "defaultValue": "0.0825"
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Customer",
+            "fieldName": "paymentTerms",
+            "scopeType": "app",
+            "defaultValue": "\"Due on receipt\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Estimate",
+            "fieldName": "terms",
+            "scopeType": "app",
+            "defaultValue": "\"Due on receipt\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Invoice",
+            "fieldName": "currency",
+            "scopeType": "app",
+            "defaultValue": "\"USD\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Invoice",
+            "fieldName": "terms",
+            "scopeType": "app",
+            "defaultValue": "\"Due on receipt\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:InvoiceLineItem",
+            "fieldName": "taxRate",
+            "scopeType": "app",
+            "defaultValue": "0.0825"
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Order",
+            "fieldName": "terms",
+            "scopeType": "app",
+            "defaultValue": "\"Due on receipt\""
+          }
+        ],
+        "layout": {
+          "version": 1,
+          "sectionOrder": [
+            "custom:jobs",
+            "custom:parts",
+            "custom:billing",
+            "custom:schedule",
+            "section:accounting"
+          ],
+          "itemOrder": {
+            "custom:jobs": [
+              "section:sales:commerce:Estimate:Estimates",
+              "section:sales:commerce:Order:Sales Orders",
+              "section:sales:commerce:Customer:Customers"
+            ],
+            "custom:parts": [
+              "section:catalog:products:Product:Products",
+              "section:catalog:inventory:StockLevel:Stock levels",
+              "section:purchasing:commerce:Vendor:Vendors",
+              "section:purchasing:commerce:PurchaseOrder:Purchase Orders"
+            ],
+            "custom:billing": [
+              "section:billing:commerce:Invoice:Invoices",
+              "section:billing:commerce:Payment:Payments"
+            ],
+            "custom:schedule": [
+              "section:calendar:events:Event:Events",
+              "section:calendar:events:EventType:Event Types"
+            ]
+          },
+          "hidden": [
+            "section:calendar:events:EventSeries:Event Series",
+            "section:catalog:inventory:InventoryLocation:Locations",
+            "section:catalog:inventory:StockMovement:Stock movements"
+          ],
+          "moved": {
+            "section:sales:commerce:Estimate:Estimates": "custom:jobs",
+            "section:sales:commerce:Order:Sales Orders": "custom:jobs",
+            "section:sales:commerce:Customer:Customers": "custom:jobs",
+            "section:catalog:products:Product:Products": "custom:parts",
+            "section:catalog:inventory:StockLevel:Stock levels": "custom:parts",
+            "section:purchasing:commerce:Vendor:Vendors": "custom:parts",
+            "section:purchasing:commerce:PurchaseOrder:Purchase Orders": "custom:parts",
+            "section:billing:commerce:Invoice:Invoices": "custom:billing",
+            "section:billing:commerce:Payment:Payments": "custom:billing",
+            "section:calendar:events:Event:Events": "custom:schedule",
+            "section:calendar:events:EventType:Event Types": "custom:schedule"
+          },
+          "customSections": [
+            {
+              "id": "custom:jobs",
+              "label": "Jobs"
+            },
+            {
+              "id": "custom:parts",
+              "label": "Parts"
+            },
+            {
+              "id": "custom:billing",
+              "label": "Billing"
+            },
+            {
+              "id": "custom:schedule",
+              "label": "Schedule"
+            }
+          ],
+          "items": {
+            "section:sales:commerce:Estimate:Estimates": {
+              "label": "Quotes"
+            },
+            "section:sales:commerce:Order:Sales Orders": {
+              "label": "Work orders"
+            },
+            "section:catalog:products:Product:Products": {
+              "label": "Parts"
+            },
+            "section:catalog:inventory:StockLevel:Stock levels": {
+              "label": "Parts on hand"
+            },
+            "section:purchasing:commerce:Vendor:Vendors": {
+              "label": "Suppliers"
+            },
+            "section:purchasing:commerce:PurchaseOrder:Purchase Orders": {
+              "label": "Parts orders"
+            },
+            "section:calendar:events:Event:Events": {
+              "label": "Appointments"
+            },
+            "section:calendar:events:EventType:Event Types": {
+              "label": "Appointment types"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "welder",
+      "name": "Welder",
+      "icon": "flame",
+      "summary": "Quotes, jobs, agreements, material and site visits for a welding business.",
+      "settings": {
+        "currency": "USD",
+        "paymentTerms": "50% deposit, balance on completion"
+      },
+      "blueprint": {
+        "$schema": "https://s-m-r-t.dev/schemas/blueprint/v1.json",
+        "version": 1,
+        "recipes": [
+          "commerce.agreements",
+          "commerce.customers",
+          "commerce.estimates",
+          "commerce.invoicing",
+          "commerce.purchases",
+          "commerce.vendors",
+          "events.calendar",
+          "inventory.stock",
+          "ledgers.bookkeeping",
+          "products.simple",
+          "projects.tracker"
+        ],
+        "features": [],
+        "policies": [
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Agreement",
+            "fieldName": "terms",
+            "scopeType": "app",
+            "defaultValue": "\"50% deposit, balance on completion\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Customer",
+            "fieldName": "paymentTerms",
+            "scopeType": "app",
+            "defaultValue": "\"50% deposit, balance on completion\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Estimate",
+            "fieldName": "terms",
+            "scopeType": "app",
+            "defaultValue": "\"50% deposit, balance on completion\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Invoice",
+            "fieldName": "currency",
+            "scopeType": "app",
+            "defaultValue": "\"USD\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Invoice",
+            "fieldName": "terms",
+            "scopeType": "app",
+            "defaultValue": "\"50% deposit, balance on completion\""
+          }
+        ],
+        "layout": {
+          "version": 1,
+          "sectionOrder": [
+            "custom:jobs",
+            "custom:material",
+            "custom:billing",
+            "custom:schedule",
+            "section:accounting"
+          ],
+          "itemOrder": {
+            "custom:jobs": [
+              "section:projects:projects:Project:Projects",
+              "section:sales:commerce:Customer:Customers",
+              "section:sales:commerce:Estimate:Estimates",
+              "section:agreements:commerce:Agreement:Agreements"
+            ],
+            "custom:material": [
+              "section:catalog:products:Product:Products",
+              "section:catalog:inventory:StockLevel:Stock levels",
+              "section:purchasing:commerce:Vendor:Vendors",
+              "section:purchasing:commerce:PurchaseOrder:Purchase Orders"
+            ],
+            "custom:billing": [
+              "section:billing:commerce:Invoice:Invoices",
+              "section:billing:commerce:Payment:Payments"
+            ],
+            "custom:schedule": [
+              "section:calendar:events:Event:Events",
+              "section:calendar:events:EventType:Event Types"
+            ]
+          },
+          "hidden": [
+            "section:agreements:commerce:Contract:All contracts",
+            "section:calendar:events:EventSeries:Event Series",
+            "section:catalog:inventory:InventoryLocation:Locations",
+            "section:catalog:inventory:StockMovement:Stock movements",
+            "section:projects:projects:Issue:Issues",
+            "section:projects:projects:Label:Labels"
+          ],
+          "moved": {
+            "section:projects:projects:Project:Projects": "custom:jobs",
+            "section:sales:commerce:Customer:Customers": "custom:jobs",
+            "section:sales:commerce:Estimate:Estimates": "custom:jobs",
+            "section:agreements:commerce:Agreement:Agreements": "custom:jobs",
+            "section:catalog:products:Product:Products": "custom:material",
+            "section:catalog:inventory:StockLevel:Stock levels": "custom:material",
+            "section:purchasing:commerce:Vendor:Vendors": "custom:material",
+            "section:purchasing:commerce:PurchaseOrder:Purchase Orders": "custom:material",
+            "section:billing:commerce:Invoice:Invoices": "custom:billing",
+            "section:billing:commerce:Payment:Payments": "custom:billing",
+            "section:calendar:events:Event:Events": "custom:schedule",
+            "section:calendar:events:EventType:Event Types": "custom:schedule"
+          },
+          "customSections": [
+            {
+              "id": "custom:jobs",
+              "label": "Jobs"
+            },
+            {
+              "id": "custom:material",
+              "label": "Material"
+            },
+            {
+              "id": "custom:billing",
+              "label": "Billing"
+            },
+            {
+              "id": "custom:schedule",
+              "label": "Schedule"
+            }
+          ],
+          "items": {
+            "section:projects:projects:Project:Projects": {
+              "label": "Jobs"
+            },
+            "section:sales:commerce:Estimate:Estimates": {
+              "label": "Quotes"
+            },
+            "section:catalog:products:Product:Products": {
+              "label": "Materials"
+            },
+            "section:catalog:inventory:StockLevel:Stock levels": {
+              "label": "Material on hand"
+            },
+            "section:purchasing:commerce:Vendor:Vendors": {
+              "label": "Suppliers"
+            },
+            "section:purchasing:commerce:PurchaseOrder:Purchase Orders": {
+              "label": "Material orders"
+            },
+            "section:calendar:events:Event:Events": {
+              "label": "Site visits"
+            },
+            "section:calendar:events:EventType:Event Types": {
+              "label": "Visit types"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "yoga-studio",
+      "name": "Yoga studio",
+      "icon": "yoga",
+      "summary": "Classes, class series, members, memberships and a small retail shop.",
+      "settings": {
+        "currency": "USD",
+        "paymentTerms": "Due on receipt"
+      },
+      "blueprint": {
+        "$schema": "https://s-m-r-t.dev/schemas/blueprint/v1.json",
+        "version": 1,
+        "recipes": [
+          "commerce.agreements",
+          "commerce.customers",
+          "commerce.invoicing",
+          "events.calendar",
+          "inventory.stock",
+          "ledgers.bookkeeping",
+          "products.simple"
+        ],
+        "features": [],
+        "policies": [
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Agreement",
+            "fieldName": "terms",
+            "scopeType": "app",
+            "defaultValue": "\"Due on receipt\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Customer",
+            "fieldName": "paymentTerms",
+            "scopeType": "app",
+            "defaultValue": "\"Due on receipt\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Invoice",
+            "fieldName": "currency",
+            "scopeType": "app",
+            "defaultValue": "\"USD\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Invoice",
+            "fieldName": "terms",
+            "scopeType": "app",
+            "defaultValue": "\"Due on receipt\""
+          }
+        ],
+        "layout": {
+          "version": 1,
+          "sectionOrder": [
+            "custom:classes",
+            "custom:members",
+            "custom:shop",
+            "custom:billing",
+            "section:accounting"
+          ],
+          "itemOrder": {
+            "custom:classes": [
+              "section:calendar:events:Event:Events",
+              "section:calendar:events:EventSeries:Event Series",
+              "section:calendar:events:EventType:Event Types"
+            ],
+            "custom:members": [
+              "section:sales:commerce:Customer:Customers",
+              "section:agreements:commerce:Agreement:Agreements"
+            ],
+            "custom:shop": [
+              "section:catalog:products:Product:Products",
+              "section:catalog:inventory:StockLevel:Stock levels"
+            ],
+            "custom:billing": [
+              "section:billing:commerce:Invoice:Invoices",
+              "section:billing:commerce:Payment:Payments"
+            ]
+          },
+          "hidden": [
+            "section:agreements:commerce:Contract:All contracts",
+            "section:catalog:inventory:InventoryLocation:Locations",
+            "section:catalog:inventory:StockMovement:Stock movements"
+          ],
+          "moved": {
+            "section:calendar:events:Event:Events": "custom:classes",
+            "section:calendar:events:EventSeries:Event Series": "custom:classes",
+            "section:calendar:events:EventType:Event Types": "custom:classes",
+            "section:sales:commerce:Customer:Customers": "custom:members",
+            "section:agreements:commerce:Agreement:Agreements": "custom:members",
+            "section:catalog:products:Product:Products": "custom:shop",
+            "section:catalog:inventory:StockLevel:Stock levels": "custom:shop",
+            "section:billing:commerce:Invoice:Invoices": "custom:billing",
+            "section:billing:commerce:Payment:Payments": "custom:billing"
+          },
+          "customSections": [
+            {
+              "id": "custom:classes",
+              "label": "Classes"
+            },
+            {
+              "id": "custom:members",
+              "label": "Members"
+            },
+            {
+              "id": "custom:shop",
+              "label": "Shop"
+            },
+            {
+              "id": "custom:billing",
+              "label": "Billing"
+            }
+          ],
+          "items": {
+            "section:calendar:events:Event:Events": {
+              "label": "Classes"
+            },
+            "section:calendar:events:EventSeries:Event Series": {
+              "label": "Class series"
+            },
+            "section:calendar:events:EventType:Event Types": {
+              "label": "Class types"
+            },
+            "section:sales:commerce:Customer:Customers": {
+              "label": "Members"
+            },
+            "section:agreements:commerce:Agreement:Agreements": {
+              "label": "Memberships"
+            },
+            "section:catalog:inventory:StockLevel:Stock levels": {
+              "label": "Stock"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

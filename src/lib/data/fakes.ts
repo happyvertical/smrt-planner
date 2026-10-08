@@ -144,7 +144,11 @@ const PERIODS = ['monthly', 'quarterly', 'annual'];
 /** Fractions a tax rate takes: 0%, 5%, 8.25%, 13% and 20%. */
 export const TAX_RATES = [0, 0.05, 0.0825, 0.13, 0.2] as const;
 
-function fakeText(field: CatalogField, random: () => number): string {
+function fakeText(
+  field: CatalogField,
+  random: () => number,
+  modelName = '',
+): string {
   const name = field.name.toLowerCase();
   if (/terms/.test(name)) return pick(random, getSamplePack().terms ?? TERMS);
   if (/channel/.test(name)) return pick(random, CHANNELS);
@@ -159,10 +163,20 @@ function fakeText(field: CatalogField, random: () => number): string {
   if (/phone/.test(name)) {
     return `+1-555-01${Math.floor(random() * 90 + 10)}`;
   }
-  if (
-    /(description|summary|body|notes?|content|comment|message|bio)/.test(name)
-  ) {
-    return pick(random, getSamplePack().notes ?? SENTENCES);
+  // Notes are about a person or a job; a description says what a thing is.
+  // Each has its own vocabulary: a class is never described by a member's note.
+  if (/(notes?|comment|message)/.test(name)) {
+    const pack = getSamplePack();
+    const own =
+      modelName === 'Customer'
+        ? pack.customerNotes
+        : modelName === 'Vendor'
+          ? pack.vendorNotes
+          : undefined;
+    return pick(random, own ?? pack.notes ?? SENTENCES);
+  }
+  if (/(description|summary|body|content|bio)/.test(name)) {
+    return pick(random, getSamplePack().descriptions?.[modelName] ?? SENTENCES);
   }
   if (/(firstname|first_name)/.test(name)) return pick(random, FIRST);
   if (/(lastname|last_name|surname)/.test(name)) return pick(random, LAST);
@@ -182,8 +196,11 @@ function fakeText(field: CatalogField, random: () => number): string {
 /**
  * Sample rows per model where the default count does not fit: every Customer
  * and Vendor gets its own Profile, so the lists show different names.
- * Customers use Profiles 0-7 and Vendors 8-12.
+ * Customers use Profiles 0-7, Vendors 8-12 and the pack's instructors 13 on
+ * (`sampleRowCount` adds them).
  */
+const PROFILE_MODEL = '@happyvertical/smrt-profiles:Profile';
+
 export const SAMPLE_ROW_COUNTS: Readonly<Record<string, number>> = {
   '@happyvertical/smrt-profiles:Profile': 13,
   '@happyvertical/smrt-commerce:Vendor': 5,
@@ -191,6 +208,14 @@ export const SAMPLE_ROW_COUNTS: Readonly<Record<string, number>> = {
 
 /** Sample rows for a model: the pack's count, else the shared one, else `fallback`. */
 export function sampleRowCount(modelId: string, fallback: number): number {
+  // Profiles: customers, then vendors, then the pack's instructors.
+  if (modelId === PROFILE_MODEL) {
+    return (
+      (getSamplePack().rowCounts?.[modelId] ??
+        SAMPLE_ROW_COUNTS[modelId] ??
+        fallback) + (getSamplePack().instructors?.length ?? 0)
+    );
+  }
   return (
     getSamplePack().rowCounts?.[modelId] ??
     SAMPLE_ROW_COUNTS[modelId] ??
@@ -206,10 +231,18 @@ function relatedIndex(
   field: CatalogField,
   context: { modelId: string; index: number },
 ): number {
+  const instructors = getSamplePack().instructors;
+  if (field.name === 'organizerId' && instructors?.length) {
+    // Organizers lead classes and jobs; they are staff, never customers.
+    return 13 + (context.index % instructors.length);
+  }
   if (field.name === 'profileId') {
-    return context.modelId.endsWith(':Vendor')
-      ? 8 + (context.index % 5)
-      : context.index;
+    if (context.modelId.endsWith(':Vendor')) return 8 + (context.index % 5);
+    // Sign-ups and the like point at a customer's Profile, whatever their
+    // own row index (child rows are numbered up to 996).
+    return context.modelId.endsWith(':Customer')
+      ? context.index
+      : context.index % 8;
   }
   return context.index % 5;
 }
@@ -263,7 +296,7 @@ export function fakeValue(
         `${field.related ?? field.name}:${relatedIndex(field, context)}`,
       );
     default:
-      return fakeText(field, random);
+      return fakeText(field, random, context.modelId.split(':').pop());
   }
 }
 
@@ -406,9 +439,14 @@ function nameFromPack(
   const at = <T>(list: readonly T[] | undefined, i: number): T | undefined =>
     list?.length ? list[i % list.length] : undefined;
   if (model.id.endsWith(':Profile') && has(model, 'name')) {
-    // Customers use Profiles 0-7 and Vendors 8-12 (see SAMPLE_ROW_COUNTS).
+    // Customers use Profiles 0-7, Vendors 8-12, instructors 13 on (see
+    // SAMPLE_ROW_COUNTS).
     const name =
-      index < 8 ? at(pack.customers, index) : at(pack.vendors, index - 8);
+      index < 8
+        ? at(pack.customers, index)
+        : index < 13
+          ? at(pack.vendors, index - 8)
+          : at(pack.instructors, index - 13);
     if (name) {
       record.name = name;
       if (has(model, 'email')) {
@@ -421,6 +459,33 @@ function nameFromPack(
     }
     return;
   }
+  const short = model.id.split(':').pop() ?? '';
+  if (short === 'EventParticipant') {
+    // A sign-up points at a member's Profile; every fifth is the instructor.
+    const instructors = pack.instructors;
+    const teaches = Boolean(instructors?.length) && index % 5 === 0;
+    if (has(model, 'profileId')) {
+      record.profileId = fakeId(
+        `${PROFILE_MODEL}:${
+          teaches && instructors
+            ? 13 + (Math.floor(index / 5) % instructors.length)
+            : index % 8
+        }`,
+      );
+    }
+    if (has(model, 'role')) record.role = teaches ? 'instructor' : 'attendee';
+    return;
+  }
+  if (has(model, 'allDay') && typeof record.startDate === 'string') {
+    // Events happen at a time of day: on the hour, between 6 and 20 h, for an hour.
+    const day =
+      Date.parse(record.startDate) - (Date.parse(record.startDate) % DAY);
+    const start = day + (6 + (index % 15)) * 60 * 60 * 1000;
+    record.startDate = new Date(start).toISOString();
+    if (has(model, 'endDate')) {
+      record.endDate = new Date(start + 60 * 60 * 1000).toISOString();
+    }
+  }
   const names: Record<string, readonly string[] | undefined> = {
     Event: pack.eventNames,
     EventType: pack.eventTypes,
@@ -428,9 +493,14 @@ function nameFromPack(
     Place: pack.placeNames,
     PlaceType: pack.placeTypes,
   };
-  const list = names[model.id.split(':').pop() ?? ''];
+  const list = names[short];
   const name = at(list, index);
   if (name && has(model, 'name')) record.name = name;
+  // A description list lines up with the names: entry n describes name n.
+  const description = at(pack.descriptions?.[short], index);
+  if (description && list && has(model, 'description')) {
+    record.description = description;
+  }
 }
 
 /**

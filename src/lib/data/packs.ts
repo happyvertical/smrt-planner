@@ -15,12 +15,16 @@ export interface PackProduct {
   productType?: 'product' | 'material' | 'assembly';
   /** Index into the pack's `locations` where this is counted; omitted: the first. */
   at?: number;
+  /** How many of it a line item sells, `[min, max]`; omitted: the pack's. */
+  quantity?: [number, number];
 }
 
 /** A line item: a service or part as an invoice or order would say it. */
 export interface PackLine {
   description: string;
   price: number;
+  /** How many a line sells, `[min, max]` (`[1, 1]`: always one); omitted: the pack's. */
+  quantity?: [number, number];
 }
 
 export interface PackLocation {
@@ -40,7 +44,26 @@ export interface SamplePack {
   /** Customer profile names (8). Vendors take the next five profiles. */
   customers?: readonly string[];
   vendors?: readonly string[];
+  /**
+   * Staff who lead events and jobs (instructors, technicians, crew leads):
+   * Profiles of their own after the customers and vendors, so an organizer is
+   * never a customer.
+   */
+  instructors?: readonly string[];
+  /** Notes on documents (orders, invoices, estimates). */
   notes?: readonly string[];
+  /** Notes about a customer (a member's preferences); omitted: `notes`. */
+  customerNotes?: readonly string[];
+  /** Notes about a vendor; omitted: `notes`. */
+  vendorNotes?: readonly string[];
+  /**
+   * Descriptions by model name (`Event`, `EventSeries`, `EventType`, `Place`).
+   * Where the pack names that model's rows, entry `n` describes name `n`.
+   * Never notes: a class is not described by a member's preferences.
+   */
+  descriptions?: Readonly<Record<string, readonly string[]>>;
+  /** Default `[min, max]` quantity of a line item; omitted: 1 to 5. */
+  lineQuantity?: [number, number];
   terms?: readonly string[];
   /** Event names; entry `n` suits `eventTypes[n % 5]`. */
   eventNames?: readonly string[];
@@ -218,6 +241,21 @@ const BAKERY: SamplePack = {
     'Pickup at the front counter.',
   ],
   terms: ['Net 15', 'Due on receipt', 'Net 30'],
+  customerNotes: [
+    'Standing order every Friday.',
+    'No nuts, please. Allergy on file.',
+    'Prefers pickup at the front counter.',
+    'Orders extra for the weekend.',
+    'Pays on the first of the month.',
+  ],
+  vendorNotes: [
+    'Delivers before 5 a.m.',
+    'Invoice arrives with the delivery.',
+    'Call ahead for holiday orders.',
+    'Minimum order of ten bags.',
+    'Credit note owed for a short delivery.',
+  ],
+  lineQuantity: [1, 6],
   locations: [
     { code: 'FRONT', name: 'Front counter', kind: 'store' },
     { code: 'COOLER', name: 'Walk-in cooler', kind: 'cooler' },
@@ -292,14 +330,26 @@ const MECHANIC: SamplePack = {
     },
   ],
   lines: [
-    { description: 'Labour: oil and filter change', price: 6500 },
-    { description: 'Labour: brake service, per axle', price: 12000 },
-    { description: 'Front brake pads', price: 8900 },
-    { description: 'Diagnostic inspection', price: 9500 },
-    { description: 'Spark plug replacement', price: 3600 },
-    { description: 'Tire rotation and balance', price: 4500 },
-    { description: 'Synthetic oil, 5 L', price: 4200 },
-    { description: 'Battery test and replacement', price: 14900 },
+    {
+      description: 'Labour: oil and filter change',
+      price: 6500,
+      quantity: [1, 3],
+    },
+    {
+      description: 'Labour: brake service, per axle',
+      price: 12000,
+      quantity: [1, 2],
+    },
+    { description: 'Front brake pads', price: 8900, quantity: [1, 4] },
+    { description: 'Diagnostic inspection', price: 9500, quantity: [1, 3] },
+    { description: 'Spark plug replacement', price: 3600, quantity: [1, 4] },
+    { description: 'Tire rotation and balance', price: 4500, quantity: [1, 2] },
+    { description: 'Synthetic oil, 5 L', price: 4200, quantity: [1, 4] },
+    {
+      description: 'Battery test and replacement',
+      price: 14900,
+      quantity: [1, 1],
+    },
   ],
   customers: [
     'Dana Whitfield',
@@ -326,6 +376,57 @@ const MECHANIC: SamplePack = {
     'Warning light on since last week.',
   ],
   terms: ['Due on receipt', 'Net 15', 'Net 30'],
+  customerNotes: [
+    'Prefers a call over a text.',
+    'Drives a company van; invoice the fleet account.',
+    'Usually waits at the shop during service.',
+    'Pick-up after 5 p.m. only.',
+    'Keeps the service history in the glovebox.',
+  ],
+  vendorNotes: [
+    'Same-day delivery before 10 a.m.',
+    'Core charge refunded on return.',
+    'Account number is on the packing slip.',
+    'Backordered items ship free.',
+    'Minimum order for free freight.',
+  ],
+  instructors: ['Ray Delgado', 'Kim Nakamura', 'Owen Pryce'],
+  descriptions: {
+    Event: [
+      'Drain, new filter and fresh oil, with a fluid top-up.',
+      'Pads, rotors and fluid checked and replaced as needed.',
+      'Full safety inspection with a written report.',
+      'Rotate all four tires and check pressure and tread.',
+      'Scan the codes and trace the warning light.',
+      'Drain, new filter and fresh oil, with a fluid top-up.',
+      'Pads, rotors and fluid checked and replaced as needed.',
+      'Full safety inspection with a written report.',
+    ],
+    EventType: [
+      'Routine oil and filter change.',
+      'Inspect and replace brake components.',
+      'Annual safety and emissions inspection.',
+      'Rotate and balance the tires.',
+      'Trace faults with the scan tool.',
+      'Test and replace the battery.',
+      'Set toe, camber and caster.',
+      'Anything else the shop agrees to take on.',
+    ],
+    EventSeries: [
+      'Regular service on the manufacturer schedule.',
+      'Winter and summer tire swaps.',
+      'Recurring work for company vehicles.',
+      'Repairs covered by the manufacturer.',
+      'Condition check before a used car is bought.',
+    ],
+    Place: [
+      'Lift bay for general repairs.',
+      'Second lift bay.',
+      'Alignment rack with laser targets.',
+      'Where finished cars wait for their owners.',
+      'Where parts are sold and picked up.',
+    ],
+  },
   eventNames: [
     'Oil change',
     'Brake service',
@@ -369,6 +470,8 @@ const MECHANIC: SamplePack = {
     'Order.status': { completed: 5, accepted: 3, sent: 1, draft: 1 },
     'Estimate.status': { sent: 3, accepted: 3, declined: 1, draft: 1 },
     'Event.status': { scheduled: 5, completed: 4, cancelled: 1 },
+    // Vehicle owners are retail customers.
+    'Customer.customerType': { retail: 1 },
   },
 };
 
@@ -437,14 +540,22 @@ const WELDER: SamplePack = {
     },
   ],
   lines: [
-    { description: 'Swing gate, fabricated and installed', price: 185000 },
-    { description: 'Stair railing, 3 m run', price: 94000 },
-    { description: 'Trailer frame repair', price: 62000 },
-    { description: 'Custom bracket set (4)', price: 18000 },
-    { description: 'Site welding, per hour', price: 9500 },
-    { description: 'Powder coat finish', price: 32000 },
-    { description: 'Delivery and site setup', price: 8500 },
-    { description: 'Fence post replacement, each', price: 14000 },
+    {
+      description: 'Swing gate, fabricated and installed',
+      price: 185000,
+      quantity: [1, 1],
+    },
+    { description: 'Stair railing, 3 m run', price: 94000, quantity: [1, 2] },
+    { description: 'Trailer frame repair', price: 62000, quantity: [1, 1] },
+    { description: 'Custom bracket set (4)', price: 18000, quantity: [1, 3] },
+    { description: 'Site welding, per hour', price: 9500, quantity: [2, 8] },
+    { description: 'Powder coat finish', price: 32000, quantity: [1, 1] },
+    { description: 'Delivery and site setup', price: 8500, quantity: [1, 1] },
+    {
+      description: 'Fence post replacement, each',
+      price: 14000,
+      quantity: [2, 6],
+    },
   ],
   customers: [
     'Ridgeline Construction',
@@ -471,6 +582,57 @@ const WELDER: SamplePack = {
     'Access through the rear lane only.',
   ],
   terms: ['50% deposit, balance on completion', 'Net 30', 'Due on completion'],
+  customerNotes: [
+    'Site foreman is the contact for access.',
+    'Pays by cheque, thirty days.',
+    'Prefers quotes by email.',
+    'Repeat customer; same crew each time.',
+    'Needs a purchase order number on invoices.',
+  ],
+  vendorNotes: [
+    'Cut lengths ready next morning.',
+    'Mill certificates come with each order.',
+    'Cylinder rental is billed monthly.',
+    'Delivers Tuesdays and Fridays.',
+    'Minimum order for free delivery.',
+  ],
+  instructors: ['Frank Dillard', 'Rosa Quintero', 'Jed Harlan'],
+  descriptions: {
+    Event: [
+      'Measure the opening and check the access on site.',
+      'Walk the job with the customer and agree the scope.',
+      'Crew delivers, fits and finishes the work.',
+      'Return to repair the fault under the original quote.',
+      'Walk the finished job with the customer.',
+      'Measure the opening and check the access on site.',
+      'Walk the job with the customer and agree the scope.',
+      'Crew delivers, fits and finishes the work.',
+    ],
+    EventType: [
+      'Measure up before a quote.',
+      'Walk through a quote with the customer.',
+      'Fit finished work on site.',
+      'Return to fix a fault.',
+      'Sign-off with the customer.',
+      'Drop finished work at the customer.',
+      'Customer collects from the shop.',
+      'Anything else the shop agrees to take on.',
+    ],
+    EventSeries: [
+      'Site visits that lead to a written quote.',
+      'Crews booked for fitting days.',
+      'Return visits for repairs.',
+      'Sign-off walks at the end of a job.',
+      'Scheduled trips with finished work.',
+    ],
+    Place: [
+      'Wherever the work is to be fitted.',
+      'Where work is cut, welded and finished.',
+      'Outdoor space for loading and staging.',
+      'Where stock is collected from the supplier.',
+      'Cabin for paperwork on large jobs.',
+    ],
+  },
   eventNames: [
     'Site measure',
     'Quote walk-through',
@@ -579,14 +741,18 @@ const YOGA: SamplePack = {
     },
   ],
   lines: [
-    { description: 'Monthly unlimited membership', price: 12900 },
-    { description: '10-class pack', price: 17000 },
-    { description: 'Drop-in class', price: 2200 },
-    { description: 'Private session, 60 min', price: 9000 },
-    { description: '6-week beginners series', price: 14400 },
-    { description: 'Workshop ticket', price: 4500 },
-    { description: 'Mat rental', price: 300 },
-    { description: 'Teacher training deposit', price: 50000 },
+    {
+      description: 'Monthly unlimited membership',
+      price: 12900,
+      quantity: [1, 1],
+    },
+    { description: '10-class pack', price: 17000, quantity: [1, 1] },
+    { description: 'Drop-in class', price: 2200, quantity: [1, 3] },
+    { description: 'Private session, 60 min', price: 9000, quantity: [1, 2] },
+    { description: '6-week beginners series', price: 14400, quantity: [1, 1] },
+    { description: 'Workshop ticket', price: 4500, quantity: [1, 2] },
+    { description: 'Mat rental', price: 300, quantity: [1, 3] },
+    { description: 'Teacher training deposit', price: 50000, quantity: [1, 1] },
   ],
   customers: [
     'Emma Larsen',
@@ -606,13 +772,65 @@ const YOGA: SamplePack = {
     'Calm Candle Works',
   ],
   notes: [
+    'Paid at the front desk.',
+    'Includes mat rental.',
+    'Renews on the first of the month.',
+    'Class pass applied.',
+    'Booked as a gift.',
+  ],
+  terms: ['Due on receipt', 'Net 15', 'Monthly, auto-renewing'],
+  customerNotes: [
     'Prefers the back row near the window.',
     'Recovering from a knee injury; offer modifications.',
     'Joined through the summer promotion.',
     'Pays by card on the first of the month.',
     'Interested in the teacher training.',
   ],
-  terms: ['Due on receipt', 'Net 15', 'Monthly, auto-renewing'],
+  vendorNotes: [
+    'Free shipping over $500.',
+    'Allow two weeks for custom colours.',
+    'Net 30 after delivery.',
+    'Samples sent on request.',
+    'Reorders by email on the first of the month.',
+  ],
+  instructors: ['Priya Raman', 'Daniel Okoye', 'Hana Sato', 'Marco Bellini'],
+  descriptions: {
+    Event: [
+      'Flowing breath-led practice that builds heat steadily.',
+      'Slow, grounding practice with long holds.',
+      'Heated room, steady pace, plenty of water.',
+      'Gentle, alignment-focused classical postures.',
+      'Supported poses and long rests to unwind.',
+      'Strong, athletic flow for experienced students.',
+      'Longer yin holds for the hips and spine.',
+      'Sixty minutes in the heat, a little faster.',
+    ],
+    EventType: [
+      'Linked movement and breath.',
+      'Passive floor poses held for minutes.',
+      'Practice in a heated room.',
+      'Slower, classical postures.',
+      'Props and rest to restore.',
+      'Safe, supported practice for expecting mothers.',
+      'Seated stillness and guided breath.',
+      'A longer session on a single theme.',
+    ],
+    EventSeries: [
+      'Six weeks of foundations for new students.',
+      'Eight mornings of steady flow.',
+      'A slow Sunday class, week after week.',
+      'A weekend of practice around the longest day.',
+      'The 200-hour course for future teachers.',
+    ],
+    Place: [
+      'Our main room with sprung floors.',
+      'Smaller room for workshops and private lessons.',
+      'Open-air deck for summer classes.',
+      'Tea, books and a place to wait.',
+      'Large hall for retreats and trainings.',
+    ],
+  },
+  lineQuantity: [1, 2],
   eventNames: [
     'Vinyasa Flow',
     'Yin Yoga',
@@ -654,6 +872,7 @@ const YOGA: SamplePack = {
   ],
   weights: {
     'Event.status': { scheduled: 6, completed: 3, cancelled: 1 },
+    'Customer.customerType': { retail: 1 },
     'Agreement.status': { accepted: 6, sent: 1, completed: 2, cancelled: 1 },
   },
 };

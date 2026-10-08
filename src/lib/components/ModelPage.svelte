@@ -201,7 +201,7 @@ const inApp = $derived(
       {:else}
         {model.name}
       {/if}
-      {#if !inApp}
+      {#if blueprintStore.loaded && !inApp}
         <span class="meta">(not in your app yet)</span>
       {/if}
     </nav>

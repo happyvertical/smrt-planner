@@ -20,6 +20,7 @@ import {
 } from '../data/derived.ts';
 import { editableFields, type ModelRecord } from '../data/fakes.ts';
 import {
+  createNoun,
   fieldLabel,
   formatValue,
   humanize,
@@ -146,6 +147,10 @@ $effect(() => {
   void load();
 });
 
+// A reset (a cookbook applied, the app reset) swaps the rows underneath an
+// open page: read them again rather than keep showing the old ones.
+$effect(() => source.onReset?.(() => void load()));
+
 async function savedMap() {
   editing = null;
   await load();
@@ -228,11 +233,11 @@ async function remove(row: ModelRecord) {
 
 <section>
   <header>
-    <h2>{heading} <small>{recordCount(rows.length)}</small></h2>
+    <h2>{heading} {#if loaded}<small>{recordCount(rows.length)}</small>{/if}</h2>
     {#if mapForms.length}
       {#each mapForms as active (active.form.id)}
         <button type="button" onclick={() => startCreate(active)}>
-          New {active.form.label.toLowerCase()}
+          New {createNoun(active.form.label, noun, mapForms.length === 1)}
         </button>
       {/each}
     {:else}
@@ -247,6 +252,7 @@ async function remove(row: ModelRecord) {
         active={mapForm}
         id={editing === 'new' ? undefined : editing}
         {preset}
+        noun={mapForms.length === 1 ? noun : undefined}
         onsaved={savedMap}
         oncancel={() => (editing = null)}
       />

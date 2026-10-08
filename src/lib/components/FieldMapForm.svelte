@@ -2,6 +2,7 @@
 import { tick } from 'svelte';
 import { errorSummary, missingRequired } from '../data/columns.ts';
 import { useDataSource } from '../data/context.ts';
+import { createNoun } from '../data/format.ts';
 import type { ModelRecord } from '../data/source.ts';
 import { focusFirstInvalid } from '../fields/invalid.ts';
 import type { ActiveForm } from '../forms/active.ts';
@@ -14,6 +15,7 @@ import {
   primaryIndex,
 } from '../forms/fieldMap.ts';
 import { catalogModels } from '../forms/shared.ts';
+import { recipeState } from '../recipes/state.svelte.ts';
 import type { FieldMapForm } from '../recipes/types.ts';
 import FieldInput from './FieldInput.svelte';
 
@@ -26,12 +28,27 @@ interface FieldMapFormProps {
   oncancel: () => void;
   /** Values a NEW row carries, e.g. the filter of the page it was added on. */
   preset?: Record<string, unknown>;
+  /** What the page calls one record ("member"); wins over the form's label. */
+  noun?: string;
 }
 
-let { active, id, onsaved, oncancel, preset }: FieldMapFormProps = $props();
+let { active, id, onsaved, oncancel, preset, noun }: FieldMapFormProps =
+  $props();
 
 const source = useDataSource();
-const inputs = $derived(fieldMapInputs(active, catalogModels));
+// An option row that hides a field (a cookbook's, or the visitor's) takes it
+// out of the form too.
+const inputs = $derived(
+  fieldMapInputs(active, catalogModels).filter(
+    ({ catalogField, modelId }) =>
+      !recipeState.rows.some(
+        (row) =>
+          row.objectRef === modelId &&
+          row.fieldName === catalogField.name &&
+          row.visibility === 'hidden',
+      ),
+  ),
+);
 
 // svelte-ignore state_referenced_locally
 let values = $state<Record<string, unknown>>(
@@ -90,7 +107,7 @@ async function save(event: SubmitEvent) {
   <p>Loading...</p>
 {:else}
   <form onsubmit={save} novalidate>
-    <h3>{id === undefined ? `New ${active.form.label.toLowerCase()}` : `Edit ${active.form.label.toLowerCase()}`}</h3>
+    <h3>{id === undefined ? 'New' : 'Edit'} {createNoun(active.form.label, noun, noun !== undefined)}</h3>
     {#each inputs as { field, catalogField, modelId } (field.id)}
       <FieldInput
         {modelId}

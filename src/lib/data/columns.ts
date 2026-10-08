@@ -6,6 +6,8 @@ import { labelKey } from './format.ts';
 
 /** A list column: a field, or a value worked out from the row (Amount due). */
 export interface ListColumn extends ViewField {
+  /** A datetime that shows its time of day, not only the date (a class start). */
+  showTime?: boolean;
   derive?: (row: Readonly<Record<string, unknown>>) => unknown;
 }
 
@@ -18,7 +20,8 @@ function columnRank(f: ViewField): number {
   if (f.type === 'json') return 99;
   if (/^(name|title|label|code)$|Number$|^number$/.test(name)) return 0;
   if (name === 'reference' && f.type === 'text') return 0.5;
-  if (name === 'description' && f.type === 'text') return 0.6;
+  // Long free text is the first thing a list can do without.
+  if (name === 'description' && f.type === 'text') return 5.9;
   if (isRelation(f)) {
     if (/^(customer|vendor|profile)/i.test(name)) return 1;
     // The contract and ledger links are bookkeeping, not what a row is about.
@@ -28,6 +31,8 @@ function columnRank(f: ViewField): number {
     return 3;
   if (/^(totalAmount|amount|total)$/.test(name)) return 4;
   if (f.type === 'datetime') {
+    // When a scheduled thing starts is what its row is about.
+    if (/^start(date|at)?$/i.test(name)) return 1.2;
     if (/^due/i.test(name)) return 5;
     if (/(issue|paid|allocated|^date$)/i.test(name)) return 5.2;
   }
@@ -70,7 +75,17 @@ export function listColumns(
     const at = ranked.findIndex((f) => f.name === 'totalAmount');
     ranked.splice(at < 0 ? ranked.length : at + 1, 0, due);
   }
-  return ranked.slice(0, max);
+  // Records that are scheduled (an `allDay` flag) show when they start to the minute.
+  const scheduled = shown.some((f) => f.name === 'allDay');
+  return ranked
+    .slice(0, max)
+    .map((f) =>
+      scheduled &&
+      f.type === 'datetime' &&
+      /^(start|end)(date|at)$/i.test(f.name)
+        ? { ...f, showTime: true }
+        : f,
+    );
 }
 
 /** The value a list cell shows for a row. */

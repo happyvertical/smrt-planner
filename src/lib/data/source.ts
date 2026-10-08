@@ -101,6 +101,11 @@ export interface DataSource {
   apply(writes: readonly RecordWrite[]): Promise<Record<string, ModelRecord>>;
   /** Forget every row and stored copy; the next read starts from the samples. */
   reset?(): void;
+  /**
+   * Call `listener` after every `reset`, so a view that already read rows
+   * reads them again; returns the way to stop listening.
+   */
+  onReset?(listener: () => void): () => void;
 }
 
 /** Prefix of the localStorage keys rows are kept under, one per model. */
@@ -182,6 +187,7 @@ export function createMemoryDataSource(
   const rows = options.rowsPerModel ?? 8;
   const empty = new Set(options.empty ?? []);
   const tables = new Map<string, ModelRecord[]>();
+  const resetListeners = new Set<() => void>();
   const storage = options.storage ?? null;
   const storedKey = (model: CatalogModel) =>
     `${DATA_STORAGE_PREFIX}${model.id}`;
@@ -511,6 +517,13 @@ export function createMemoryDataSource(
       tables.clear();
       created = 0;
       clearStoredData(storage);
+      for (const listener of [...resetListeners]) listener();
+    },
+    onReset(listener) {
+      resetListeners.add(listener);
+      return () => {
+        resetListeners.delete(listener);
+      };
     },
     async apply(writes) {
       // Snapshot every table a step touches; restore them all if one throws.

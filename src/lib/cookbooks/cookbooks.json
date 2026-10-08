@@ -207,6 +207,18 @@
           },
           {
             "objectRef": "@happyvertical/smrt-commerce:Customer",
+            "fieldName": "creditLimit",
+            "scopeType": "app",
+            "visibility": "hidden"
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Customer",
+            "fieldName": "customerType",
+            "scopeType": "app",
+            "visibility": "hidden"
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Customer",
             "fieldName": "paymentTerms",
             "scopeType": "app",
             "defaultValue": "\"Due on receipt\""
@@ -530,9 +542,27 @@
           },
           {
             "objectRef": "@happyvertical/smrt-commerce:Customer",
+            "fieldName": "creditLimit",
+            "scopeType": "app",
+            "visibility": "hidden"
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Customer",
+            "fieldName": "customerType",
+            "scopeType": "app",
+            "visibility": "hidden"
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Customer",
             "fieldName": "paymentTerms",
             "scopeType": "app",
             "defaultValue": "\"Due on receipt\""
+          },
+          {
+            "objectRef": "@happyvertical/smrt-commerce:Customer",
+            "fieldName": "taxExempt",
+            "scopeType": "app",
+            "visibility": "hidden"
           },
           {
             "objectRef": "@happyvertical/smrt-commerce:Invoice",

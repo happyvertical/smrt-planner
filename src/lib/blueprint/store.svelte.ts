@@ -52,6 +52,9 @@ export class BlueprintStore {
   /** A migrated legacy link whose data is not safely stored: keep the URL. */
   keepLegacyUrl = $state(false);
 
+  /** A blueprint was chosen (cookbook, import) before the saved one was read. */
+  private replacedBeforeLoad = false;
+
   private storage: Storage | null = null;
   private timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -79,6 +82,7 @@ export class BlueprintStore {
   /** Replace on the visitor's say-so (an import): saving is allowed again. */
   replace(blueprint: Blueprint): void {
     this.apply(blueprint);
+    if (!this.loaded) this.replacedBeforeLoad = true;
     this.saveBlocked = false;
     this.keepLegacyUrl = false;
   }
@@ -111,8 +115,11 @@ export class BlueprintStore {
   hydrate(search: string, storage: Storage | null = browserStorage()): boolean {
     this.storage = storage;
     const outcome = loadBlueprint(storage);
-    if (outcome.status === 'loaded') this.apply(outcome.blueprint);
-    else if (outcome.status === 'unreadable') {
+    // What the visitor chose a moment ago (before the first navigation settled)
+    // wins over what was saved; the next save keeps it.
+    if (outcome.status === 'loaded' && !this.replacedBeforeLoad) {
+      this.apply(outcome.blueprint);
+    } else if (outcome.status === 'unreadable') {
       this.saveBlocked = !outcome.keptAside;
       this.loadNotice = outcome.keptAside
         ? `The saved blueprint could not be read (${outcome.reason}) and was kept aside; starting empty.`

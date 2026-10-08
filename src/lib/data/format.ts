@@ -21,7 +21,7 @@ export const labelKey = (modelId: string, id: unknown): string =>
  * short id when the record is gone.
  */
 export function formatValue(
-  field: CatalogField,
+  field: CatalogField & { showTime?: boolean },
   value: unknown,
   labels?: ReadonlyMap<string, string>,
 ): string {
@@ -37,7 +37,10 @@ export function formatValue(
     case 'boolean':
       return value ? 'Yes' : 'No';
     case 'datetime':
-      return String(value).slice(0, 10);
+      // A list of things that happen at a time (classes) shows it too.
+      return field.showTime
+        ? String(value).slice(0, 16).replace('T', ' ')
+        : String(value).slice(0, 10);
     case 'foreignKey':
     case 'crossPackageRef':
       return (
@@ -87,6 +90,19 @@ export function singularize(label: string): string {
 /** What New creates for a menu entry: its declared noun, else the label's singular. */
 export function navNoun(label: string, noun?: string): string {
   return (noun?.trim() || singularize(label)).toLowerCase();
+}
+
+/**
+ * What a New button or form heading names. A page with one way to create a
+ * record uses the menu entry's noun ("part", "member"); with several forms
+ * (Simple, Clothing) each keeps its own label.
+ */
+export function createNoun(
+  formLabel: string,
+  noun: string | undefined,
+  onlyForm: boolean,
+): string {
+  return onlyForm && noun?.trim() ? noun.trim() : formLabel.toLowerCase();
 }
 
 /** "1 record", "8 records". */

@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { CatalogModel } from '../catalog/types.ts';
 import { useDataSource } from '../data/context.ts';
-import { formatMoney, recordCount } from '../data/format.ts';
+import { createNoun, formatMoney, recordCount } from '../data/format.ts';
 import type { ModelRecord } from '../data/source.ts';
 import {
   type ActiveForm,
@@ -79,6 +79,10 @@ $effect(() => {
   void load();
 });
 
+// A reset (a cookbook applied, the app reset) swaps the rows underneath an
+// open page: read them again rather than keep showing the old ones.
+$effect(() => source.onReset?.(() => void load()));
+
 /** A row is Clothing when it has axes, Simple otherwise. */
 const kindOf = (row: ModelRecord): ActiveForm | undefined =>
   withAxes.has(row.id) ? gridForm : mapForm;
@@ -107,11 +111,11 @@ async function remove(row: ModelRecord) {
 
 <section>
   <header>
-    <h2>{title ?? (model.name === 'Product' ? 'Products' : model.name)} <small>{recordCount(rows.length)}</small></h2>
+    <h2>{title ?? (model.name === 'Product' ? 'Products' : model.name)} {#if loaded}<small>{recordCount(rows.length)}</small>{/if}</h2>
     <div class="new">
       {#each offered as active (active.form.id)}
         <button type="button" onclick={() => open(active)}>
-          New {scope?.equals !== undefined && noun ? noun : active.form.label.toLowerCase()}
+          New {createNoun(active.form.label, noun, scope?.equals !== undefined || offered.length === 1)}
         </button>
       {/each}
     </div>
@@ -132,6 +136,7 @@ async function remove(row: ModelRecord) {
           active={current.form}
           id={current.id}
           {preset}
+          noun={offered.length === 1 ? noun : undefined}
           onsaved={saved}
           oncancel={() => (editing = null)}
         />

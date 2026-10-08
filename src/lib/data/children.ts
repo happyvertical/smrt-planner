@@ -54,7 +54,8 @@ export function fakeChildrenOf(
       const productField = child.fields.find(
         (f) => f.related?.endsWith(':Product') && f.name in record,
       );
-      const { products } = getSamplePack();
+      const pack = getSamplePack();
+      const { products } = pack;
       const item = products[(index % 5) % products.length];
       const described = packLine(index);
       if (described) {
@@ -68,7 +69,13 @@ export function fakeChildrenOf(
         if (hasField(child, 'description')) record.description = item.name;
         record.unitPrice = item.price;
       }
-      const quantity = 1 + Math.floor(random() * 5);
+      // How many a line sells is the pack's call: one membership, a few hours
+      // of labour, a handful of parts. The draw is always taken so a pack
+      // without ranges leaves the rest of the stream as it was.
+      const [low, high] = described?.quantity ??
+        item?.quantity ??
+        pack.lineQuantity ?? [1, 5];
+      const quantity = low + Math.floor(random() * (high - low + 1));
       if (hasField(child, 'quantity')) record.quantity = quantity;
       if (hasField(child, 'discount')) record.discount = 0;
       record.amount = settleLine(record).amount;

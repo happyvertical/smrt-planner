@@ -88,7 +88,7 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `models.ts` the offered models, `prefs.ts` the localStorage preference
   (model choice and consent; not part of the blueprint). It never navigates.
 - `src/lib/data/`: `DataSource` (async, `apply` for related multi-model saves), the seeded in-memory fakes, money and
-  value formatting. Views only talk to `DataSource` via context; live
+  value formatting. Sample packs (`packs.ts`) keep a vocabulary per field kind: `notes` (documents), `customerNotes`/`vendorNotes`, `descriptions` by model, `instructors` (staff Profiles that organise events), `quantity` ranges on lines. Never reuse one list for another kind of field. Views only talk to `DataSource` via context; live
   collections later replace `createMemoryDataSource()` in `+layout.svelte`.
 - `src/lib/upstream/`: LOCAL stand-ins for s-m-r-t work the published 0.55.3
   manifests do not carry yet (`_meta.ui.widget` and `uiSelectors` from smrt#3611,

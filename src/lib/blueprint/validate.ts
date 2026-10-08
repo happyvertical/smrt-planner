@@ -146,11 +146,12 @@ export function parseBlueprint(
     }
     features = [...input.features].sort();
   }
-  // Options only mean something for models an added recipe covers, as in the
+  // Options only mean something for models an added recipe or feature covers, as in the
   // app itself; dropping the rest keeps export then import an exact round trip.
-  const covered = new Set(
-    recipes.flatMap((id) => recipesById.get(id)?.models ?? []),
-  );
+  const covered = new Set([
+    ...recipes.flatMap((id) => recipesById.get(id)?.models ?? []),
+    ...features,
+  ]);
 
   if (!Array.isArray(input.policies)) {
     return fail('The blueprint "policies" must be a list.');

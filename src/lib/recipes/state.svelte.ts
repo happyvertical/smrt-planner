@@ -50,6 +50,7 @@ class RecipeState {
 
   removeFeature(id: string): void {
     this.features = this.features.filter((f) => f !== id);
+    this.prune();
   }
 
   has(id: string): boolean {
@@ -88,9 +89,11 @@ class RecipeState {
 
   /** Drop options for models no added recipe covers any more. */
   private prune(): void {
-    const covered = new Set(
-      this.ids.flatMap((id) => recipesById.get(id)?.models ?? []),
-    );
+    // A feature model is covered too: a cookbook can set its options.
+    const covered = new Set([
+      ...this.ids.flatMap((id) => recipesById.get(id)?.models ?? []),
+      ...this.features,
+    ]);
     this.rows = this.rows.filter((r) => covered.has(r.objectRef));
     this.narrowed = Object.fromEntries(
       Object.entries(this.narrowed).filter(([ref]) => covered.has(ref)),

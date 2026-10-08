@@ -62,6 +62,27 @@ export function policyFields(model: CatalogModel): CatalogField[] {
   return model.fields.filter((f) => !f.system);
 }
 
+const snakeCase = (name: string) =>
+  name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+
+/**
+ * The single-table-inheritance discriminator: an enumerated `...Type` field of
+ * a subclass (or one listing the model's own snake_case name), like
+ * `contractType` on a ProductionOrder. It tells the classes of a shared table
+ * apart, so a form never offers it.
+ */
+export function isDiscriminatorField(
+  model: CatalogModel,
+  field: CatalogField,
+): boolean {
+  return (
+    /Type$/.test(field.name) &&
+    Array.isArray(field.enum) &&
+    field.enum.length > 0 &&
+    (Boolean(model.extends) || field.enum.includes(snakeCase(model.name)))
+  );
+}
+
 /** The cold-start rule: with no `ui.basic` marker anywhere, all fields are basic. */
 function hasBasicMarkers(fields: readonly CatalogField[]): boolean {
   return fields.some((f) => f.ui?.basic === true);
@@ -101,15 +122,27 @@ export function resolveFields(
 
   const resolved = fields.map((field, index): ResolvedField => {
     const hint: RecipeFieldHint = hints?.fields?.[field.name] ?? {};
+    const discriminator = isDiscriminatorField(model, field);
     let visibility: FieldPolicyVisibility =
       hint.visibility ??
-      (!markers || field.ui?.basic === true ? 'basic' : 'advanced');
+      (discriminator
+        ? 'hidden'
+        : !markers || field.ui?.basic === true
+          ? 'basic'
+          : 'advanced');
     let label = hint.label ?? fieldLabel(field);
     let help: string | null = hint.help ?? null;
     let order = hint.order ?? field.ui?.order ?? index;
-    let locked = hint.locked ?? field.ui?.locked ?? false;
-    let hasDefault = 'default' in hint || field.default !== undefined;
-    let value: unknown = 'default' in hint ? hint.default : field.default;
+    let locked = hint.locked ?? field.ui?.locked ?? discriminator;
+    const ownType = snakeCase(model.name);
+    const fallback: unknown =
+      field.default !== undefined
+        ? field.default
+        : discriminator && field.enum?.includes(ownType)
+          ? ownType
+          : undefined;
+    let hasDefault = 'default' in hint || fallback !== undefined;
+    let value: unknown = 'default' in hint ? hint.default : fallback;
 
     const row = own.get(field.name);
     if (row && (!locked || row.locked === false)) {

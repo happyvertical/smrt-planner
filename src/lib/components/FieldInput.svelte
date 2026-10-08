@@ -67,11 +67,14 @@ const text = $derived(
       : String(value),
 );
 // An optional enum can be cleared again, as the native select it replaces could.
+// An enum that already lists '' (Invoice.collectionMethod) supplies that choice.
 const enumOptions = $derived([
-  ...(required ? [] : [{ value: '', label: '(none)' }]),
+  ...(required || (field.enum ?? []).includes('')
+    ? []
+    : [{ value: '', label: '(none)' }]),
   ...(field.enum ?? []).map((option) => ({
     value: option,
-    label: enumLabel(option),
+    label: option === '' ? '(none)' : enumLabel(option),
   })),
 ]);
 

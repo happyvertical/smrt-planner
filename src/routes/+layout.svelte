@@ -242,7 +242,7 @@ function flushOnHide() {
   layout={blueprintStore.layout ?? null}
   onlayoutchange={(next) => blueprintStore.setLayout(next)}
   dockToggles={[{ tool: 'assistant', label: 'Assistant', slot: 'leftSidebar.footer' }]}
-  layoutEditing
+  layoutEditing={{ floating: true }}
 >
   {#snippet sectionActions({ sectionId: navSectionId, label })}
     <SectionActions {label} groups={sectionOptionGroups.get(navSectionId) ?? []} />

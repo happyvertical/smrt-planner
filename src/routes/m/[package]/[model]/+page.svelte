@@ -1,4 +1,5 @@
 <script lang="ts">
+import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
 import { getModel } from '$lib/catalog/index.ts';
 import FormWorkspace from '$lib/components/FormWorkspace.svelte';
 import ModelWorkspace from '$lib/components/ModelWorkspace.svelte';
@@ -8,7 +9,8 @@ import { activeForms } from '$lib/forms/active.ts';
 import { PRODUCT } from '$lib/forms/stock.ts';
 import { appHref } from '$lib/planner/app.svelte.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
-import { recipes, sectionId } from '$lib/recipes/index.ts';
+import { recipeNav, recipes, sectionId } from '$lib/recipes/index.ts';
+import { navSectionOf } from '$lib/recipes/sections.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
 import type { PageProps } from './$types';
 
@@ -39,6 +41,21 @@ const iconSection = $derived(iconRecipe ? sectionId(iconRecipe) : undefined);
 const iconLabel = $derived(
   iconRecipe ? (iconRecipe.group?.label ?? iconRecipe.label) : '',
 );
+// Breadcrumbs follow the app's own navigation, not catalog packages: the menu
+// section the model sits in (the user's renamed label wins) and its menu label.
+const navCrumb = $derived.by(() => {
+  const recipe = recipesWithModel.find((r) => recipeState.has(r.id));
+  if (!recipe || !catalogModel) return undefined;
+  const section = navSectionOf(recipe);
+  const entry = recipeNav(recipe).find((e) => e.model.id === catalogModel.id);
+  const renamed =
+    blueprintStore.layout?.sections?.[`section:${section.id}`]?.label;
+  return {
+    section: renamed || section.label,
+    label: entry?.label ?? catalogModel.name,
+  };
+});
+
 // Anchored to this model's fields in the recipe whose Help covers it.
 const helpAnchor = $derived.by(() => {
   const covering =
@@ -68,8 +85,11 @@ const inApp = $derived(
     <div class="bar">
     <nav aria-label="Breadcrumb">
       <a href={appHref('/')}>Planner</a>
-      / <a href={appHref(`/packages/${data.packageId}/`)}>{humanize(data.packageId)}</a>
-      / {model.name}
+      {#if navCrumb}
+        / {navCrumb.section} / {navCrumb.label}
+      {:else}
+        / {model.name}
+      {/if}
       {#if !inApp}
         <span class="meta">(not in your app yet)</span>
       {/if}

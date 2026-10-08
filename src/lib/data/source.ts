@@ -1,4 +1,5 @@
 import type { CatalogModel } from '../catalog/types.ts';
+import { type ChildOf, fakeChildrenOf, syncTotals } from './children.ts';
 import {
   fakeId,
   fakeRecords,
@@ -104,6 +105,17 @@ export interface MemoryDataSourceOptions {
    * stock), where random rows would point at nothing.
    */
   empty?: readonly string[];
+  /**
+   * Parent-to-children wiring. With it, every sample parent comes with one to
+   * four child rows (line items, allocations, entries) whose foreign key is
+   * the parent's id, so an open record's child tables are not empty. `links`
+   * is the helper the record view uses (`childLinks`); `models` is what to
+   * scan for parents of a child.
+   */
+  children?: {
+    models: readonly CatalogModel[];
+    links: (modelId: string) => ChildOf[];
+  };
 }
 
 /** Deterministic seeded fakes held in memory, lazily per model. */
@@ -116,15 +128,68 @@ export function createMemoryDataSource(
   const tables = new Map<string, ModelRecord[]>();
   let created = 0;
 
+  // Parent-to-children wiring, indexed both ways on first use.
+  const links = new Map<string, ChildOf[]>();
+  const linksOf = (id: string): ChildOf[] => {
+    let found = links.get(id);
+    if (!found) {
+      found = options.children?.links(id) ?? [];
+      links.set(id, found);
+    }
+    return found;
+  };
+  let owners: Map<string, { parent: CatalogModel; fk: string }[]> | undefined;
+  const ownersOf = (id: string) => {
+    if (!owners) {
+      owners = new Map();
+      for (const parent of options.children?.models ?? []) {
+        for (const link of linksOf(parent.id)) {
+          const list = owners.get(link.model.id) ?? [];
+          list.push({ parent, fk: link.fk });
+          owners.set(link.model.id, list);
+        }
+      }
+      // A child pointing at several kinds of parent (a JournalEntry at a
+      // Journal and an Account) is generated under one key only: the one its
+      // name starts with, else the first. Its other keys already hold ids of
+      // real sample rows.
+      for (const [id, list] of owners) {
+        const name = id.slice(id.lastIndexOf(':') + 1).toLowerCase();
+        const main =
+          list.find((o) =>
+            name.startsWith(o.fk.replace(/Id$/, '').toLowerCase()),
+          )?.fk ?? list[0]?.fk;
+        owners.set(
+          id,
+          list.filter((o) => o.fk === main),
+        );
+      }
+    }
+    return owners.get(id) ?? [];
+  };
+
   const table = (model: CatalogModel): ModelRecord[] => {
-    let existing = tables.get(model.id);
-    if (!existing) {
-      existing = empty.has(model.id)
+    const existing = tables.get(model.id);
+    if (existing) return existing;
+    const owned = ownersOf(model.id);
+    // A child's rows come from its parents, never from random fakes.
+    const made: ModelRecord[] =
+      empty.has(model.id) || owned.length
         ? []
         : fakeRecords(model, SAMPLE_ROW_COUNTS[model.id] ?? rows, seed);
-      tables.set(model.id, existing);
+    // Registered before the other side is built so each finds this table.
+    tables.set(model.id, made);
+    for (const link of linksOf(model.id)) table(link.model);
+    if (!empty.has(model.id)) {
+      for (const { parent, fk } of owned) {
+        for (const row of table(parent)) {
+          const items = fakeChildrenOf(model, fk, row, seed);
+          made.push(...items);
+          syncTotals(row, parent, items);
+        }
+      }
     }
-    return existing;
+    return made;
   };
 
   const present = (model: CatalogModel, record: ModelRecord): ModelRecord => ({

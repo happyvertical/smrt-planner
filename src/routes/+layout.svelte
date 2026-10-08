@@ -11,7 +11,7 @@ import {
   blueprintStore,
   SHELL_STORAGE_KEY,
 } from '$lib/blueprint/store.svelte.ts';
-import { exposedModels, getPackage } from '$lib/catalog/index.ts';
+import { catalog, exposedModels, getPackage } from '$lib/catalog/index.ts';
 import BrowserAssistant from '$lib/components/BrowserAssistant.svelte';
 import PlannerEditBridge from '$lib/components/PlannerEditBridge.svelte';
 import SectionActions from '$lib/components/SectionActions.svelte';
@@ -30,6 +30,7 @@ import {
   recipes,
   sectionId,
 } from '$lib/recipes/index.ts';
+import { childLinks } from '$lib/recipes/plumbing.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
 import type { LayoutProps } from './$types';
 
@@ -44,6 +45,12 @@ provideDataSource(
     // Rows that only make sense under a product a form creates start empty,
     // as do Profile types: a form adds the one it needs.
     empty: [...SAVED_BY_FORMS, PROFILE_TYPE],
+    // Every sample parent comes with line items: the same parent-to-children
+    // lookup the record view uses, so what it shows is what was seeded.
+    children: {
+      models: catalog.packages.flatMap((p) => p.models),
+      links: (id) => childLinks(catalog, recipes, id),
+    },
   }),
 );
 

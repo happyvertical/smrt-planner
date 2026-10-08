@@ -84,11 +84,10 @@ const inApp = $derived(
   <main>
     <div class="bar">
     <nav aria-label="Breadcrumb">
-      <a href={appHref('/')}>Planner</a>
       {#if navCrumb}
-        / {navCrumb.section} / {navCrumb.label}
+        {navCrumb.section} / {navCrumb.label}
       {:else}
-        / {model.name}
+        {model.name}
       {/if}
       {#if !inApp}
         <span class="meta">(not in your app yet)</span>

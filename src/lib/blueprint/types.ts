@@ -24,6 +24,11 @@ export interface Blueprint {
   version: typeof BLUEPRINT_VERSION;
   /** Added recipe ids, sorted; requirements are already included. */
   recipes: string[];
+  /**
+   * Added feature models (qualified names), sorted and unique: exposed
+   * catalog models no recipe covers. Absent in older files, read as `[]`.
+   */
+  features: string[];
   /** App-scope smrt-fields policy rows (the recipe options). */
   policies: FieldPolicyRow[];
   /**

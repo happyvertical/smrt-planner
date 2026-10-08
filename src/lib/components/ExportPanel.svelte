@@ -5,6 +5,7 @@ import { downloadBlueprint } from '$lib/blueprint/file.ts';
 import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
 import type { Blueprint } from '$lib/blueprint/types.ts';
 import { parseBlueprintText } from '$lib/blueprint/validate.ts';
+import { humanize } from '$lib/data/format.ts';
 import { recipesById } from '$lib/recipes/index.ts';
 
 let fileInput: HTMLInputElement | undefined = $state();
@@ -17,7 +18,7 @@ let confirmingReset = $state(false);
 const current = $derived(blueprintStore.snapshot());
 
 const describe = (b: Blueprint) =>
-  `${b.recipes.length} ${b.recipes.length === 1 ? 'recipe' : 'recipes'}, ${b.policies.length} saved ${b.policies.length === 1 ? 'option' : 'options'}`;
+  `${b.recipes.length} ${b.recipes.length === 1 ? 'recipe' : 'recipes'}, ${b.features.length} ${b.features.length === 1 ? 'feature' : 'features'}, ${b.policies.length} saved ${b.policies.length === 1 ? 'option' : 'options'}`;
 
 async function choose(event: Event & { currentTarget: HTMLInputElement }) {
   const input = event.currentTarget;
@@ -67,6 +68,13 @@ function confirmReset() {
       <ul>
         {#each current.recipes as id (id)}
           <li>{recipesById.get(id)?.label ?? id}</li>
+        {/each}
+      </ul>
+    {/if}
+    {#if current.features.length}
+      <ul>
+        {#each current.features as id (id)}
+          <li>{humanize(id.slice(id.lastIndexOf(':') + 1))}</li>
         {/each}
       </ul>
     {/if}

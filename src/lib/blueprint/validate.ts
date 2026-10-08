@@ -1,4 +1,5 @@
 import type { ShellLayout } from '@happyvertical/smrt-svelte/workspace/layout';
+import { getModelByQualifiedName } from '../catalog/index.ts';
 import { recipesById } from '../recipes/index.ts';
 import type { FieldPolicyRow } from '../recipes/policy.ts';
 import { withRequirements } from '../recipes/resolve.ts';
@@ -122,6 +123,29 @@ export function parseBlueprint(
     input.recipes.filter((id) => recipesById.has(id)),
     recipesById,
   );
+  // Absent in files from before features: read as none.
+  let features: string[] = [];
+  if (input.features !== undefined) {
+    if (!isStrings(input.features)) {
+      return fail('The blueprint "features" must be a list of model names.');
+    }
+    const seen = new Set<string>();
+    for (const name of input.features) {
+      if (seen.has(name)) {
+        return fail(`The blueprint lists the feature ${name} more than once.`);
+      }
+      seen.add(name);
+    }
+    const bad = input.features.filter(
+      (name) => !getModelByQualifiedName(name)?.model.exposed,
+    );
+    if (bad.length) {
+      return fail(
+        `The blueprint names features that are not in the catalog: ${bad.join(', ')}.`,
+      );
+    }
+    features = [...input.features].sort();
+  }
   // Options only mean something for models an added recipe covers, as in the
   // app itself; dropping the rest keeps export then import an exact round trip.
   const covered = new Set(
@@ -170,6 +194,7 @@ export function parseBlueprint(
     $schema: BLUEPRINT_SCHEMA,
     version: BLUEPRINT_VERSION,
     recipes,
+    features,
     policies,
   };
   if (exposure && Object.keys(exposure).length) blueprint.exposure = exposure;

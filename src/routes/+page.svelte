@@ -2,6 +2,7 @@
 import { ShellLayoutEditor } from '@happyvertical/smrt-svelte/workspace';
 import { Tabs } from '@happyvertical/smrt-ui';
 import ExportPanel from '$lib/components/ExportPanel.svelte';
+import FeaturesPanel from '$lib/components/FeaturesPanel.svelte';
 import RecipeCards from '$lib/components/RecipeCards.svelte';
 import {
   PLANNER_TABS,
@@ -11,11 +12,12 @@ import {
 
 const tabs = [
   { id: 'recipes', label: 'Recipes' },
+  { id: 'features', label: 'Features' },
   { id: 'layout', label: 'Layout' },
   { id: 'export', label: 'Export' },
 ];
 
-// All three panels stay mounted (the inactive ones hidden), so switching
+// All four panels stay mounted (the inactive ones hidden), so switching
 // never resets a notice or an editor; the layout keeps the URL in step.
 const select = (id: string) => {
   const tab = PLANNER_TABS.find((t) => t === id);
@@ -30,6 +32,7 @@ const select = (id: string) => {
 <main>
   <Tabs {tabs} active={plannerTab.active} onchange={select} aria-label="Planner">
     <div hidden={plannerTab.active !== 'recipes'}><RecipeCards /></div>
+    <div hidden={plannerTab.active !== 'features'}><FeaturesPanel /></div>
     <div hidden={plannerTab.active !== 'layout'} class="pane">
       <p class="meta">
         Reorder, move or hide navigation entries and choose which panels show.

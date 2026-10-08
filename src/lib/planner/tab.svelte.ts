@@ -1,6 +1,11 @@
 import { TAB_PARAM } from './query.ts';
 
-export const PLANNER_TABS = ['recipes', 'layout', 'export'] as const;
+export const PLANNER_TABS = [
+  'recipes',
+  'features',
+  'layout',
+  'export',
+] as const;
 export type PlannerTab = (typeof PLANNER_TABS)[number];
 
 /** `recipes` unless the query names another known tab. */

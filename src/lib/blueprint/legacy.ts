@@ -117,6 +117,7 @@ export function blueprintFromLegacySearch(search: string): Blueprint {
     $schema: BLUEPRINT_SCHEMA,
     version: BLUEPRINT_VERSION,
     recipes,
+    features: [],
     policies: rows.filter((row) => covered.has(row.objectRef)),
   };
   const exposure = Object.fromEntries(

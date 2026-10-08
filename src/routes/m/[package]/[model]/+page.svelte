@@ -9,6 +9,7 @@ import { activeForms } from '$lib/forms/active.ts';
 import { PRODUCT } from '$lib/forms/stock.ts';
 import { appHref } from '$lib/planner/app.svelte.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
+import { FEATURE_SECTION } from '$lib/recipes/features.ts';
 import { recipeNav, recipes, sectionId } from '$lib/recipes/index.ts';
 import { navSectionOf } from '$lib/recipes/sections.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
@@ -44,8 +45,17 @@ const iconLabel = $derived(
 // Breadcrumbs follow the app's own navigation, not catalog packages: the menu
 // section the model sits in (the user's renamed label wins) and its menu label.
 const navCrumb = $derived.by(() => {
+  if (!catalogModel) return undefined;
   const recipe = recipesWithModel.find((r) => recipeState.has(r.id));
-  if (!recipe || !catalogModel) return undefined;
+  if (!recipe) {
+    if (!recipeState.hasFeature(catalogModel.id)) return undefined;
+    const renamed =
+      blueprintStore.layout?.sections?.[`section:${FEATURE_SECTION.id}`]?.label;
+    return {
+      section: renamed || FEATURE_SECTION.label,
+      label: humanize(catalogModel.name),
+    };
+  }
   const section = navSectionOf(recipe);
   const entry = recipeNav(recipe).find((e) => e.model.id === catalogModel.id);
   const renamed =
@@ -72,6 +82,7 @@ const helpAnchor = $derived.by(() => {
 });
 const inApp = $derived(
   selection.has(data.packageId) ||
+    (catalogModel ? recipeState.hasFeature(catalogModel.id) : false) ||
     recipesWithModel.some((recipe) => recipeState.has(recipe.id)),
 );
 </script>

@@ -23,6 +23,7 @@ import { appHref, appQuery } from '$lib/planner/app.svelte.ts';
 import { hasAppState, withTab } from '$lib/planner/query.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
 import { plannerTab } from '$lib/planner/tab.svelte.ts';
+import { FEATURE_SECTION, featureNavItems } from '$lib/recipes/features.ts';
 import {
   buildNavSections,
   recipeNav,
@@ -115,6 +116,25 @@ const sectionOptionGroups = $derived.by(() => {
   return map;
 });
 
+// Added feature models share one suggested section after the recipes'; the
+// layout overrides it like any other. They have no per-recipe options page.
+const featureGroups: ShellNavGroup[] = $derived.by(() => {
+  const items = featureNavItems(recipeState.features).map((item) => ({
+    id: item.id,
+    href: appHref(`/m/${item.packageId}/${item.modelName}/`),
+    label: item.label,
+  }));
+  return items.length
+    ? [
+        {
+          id: `section:${FEATURE_SECTION.id}`,
+          heading: FEATURE_SECTION.label,
+          items,
+        },
+      ]
+    : [];
+});
+
 const packageGroups: ShellNavGroup[] = $derived(
   selection.ids.flatMap((id) => {
     const pkg = getPackage(id);
@@ -142,6 +162,7 @@ const packageGroups: ShellNavGroup[] = $derived(
 
 const navGroups: ShellNavGroup[] = $derived([
   ...recipeGroups,
+  ...featureGroups,
   ...packageGroups,
 ]);
 

@@ -37,6 +37,20 @@ class RecipeState {
   ids = $state<string[]>([]);
   rows = $state<FieldPolicyRow[]>([]);
   narrowed = $state<Record<string, ExposureSurface[]>>({});
+  /** Added feature models (qualified names): models no recipe covers. */
+  features = $state<string[]>([]);
+
+  hasFeature(id: string): boolean {
+    return this.features.includes(id);
+  }
+
+  addFeature(id: string): void {
+    if (!this.hasFeature(id)) this.features = [...this.features, id].sort();
+  }
+
+  removeFeature(id: string): void {
+    this.features = this.features.filter((f) => f !== id);
+  }
 
   has(id: string): boolean {
     return this.ids.includes(id);
@@ -69,6 +83,7 @@ class RecipeState {
     this.ids = [];
     this.rows = [];
     this.narrowed = {};
+    this.features = [];
   }
 
   /** Drop options for models no added recipe covers any more. */
@@ -127,7 +142,10 @@ class RecipeState {
   }
 
   /** The recipes and options as blueprint fields, in a stable order. */
-  snapshot(): Pick<Blueprint, 'recipes' | 'policies' | 'exposure'> {
+  snapshot(): Pick<
+    Blueprint,
+    'recipes' | 'features' | 'policies' | 'exposure'
+  > {
     const policies = [...this.rows].sort(
       (a, b) =>
         a.objectRef.localeCompare(b.objectRef) ||
@@ -139,8 +157,12 @@ class RecipeState {
         .filter((ref) => this.narrowed[ref].length)
         .map((ref) => [ref, [...this.narrowed[ref]].sort()]),
     );
-    const out: Pick<Blueprint, 'recipes' | 'policies' | 'exposure'> = {
+    const out: Pick<
+      Blueprint,
+      'recipes' | 'features' | 'policies' | 'exposure'
+    > = {
       recipes: [...this.ids].sort(),
+      features: [...this.features].sort(),
       policies: policies.map((row) => ({ ...row })),
     };
     if (Object.keys(exposure).length) out.exposure = exposure;
@@ -148,8 +170,14 @@ class RecipeState {
   }
 
   /** Replace everything from a validated blueprint. */
-  load(blueprint: Pick<Blueprint, 'recipes' | 'policies' | 'exposure'>): void {
+  load(
+    blueprint: Pick<
+      Blueprint,
+      'recipes' | 'features' | 'policies' | 'exposure'
+    >,
+  ): void {
     this.ids = withRequirements(blueprint.recipes, recipesById);
+    this.features = [...new Set(blueprint.features)].sort();
     this.rows = blueprint.policies.map((row) => ({ ...row }));
     this.narrowed = Object.fromEntries(
       Object.entries(blueprint.exposure ?? {}).map(([ref, s]) => [ref, [...s]]),

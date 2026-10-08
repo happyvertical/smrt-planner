@@ -19,6 +19,9 @@ import {
 } from './types.ts';
 import { parseBlueprintText } from './validate.ts';
 
+/** Where the planner's AppShell keeps its own settings (panel states, sizes). */
+export const SHELL_STORAGE_KEY = 'smrt-planner:shell';
+
 export const SAVE_DELAY_MS = 300;
 
 /** `ok`: saved. `memory`: storage unavailable or refusing, working in memory. */
@@ -80,10 +83,15 @@ export class BlueprintStore {
     this.keepLegacyUrl = false;
   }
 
-  /** Back to an empty blueprint. */
+  /** Back to an empty blueprint, and the shell's own settings to defaults. */
   reset(): void {
     recipeState.clear();
     this.layout = undefined;
+    try {
+      globalThis.localStorage?.removeItem(SHELL_STORAGE_KEY);
+    } catch {
+      // Storage may be unavailable (private mode); the blueprint still resets.
+    }
     this.saveBlocked = false;
     this.keepLegacyUrl = false;
   }

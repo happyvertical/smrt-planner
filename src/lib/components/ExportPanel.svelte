@@ -47,7 +47,10 @@ function confirmImport() {
 function confirmReset() {
   blueprintStore.reset();
   confirmingReset = false;
-  notice = 'Blueprint reset.';
+  // The shell holds its settings in memory too; reload so it starts from its
+  // defaults (the blueprint is already saved empty).
+  blueprintStore.flush();
+  location.reload();
 }
 </script>
 

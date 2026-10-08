@@ -7,7 +7,10 @@ import {
 } from '@happyvertical/smrt-svelte/workspace';
 import { afterNavigate, replaceState } from '$app/navigation';
 import { page } from '$app/state';
-import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
+import {
+  blueprintStore,
+  SHELL_STORAGE_KEY,
+} from '$lib/blueprint/store.svelte.ts';
 import { exposedModels, getPackage } from '$lib/catalog/index.ts';
 import BrowserAssistant from '$lib/components/BrowserAssistant.svelte';
 import SectionActions from '$lib/components/SectionActions.svelte';
@@ -208,6 +211,7 @@ function flushOnHide() {
 <svelte:document onvisibilitychange={flushOnHide} />
 
 <AppShell
+  storageKey={SHELL_STORAGE_KEY}
   title="smrt planner"
   subtitle="Add recipes, watch the app assemble"
   {nav}

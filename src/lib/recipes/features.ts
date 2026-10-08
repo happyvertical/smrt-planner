@@ -1,7 +1,7 @@
 import { exposedModels, getModelByQualifiedName } from '../catalog/index.ts';
 import type { Catalog, CatalogPackage } from '../catalog/types.ts';
 import { humanize } from '../data/format.ts';
-import { isPlumbing } from './plumbing.ts';
+import { childModels, isPlumbing } from './plumbing.ts';
 import type { Recipe, RecipeNavSection } from './types.ts';
 
 /**
@@ -26,6 +26,8 @@ export interface FeatureEntry {
   /** Link tables, child records and tiny lookups; hidden unless "Show all". */
   plumbing: boolean;
   fieldNames: string[];
+  /** Humanized names of the child models that come along (line items). */
+  includes: string[];
 }
 
 /** One line for a row: the model's description, else how many fields it has. */
@@ -54,6 +56,7 @@ export function featureEntries(
         described: Boolean(model.description?.trim()),
         plumbing: isPlumbing(model),
         fieldNames: model.fields.map((f) => f.name),
+        includes: childModels(catalog, model.id).map((c) => humanize(c.name)),
       })),
   );
 }

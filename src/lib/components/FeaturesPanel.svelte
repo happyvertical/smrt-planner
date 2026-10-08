@@ -113,6 +113,9 @@ function toggle(entry: FeatureEntry, on: boolean) {
               {#if entry.plumbing}<span class="tag">plumbing</span>{/if}
             </span>
             <span class="meta">{featureSummary(entry)}</span>
+            {#if entry.includes.length}
+              <span class="includes">+ {entry.includes.join(', ')}</span>
+            {/if}
           </div>
           <Switch
             checked={on}
@@ -184,6 +187,11 @@ function toggle(entry: FeatureEntry, on: boolean) {
 
   .rows li.selected {
     background: var(--smrt-color-surface-container);
+  }
+
+  .includes {
+    color: var(--smrt-color-on-surface-variant);
+    font-size: var(--smrt-font-size-body-small, 0.75rem);
   }
 
   .icon {

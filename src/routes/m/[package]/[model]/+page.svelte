@@ -1,6 +1,6 @@
 <script lang="ts">
 import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
-import { getModel } from '$lib/catalog/index.ts';
+import { catalog, getModel } from '$lib/catalog/index.ts';
 import FormWorkspace from '$lib/components/FormWorkspace.svelte';
 import ModelWorkspace from '$lib/components/ModelWorkspace.svelte';
 import SectionIcons from '$lib/components/SectionIcons.svelte';
@@ -11,6 +11,7 @@ import { appHref } from '$lib/planner/app.svelte.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
 import { FEATURE_SECTION } from '$lib/recipes/features.ts';
 import { recipeNav, recipes, sectionId } from '$lib/recipes/index.ts';
+import { childModels } from '$lib/recipes/plumbing.ts';
 import { navSectionOf } from '$lib/recipes/sections.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
 import type { PageProps } from './$types';
@@ -80,6 +81,14 @@ const helpAnchor = $derived.by(() => {
     );
   return covering ? `${covering.id}-fields-${data.modelName}` : undefined;
 });
+// Line items and other dependent records ride along with their parent.
+const children = $derived(
+  catalogModel
+    ? childModels(catalog, catalogModel.id).map((child) =>
+        recipeState.apply(child),
+      )
+    : [],
+);
 const inApp = $derived(
   selection.has(data.packageId) ||
     (catalogModel ? recipeState.hasFeature(catalogModel.id) : false) ||
@@ -114,6 +123,10 @@ const inApp = $derived(
     {:else}
       <ModelWorkspace {model} fields={applied.fields} {forms} />
     {/if}
+
+    {#each children as child (child.model.id)}
+      <ModelWorkspace model={child.model} fields={child.fields} />
+    {/each}
   </main>
 {/if}
 

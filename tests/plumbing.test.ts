@@ -10,7 +10,7 @@ import {
   filterFeatures,
   visibleFeatures,
 } from '../src/lib/recipes/features.ts';
-import { plumbingReason } from '../src/lib/recipes/plumbing.ts';
+import { childModels, plumbingReason } from '../src/lib/recipes/plumbing.ts';
 
 const text = (name: string): CatalogField => ({
   name,
@@ -110,6 +110,7 @@ describe('visibleFeatures and search', () => {
     described: false,
     plumbing,
     fieldNames: [],
+    includes: [],
   });
   const all = [entry('Invoice', false), entry('InvoiceLineItem', true)];
 
@@ -135,6 +136,7 @@ describe('descriptions', () => {
       packageId: 'commerce',
       plumbing: false,
       fieldNames: [],
+      includes: [],
     };
     expect(
       featureSummary({
@@ -195,5 +197,32 @@ describe('generator passthrough', () => {
   it('drops excluded packages without network access', () => {
     const core = { ...raw(), packageName: '@happyvertical/smrt-core' };
     expect(assembleCatalog([core], 'r').packages).toEqual([]);
+  });
+});
+
+describe('childModels', () => {
+  const names = (id: string) =>
+    childModels(catalog, id)
+      .map((m) => m.name)
+      .sort();
+  const COMMERCE = '@happyvertical/smrt-commerce:';
+
+  it('finds line items through the STI parent', () => {
+    expect(names(`${COMMERCE}Contract`)).toContain('ContractLineItem');
+    for (const order of ['ProductionOrder', 'WholesaleOrder', 'Order']) {
+      expect(names(`${COMMERCE}${order}`)).toContain('ContractLineItem');
+    }
+  });
+
+  it('finds direct children and excludes lookups and the model itself', () => {
+    expect(names(`${COMMERCE}Invoice`)).toEqual(
+      expect.arrayContaining(['InvoiceLineItem', 'PaymentAllocation']),
+    );
+    expect(names(`${COMMERCE}Invoice`)).not.toContain('Invoice');
+    expect(names(`${COMMERCE}Vendor`)).not.toContain('Contract');
+  });
+
+  it('is empty for unknown models', () => {
+    expect(childModels(catalog, 'nope:Nope')).toEqual([]);
   });
 });

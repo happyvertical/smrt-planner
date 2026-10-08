@@ -2,6 +2,7 @@ import { exposedModels, getModelByQualifiedName } from '../catalog/index.ts';
 import type { Catalog, CatalogPackage } from '../catalog/types.ts';
 import { humanize } from '../data/format.ts';
 import { childModels, isPlumbing } from './plumbing.ts';
+import { navItemId } from './sections.ts';
 import type { Recipe, RecipeNavSection } from './types.ts';
 
 /**
@@ -108,7 +109,7 @@ export function filterFeatures(
 }
 
 export interface FeatureNavItem {
-  /** Stable layout id: `section:more:<package>:<Model>`. */
+  /** Stable layout id: `item:<package>:<Model>`. */
   id: string;
   packageId: string;
   modelName: string;
@@ -122,7 +123,7 @@ export function featureNavItems(features: readonly string[]): FeatureNavItem[] {
     if (!found?.model.exposed) return [];
     return [
       {
-        id: `section:${FEATURE_SECTION.id}:${found.pkg.id}:${found.model.name}`,
+        id: navItemId(found.pkg.id, found.model.name),
         packageId: found.pkg.id,
         modelName: found.model.name,
         label: humanize(found.model.name),

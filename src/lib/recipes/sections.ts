@@ -84,15 +84,16 @@ export function legacyNavSectionKeys(
 }
 
 /**
- * The stable layout id of a recipe's nav item: it names the section, package,
- * model and label, never the href, so a saved layout (or a cookbook's) stays
- * valid when the selection query in the hrefs changes.
+ * The stable layout id of a navigation item: `item:<package>:<Model>`, or
+ * `item:<package>:<Model>:<key>` when a model appears twice in the nav and the
+ * extra entry declares a fixed `key`. It never names the section, the label or
+ * the href, so renaming an entry, moving a recipe's suggested section or
+ * changing the selection query leaves saved layouts and cookbooks valid.
  */
-export function recipeNavItemId(
-  navSectionId: string,
+export function navItemId(
   packageId: string,
   modelName: string,
-  label: string,
+  key?: string,
 ): string {
-  return `section:${navSectionId}:${packageId}:${modelName}:${label}`;
+  return `item:${packageId}:${modelName}${key ? `:${key}` : ''}`;
 }

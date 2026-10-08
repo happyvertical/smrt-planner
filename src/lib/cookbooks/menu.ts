@@ -3,13 +3,13 @@ import { applyShellLayout } from '@happyvertical/smrt-svelte/workspace/layout';
 import type { Blueprint } from '../blueprint/types.ts';
 import { FEATURE_SECTION, featureNavItems } from '../recipes/features.ts';
 import { buildNavSections, recipeNav, recipesById } from '../recipes/index.ts';
-import { recipeNavItemId } from '../recipes/sections.ts';
+import { navItemId } from '../recipes/sections.ts';
 import type { CookbookLayout, MenuSection } from './types.ts';
 
 /**
  * The navigation a blueprint produces before its layout: one group per nav
  * section, items in recipe order, with the same stable ids the app shell uses
- * (`recipeNavItemId`), so a layout's ids line up with what the app generates.
+ * (`navItemId`), so a layout's ids line up with what the app generates.
  */
 export function blueprintNavGroups(
   blueprint: Pick<Blueprint, 'recipes' | 'features'>,
@@ -23,16 +23,11 @@ export function blueprintNavGroups(
     const items: ShellNavGroup['items'] = [];
     for (const recipe of section.recipes) {
       for (const entry of recipeNav(recipe)) {
-        const dedupe = `${entry.model.id}:${entry.label}`;
-        if (seen.has(dedupe)) continue;
-        seen.add(dedupe);
+        const id = navItemId(entry.packageId, entry.model.name, entry.key);
+        if (seen.has(id)) continue;
+        seen.add(id);
         items.push({
-          id: recipeNavItemId(
-            section.id,
-            entry.packageId,
-            entry.model.name,
-            entry.label,
-          ),
+          id,
           href: '#',
           label: entry.label,
         });

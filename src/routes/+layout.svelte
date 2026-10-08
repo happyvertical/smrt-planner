@@ -27,8 +27,8 @@ import { plannerTab } from '$lib/planner/tab.svelte.ts';
 import { FEATURE_SECTION, featureNavItems } from '$lib/recipes/features.ts';
 import {
   buildNavSections,
+  navItemId,
   recipeNav,
-  recipeNavItemId,
   recipes,
   sectionId,
 } from '$lib/recipes/index.ts';
@@ -80,18 +80,13 @@ const recipeGroups: ShellNavGroup[] = $derived.by(() => {
       const optionsLabel = `${recipe.group?.label ?? recipe.label} options`;
       let main = true;
       for (const entry of recipeNav(recipe)) {
-        const dedupe = `${entry.model.id}:${entry.label}`;
-        if (seen.has(dedupe)) continue;
-        seen.add(dedupe);
+        const id = navItemId(entry.packageId, entry.model.name, entry.key);
+        if (seen.has(id)) continue;
+        seen.add(id);
         // Stable ids keep a saved layout valid when the selection query in the
         // hrefs changes.
         items.push({
-          id: recipeNavItemId(
-            section.id,
-            entry.packageId,
-            entry.model.name,
-            entry.label,
-          ),
+          id,
           href: appHref(`/m/${entry.packageId}/${entry.model.name}/`),
           label: entry.label,
           ...(main

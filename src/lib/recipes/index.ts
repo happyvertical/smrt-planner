@@ -11,8 +11,8 @@ export type { RecipeSection } from './sections.ts';
 export {
   buildNavSections,
   legacyNavSectionKeys,
+  navItemId,
   navSectionOf,
-  recipeNavItemId,
   sectionId,
 } from './sections.ts';
 export type * from './types.ts';
@@ -64,6 +64,8 @@ export function recipePackage(recipe: Recipe): CatalogPackage | undefined {
 
 export interface RecipeNavTarget {
   label: string;
+  /** The entry's fixed id key, if the model appears twice in the nav. */
+  key?: string;
   model: CatalogModel;
   /** Catalog package id, for the `/m/<package>/<model>/` route. */
   packageId: string;
@@ -74,7 +76,14 @@ export function recipeNav(recipe: Recipe): RecipeNavTarget[] {
   return recipe.nav.flatMap((entry) => {
     const found = getModelByQualifiedName(entry.model);
     return found
-      ? [{ label: entry.label, model: found.model, packageId: found.pkg.id }]
+      ? [
+          {
+            label: entry.label,
+            ...(entry.key ? { key: entry.key } : {}),
+            model: found.model,
+            packageId: found.pkg.id,
+          },
+        ]
       : [];
   });
 }

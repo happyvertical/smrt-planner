@@ -1,5 +1,12 @@
 import type { ShellLayout } from '@happyvertical/smrt-svelte/workspace/layout';
-import { legacyNavSectionKeys, recipes } from '../recipes/index.ts';
+import type { Recipe } from '../recipes/index.ts';
+import {
+  legacyNavSectionKeys,
+  navItemId,
+  navSectionOf,
+  recipeNav,
+  recipes,
+} from '../recipes/index.ts';
 
 const PREFIX = 'section:';
 
@@ -59,5 +66,58 @@ export function migrateLegacySections(
       ]),
     );
   }
+  return next;
+}
+
+/**
+ * Old item ids were `section:<nav>:<pkg>:<Model>:<label>` (features
+ * `section:more:<pkg>:<Model>`); they are now `item:<pkg>:<Model>[:<key>]`
+ * (`navItemId`). Section ids (`section:<id>`, no further parts) are unchanged.
+ * Rewrites every id the layout holds (itemOrder, hidden, moved, items), keys
+ * and values alike. An entry declaring a `key` is matched exactly through the
+ * recipes; any other old id maps by its package and model. Idempotent (`item:`
+ * ids are left alone) and unknown ids stay as they are.
+ */
+export function migrateNavItemIds(
+  layout: ShellLayout,
+  source: readonly Recipe[] = recipes,
+): ShellLayout {
+  const keyed = new Map<string, string>();
+  for (const recipe of source) {
+    const section = navSectionOf(recipe).id;
+    for (const entry of recipeNav(recipe)) {
+      if (!entry.key) continue;
+      keyed.set(
+        `${PREFIX}${section}:${entry.packageId}:${entry.model.name}:${entry.label}`,
+        navItemId(entry.packageId, entry.model.name, entry.key),
+      );
+    }
+  }
+  const mapId = (id: string): string => {
+    const exact = keyed.get(id);
+    if (exact) return exact;
+    if (!id.startsWith(PREFIX)) return id;
+    // section : pkg : Model [: label]; a section id has no further parts.
+    const parts = id.slice(PREFIX.length).split(':');
+    if (parts.length < 3 || !parts[1] || !parts[2]) return id;
+    return navItemId(parts[1], parts[2]);
+  };
+  const unique = (ids: string[]) => [...new Set(ids)];
+  const remap = <T>(record: Record<string, T>, value: (v: T) => T) => {
+    const out: Record<string, T> = {};
+    for (const [key, v] of Object.entries(record)) {
+      const next = mapId(key);
+      if (!(next in out)) out[next] = value(v);
+    }
+    return out;
+  };
+
+  const next: ShellLayout = { ...layout };
+  if (layout.hidden) next.hidden = unique(layout.hidden.map(mapId));
+  if (layout.itemOrder) {
+    next.itemOrder = remap(layout.itemOrder, (ids) => unique(ids.map(mapId)));
+  }
+  if (layout.moved) next.moved = remap(layout.moved, mapId);
+  if (layout.items) next.items = remap(layout.items, (item) => item);
   return next;
 }

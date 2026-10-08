@@ -70,39 +70,39 @@
           ],
           "itemOrder": {
             "custom:shop": [
-              "section:sales:commerce:Order:Sales Orders",
-              "section:sales:commerce:Customer:Customers"
+              "item:commerce:Order",
+              "item:commerce:Customer"
             ],
             "custom:wholesale": [
-              "section:sales:commerce:WholesaleOrder:Wholesale Orders",
-              "section:billing:commerce:Invoice:Invoices",
-              "section:billing:commerce:Payment:Payments"
+              "item:commerce:WholesaleOrder",
+              "item:commerce:Invoice",
+              "item:commerce:Payment"
             ],
             "custom:kitchen": [
-              "section:catalog:products:Product:Products",
-              "section:catalog:inventory:StockLevel:Stock levels",
-              "section:more:commerce:ProductionOrder"
+              "item:products:Product",
+              "item:inventory:StockLevel",
+              "item:commerce:ProductionOrder"
             ],
             "custom:buying": [
-              "section:purchasing:commerce:Vendor:Vendors",
-              "section:purchasing:commerce:PurchaseOrder:Purchase Orders"
+              "item:commerce:Vendor",
+              "item:commerce:PurchaseOrder"
             ]
           },
           "hidden": [
-            "section:catalog:inventory:InventoryLocation:Locations",
-            "section:catalog:inventory:StockMovement:Stock movements"
+            "item:inventory:InventoryLocation",
+            "item:inventory:StockMovement"
           ],
           "moved": {
-            "section:sales:commerce:Order:Sales Orders": "custom:shop",
-            "section:sales:commerce:Customer:Customers": "custom:shop",
-            "section:sales:commerce:WholesaleOrder:Wholesale Orders": "custom:wholesale",
-            "section:billing:commerce:Invoice:Invoices": "custom:wholesale",
-            "section:billing:commerce:Payment:Payments": "custom:wholesale",
-            "section:catalog:products:Product:Products": "custom:kitchen",
-            "section:catalog:inventory:StockLevel:Stock levels": "custom:kitchen",
-            "section:more:commerce:ProductionOrder": "custom:kitchen",
-            "section:purchasing:commerce:Vendor:Vendors": "custom:buying",
-            "section:purchasing:commerce:PurchaseOrder:Purchase Orders": "custom:buying"
+            "item:commerce:Order": "custom:shop",
+            "item:commerce:Customer": "custom:shop",
+            "item:commerce:WholesaleOrder": "custom:wholesale",
+            "item:commerce:Invoice": "custom:wholesale",
+            "item:commerce:Payment": "custom:wholesale",
+            "item:products:Product": "custom:kitchen",
+            "item:inventory:StockLevel": "custom:kitchen",
+            "item:commerce:ProductionOrder": "custom:kitchen",
+            "item:commerce:Vendor": "custom:buying",
+            "item:commerce:PurchaseOrder": "custom:buying"
           },
           "customSections": [
             {
@@ -123,19 +123,19 @@
             }
           ],
           "items": {
-            "section:sales:commerce:Order:Sales Orders": {
+            "item:commerce:Order": {
               "label": "Orders"
             },
-            "section:sales:commerce:WholesaleOrder:Wholesale Orders": {
+            "item:commerce:WholesaleOrder": {
               "label": "Cafe orders"
             },
-            "section:catalog:inventory:StockLevel:Stock levels": {
+            "item:inventory:StockLevel": {
               "label": "Ingredients"
             },
-            "section:more:commerce:ProductionOrder": {
+            "item:commerce:ProductionOrder": {
               "label": "Batches"
             },
-            "section:purchasing:commerce:Vendor:Vendors": {
+            "item:commerce:Vendor": {
               "label": "Suppliers"
             }
           }
@@ -223,42 +223,42 @@
           ],
           "itemOrder": {
             "custom:jobs": [
-              "section:sales:commerce:Estimate:Estimates",
-              "section:sales:commerce:Order:Sales Orders",
-              "section:sales:commerce:Customer:Customers"
+              "item:commerce:Estimate",
+              "item:commerce:Order",
+              "item:commerce:Customer"
             ],
             "custom:parts": [
-              "section:catalog:products:Product:Products",
-              "section:catalog:inventory:StockLevel:Stock levels",
-              "section:purchasing:commerce:Vendor:Vendors",
-              "section:purchasing:commerce:PurchaseOrder:Purchase Orders"
+              "item:products:Product",
+              "item:inventory:StockLevel",
+              "item:commerce:Vendor",
+              "item:commerce:PurchaseOrder"
             ],
             "custom:billing": [
-              "section:billing:commerce:Invoice:Invoices",
-              "section:billing:commerce:Payment:Payments"
+              "item:commerce:Invoice",
+              "item:commerce:Payment"
             ],
             "custom:schedule": [
-              "section:calendar:events:Event:Events",
-              "section:calendar:events:EventType:Event Types"
+              "item:events:Event",
+              "item:events:EventType"
             ]
           },
           "hidden": [
-            "section:calendar:events:EventSeries:Event Series",
-            "section:catalog:inventory:InventoryLocation:Locations",
-            "section:catalog:inventory:StockMovement:Stock movements"
+            "item:events:EventSeries",
+            "item:inventory:InventoryLocation",
+            "item:inventory:StockMovement"
           ],
           "moved": {
-            "section:sales:commerce:Estimate:Estimates": "custom:jobs",
-            "section:sales:commerce:Order:Sales Orders": "custom:jobs",
-            "section:sales:commerce:Customer:Customers": "custom:jobs",
-            "section:catalog:products:Product:Products": "custom:parts",
-            "section:catalog:inventory:StockLevel:Stock levels": "custom:parts",
-            "section:purchasing:commerce:Vendor:Vendors": "custom:parts",
-            "section:purchasing:commerce:PurchaseOrder:Purchase Orders": "custom:parts",
-            "section:billing:commerce:Invoice:Invoices": "custom:billing",
-            "section:billing:commerce:Payment:Payments": "custom:billing",
-            "section:calendar:events:Event:Events": "custom:schedule",
-            "section:calendar:events:EventType:Event Types": "custom:schedule"
+            "item:commerce:Estimate": "custom:jobs",
+            "item:commerce:Order": "custom:jobs",
+            "item:commerce:Customer": "custom:jobs",
+            "item:products:Product": "custom:parts",
+            "item:inventory:StockLevel": "custom:parts",
+            "item:commerce:Vendor": "custom:parts",
+            "item:commerce:PurchaseOrder": "custom:parts",
+            "item:commerce:Invoice": "custom:billing",
+            "item:commerce:Payment": "custom:billing",
+            "item:events:Event": "custom:schedule",
+            "item:events:EventType": "custom:schedule"
           },
           "customSections": [
             {
@@ -279,28 +279,28 @@
             }
           ],
           "items": {
-            "section:sales:commerce:Estimate:Estimates": {
+            "item:commerce:Estimate": {
               "label": "Quotes"
             },
-            "section:sales:commerce:Order:Sales Orders": {
+            "item:commerce:Order": {
               "label": "Work orders"
             },
-            "section:catalog:products:Product:Products": {
+            "item:products:Product": {
               "label": "Parts"
             },
-            "section:catalog:inventory:StockLevel:Stock levels": {
+            "item:inventory:StockLevel": {
               "label": "Parts on hand"
             },
-            "section:purchasing:commerce:Vendor:Vendors": {
+            "item:commerce:Vendor": {
               "label": "Suppliers"
             },
-            "section:purchasing:commerce:PurchaseOrder:Purchase Orders": {
+            "item:commerce:PurchaseOrder": {
               "label": "Parts orders"
             },
-            "section:calendar:events:Event:Events": {
+            "item:events:Event": {
               "label": "Appointments"
             },
-            "section:calendar:events:EventType:Event Types": {
+            "item:events:EventType": {
               "label": "Appointment types"
             }
           }
@@ -376,47 +376,47 @@
           ],
           "itemOrder": {
             "custom:jobs": [
-              "section:projects:projects:Project:Projects",
-              "section:sales:commerce:Customer:Customers",
-              "section:sales:commerce:Estimate:Estimates",
-              "section:agreements:commerce:Agreement:Agreements"
+              "item:projects:Project",
+              "item:commerce:Customer",
+              "item:commerce:Estimate",
+              "item:commerce:Agreement"
             ],
             "custom:material": [
-              "section:catalog:products:Product:Products",
-              "section:catalog:inventory:StockLevel:Stock levels",
-              "section:purchasing:commerce:Vendor:Vendors",
-              "section:purchasing:commerce:PurchaseOrder:Purchase Orders"
+              "item:products:Product",
+              "item:inventory:StockLevel",
+              "item:commerce:Vendor",
+              "item:commerce:PurchaseOrder"
             ],
             "custom:billing": [
-              "section:billing:commerce:Invoice:Invoices",
-              "section:billing:commerce:Payment:Payments"
+              "item:commerce:Invoice",
+              "item:commerce:Payment"
             ],
             "custom:schedule": [
-              "section:calendar:events:Event:Events",
-              "section:calendar:events:EventType:Event Types"
+              "item:events:Event",
+              "item:events:EventType"
             ]
           },
           "hidden": [
-            "section:agreements:commerce:Contract:All contracts",
-            "section:calendar:events:EventSeries:Event Series",
-            "section:catalog:inventory:InventoryLocation:Locations",
-            "section:catalog:inventory:StockMovement:Stock movements",
-            "section:projects:projects:Issue:Issues",
-            "section:projects:projects:Label:Labels"
+            "item:commerce:Contract",
+            "item:events:EventSeries",
+            "item:inventory:InventoryLocation",
+            "item:inventory:StockMovement",
+            "item:projects:Issue",
+            "item:projects:Label"
           ],
           "moved": {
-            "section:projects:projects:Project:Projects": "custom:jobs",
-            "section:sales:commerce:Customer:Customers": "custom:jobs",
-            "section:sales:commerce:Estimate:Estimates": "custom:jobs",
-            "section:agreements:commerce:Agreement:Agreements": "custom:jobs",
-            "section:catalog:products:Product:Products": "custom:material",
-            "section:catalog:inventory:StockLevel:Stock levels": "custom:material",
-            "section:purchasing:commerce:Vendor:Vendors": "custom:material",
-            "section:purchasing:commerce:PurchaseOrder:Purchase Orders": "custom:material",
-            "section:billing:commerce:Invoice:Invoices": "custom:billing",
-            "section:billing:commerce:Payment:Payments": "custom:billing",
-            "section:calendar:events:Event:Events": "custom:schedule",
-            "section:calendar:events:EventType:Event Types": "custom:schedule"
+            "item:projects:Project": "custom:jobs",
+            "item:commerce:Customer": "custom:jobs",
+            "item:commerce:Estimate": "custom:jobs",
+            "item:commerce:Agreement": "custom:jobs",
+            "item:products:Product": "custom:material",
+            "item:inventory:StockLevel": "custom:material",
+            "item:commerce:Vendor": "custom:material",
+            "item:commerce:PurchaseOrder": "custom:material",
+            "item:commerce:Invoice": "custom:billing",
+            "item:commerce:Payment": "custom:billing",
+            "item:events:Event": "custom:schedule",
+            "item:events:EventType": "custom:schedule"
           },
           "customSections": [
             {
@@ -437,28 +437,28 @@
             }
           ],
           "items": {
-            "section:projects:projects:Project:Projects": {
+            "item:projects:Project": {
               "label": "Jobs"
             },
-            "section:sales:commerce:Estimate:Estimates": {
+            "item:commerce:Estimate": {
               "label": "Quotes"
             },
-            "section:catalog:products:Product:Products": {
+            "item:products:Product": {
               "label": "Materials"
             },
-            "section:catalog:inventory:StockLevel:Stock levels": {
+            "item:inventory:StockLevel": {
               "label": "Material on hand"
             },
-            "section:purchasing:commerce:Vendor:Vendors": {
+            "item:commerce:Vendor": {
               "label": "Suppliers"
             },
-            "section:purchasing:commerce:PurchaseOrder:Purchase Orders": {
+            "item:commerce:PurchaseOrder": {
               "label": "Material orders"
             },
-            "section:calendar:events:Event:Events": {
+            "item:events:Event": {
               "label": "Site visits"
             },
-            "section:calendar:events:EventType:Event Types": {
+            "item:events:EventType": {
               "label": "Visit types"
             }
           }
@@ -524,38 +524,38 @@
           ],
           "itemOrder": {
             "custom:classes": [
-              "section:calendar:events:Event:Events",
-              "section:calendar:events:EventSeries:Event Series",
-              "section:calendar:events:EventType:Event Types"
+              "item:events:Event",
+              "item:events:EventSeries",
+              "item:events:EventType"
             ],
             "custom:members": [
-              "section:sales:commerce:Customer:Customers",
-              "section:agreements:commerce:Agreement:Agreements"
+              "item:commerce:Customer",
+              "item:commerce:Agreement"
             ],
             "custom:shop": [
-              "section:catalog:products:Product:Products",
-              "section:catalog:inventory:StockLevel:Stock levels"
+              "item:products:Product",
+              "item:inventory:StockLevel"
             ],
             "custom:billing": [
-              "section:billing:commerce:Invoice:Invoices",
-              "section:billing:commerce:Payment:Payments"
+              "item:commerce:Invoice",
+              "item:commerce:Payment"
             ]
           },
           "hidden": [
-            "section:agreements:commerce:Contract:All contracts",
-            "section:catalog:inventory:InventoryLocation:Locations",
-            "section:catalog:inventory:StockMovement:Stock movements"
+            "item:commerce:Contract",
+            "item:inventory:InventoryLocation",
+            "item:inventory:StockMovement"
           ],
           "moved": {
-            "section:calendar:events:Event:Events": "custom:classes",
-            "section:calendar:events:EventSeries:Event Series": "custom:classes",
-            "section:calendar:events:EventType:Event Types": "custom:classes",
-            "section:sales:commerce:Customer:Customers": "custom:members",
-            "section:agreements:commerce:Agreement:Agreements": "custom:members",
-            "section:catalog:products:Product:Products": "custom:shop",
-            "section:catalog:inventory:StockLevel:Stock levels": "custom:shop",
-            "section:billing:commerce:Invoice:Invoices": "custom:billing",
-            "section:billing:commerce:Payment:Payments": "custom:billing"
+            "item:events:Event": "custom:classes",
+            "item:events:EventSeries": "custom:classes",
+            "item:events:EventType": "custom:classes",
+            "item:commerce:Customer": "custom:members",
+            "item:commerce:Agreement": "custom:members",
+            "item:products:Product": "custom:shop",
+            "item:inventory:StockLevel": "custom:shop",
+            "item:commerce:Invoice": "custom:billing",
+            "item:commerce:Payment": "custom:billing"
           },
           "customSections": [
             {
@@ -576,22 +576,22 @@
             }
           ],
           "items": {
-            "section:calendar:events:Event:Events": {
+            "item:events:Event": {
               "label": "Classes"
             },
-            "section:calendar:events:EventSeries:Event Series": {
+            "item:events:EventSeries": {
               "label": "Class series"
             },
-            "section:calendar:events:EventType:Event Types": {
+            "item:events:EventType": {
               "label": "Class types"
             },
-            "section:sales:commerce:Customer:Customers": {
+            "item:commerce:Customer": {
               "label": "Members"
             },
-            "section:agreements:commerce:Agreement:Agreements": {
+            "item:commerce:Agreement": {
               "label": "Memberships"
             },
-            "section:catalog:inventory:StockLevel:Stock levels": {
+            "item:inventory:StockLevel": {
               "label": "Stock"
             }
           }

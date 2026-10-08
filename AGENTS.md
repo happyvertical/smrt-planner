@@ -57,8 +57,12 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   records default to). Menu words come from `layout.customSections` (sections) and
   `layout.items[<navItemId>].label` (entries; smrt-svelte renders it once its build
   carries `items`, `CookbookLayout` in `types.ts` is the local type until then);
-  nav item ids are `recipeNavItemId` (`section:<nav>:<pkg>:<Model>:<label>`, features
-  `section:more:<pkg>:<Model>`). Defaults are app-scope `defaultValue` policy rows
+  nav item ids are `navItemId` (`item:<pkg>:<Model>`, recipes and features alike; a model
+  that appears twice in the nav gives the extra `nav` entry a fixed `key` -> `item:<pkg>:<Model>:<key>`,
+  never derived from the label). Ids never name a section or label, so renames and
+  suggested-section moves keep saved layouts and cookbooks valid; `migrateNavItemIds`
+  (`blueprint/migrate.ts`, run by `parseBlueprint`) rewrites the old `section:...` item
+  ids; `tests/nav-ids.test.ts` fails on duplicate ids. Defaults are app-scope `defaultValue` policy rows
   (`terms`, `paymentTerms`, `currency`, line-item `taxRate`), written only where the
   catalog default differs, plus `terms` and `paymentTerms` always. `menu.ts` previews
   a blueprint's menu (same `applyShellLayout`), `apply.ts` replaces the blueprint

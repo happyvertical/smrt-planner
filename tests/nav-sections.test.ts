@@ -83,15 +83,15 @@ describe('migrateLegacySections', () => {
           'section:commerce.customers',
         ],
         itemOrder: {
-          'section:commerce.customers': ['section:commerce.customers:p:M:A'],
-          'section:commerce.sales': ['section:commerce.sales:p:M:B'],
+          'section:commerce.customers': ['section:commerce.customers:p:MA:A'],
+          'section:commerce.sales': ['section:commerce.sales:p:MB:B'],
         },
         hidden: [
           'section:commerce.vendors',
-          'section:products:p:M:Hid',
+          'section:products:p:MH:Hid',
           'plain',
         ],
-        moved: { 'section:products:p:M:X': 'section:commerce.sales' },
+        moved: { 'section:products:p:MX:X': 'section:commerce.sales' },
         panels: { left: { visible: false } },
       },
       keys,
@@ -100,10 +100,10 @@ describe('migrateLegacySections', () => {
       version: 1,
       sectionOrder: ['section:catalog', 'section:sales'],
       itemOrder: {
-        'section:sales': ['section:sales:p:M:A', 'section:sales:p:M:B'],
+        'section:sales': ['section:sales:p:MA:A', 'section:sales:p:MB:B'],
       },
-      hidden: ['section:catalog:p:M:Hid', 'plain'],
-      moved: { 'section:catalog:p:M:X': 'section:sales' },
+      hidden: ['section:catalog:p:MH:Hid', 'plain'],
+      moved: { 'section:catalog:p:MX:X': 'section:sales' },
       panels: { left: { visible: false } },
     });
   });

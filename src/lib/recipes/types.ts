@@ -42,6 +42,11 @@ export interface RecipeNavEntry {
   label: string;
   /** Qualified model name, `@scope/pkg:Class`. */
   model: string;
+  /**
+   * Fixed key making this entry's layout id `item:<pkg>:<Model>:<key>`. Only
+   * for a model that appears twice in the nav; never derived from the label.
+   */
+  key?: string;
 }
 
 /**

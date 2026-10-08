@@ -130,7 +130,7 @@ describe('feature nav section', () => {
     expect(FEATURE_SECTION).toEqual({ id: 'more', label: 'More' });
     const items = featureNavItems(pick.map((e) => e.id));
     expect(items.map((i) => i.id)).toEqual(
-      pick.map((e) => `section:more:${e.packageId}:${e.name}`),
+      pick.map((e) => `item:${e.packageId}:${e.name}`),
     );
     expect(items[0].label).toBe(pick[0].label);
   });

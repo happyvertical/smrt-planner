@@ -87,7 +87,12 @@ describe('cookbook data', () => {
       ...(layout.hidden ?? []),
     ]);
     const left = [...itemIds].filter((id) => !placed.has(id));
-    expect(left.every((id) => id.startsWith('section:accounting:'))).toBe(true);
+    const accounting = new Set(
+      groups
+        .filter((g) => g.id === 'section:accounting')
+        .flatMap((g) => g.items.map((i) => i.id ?? i.href)),
+    );
+    expect(left.every((id) => accounting.has(id))).toBe(true);
   });
 
   it.each(

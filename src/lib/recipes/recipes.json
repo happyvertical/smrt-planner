@@ -150,7 +150,8 @@
         "procurement"
       ],
       "models": [
-        "@happyvertical/smrt-commerce:PurchaseOrder"
+        "@happyvertical/smrt-commerce:PurchaseOrder",
+        "@happyvertical/smrt-commerce:ContractLineItem"
       ],
       "nav": [
         {
@@ -178,6 +179,28 @@
               "order": 1
             }
           }
+        },
+        "@happyvertical/smrt-commerce:ContractLineItem": {
+          "fields": {
+            "sku": {
+              "visibility": "hidden"
+            },
+            "startDate": {
+              "visibility": "hidden"
+            },
+            "endDate": {
+              "visibility": "hidden"
+            },
+            "billingPeriod": {
+              "visibility": "hidden"
+            },
+            "sortOrder": {
+              "visibility": "hidden"
+            },
+            "discount": {
+              "visibility": "hidden"
+            }
+          }
         }
       }
     },
@@ -195,7 +218,8 @@
         "customer orders"
       ],
       "models": [
-        "@happyvertical/smrt-commerce:Order"
+        "@happyvertical/smrt-commerce:Order",
+        "@happyvertical/smrt-commerce:ContractLineItem"
       ],
       "nav": [
         {
@@ -221,6 +245,28 @@
             "customerId": {
               "label": "Customer",
               "order": 1
+            }
+          }
+        },
+        "@happyvertical/smrt-commerce:ContractLineItem": {
+          "fields": {
+            "sku": {
+              "visibility": "hidden"
+            },
+            "startDate": {
+              "visibility": "hidden"
+            },
+            "endDate": {
+              "visibility": "hidden"
+            },
+            "billingPeriod": {
+              "visibility": "hidden"
+            },
+            "sortOrder": {
+              "visibility": "hidden"
+            },
+            "discount": {
+              "visibility": "hidden"
             }
           }
         }
@@ -376,7 +422,8 @@
       ],
       "models": [
         "@happyvertical/smrt-inventory:StockLevel",
-        "@happyvertical/smrt-inventory:InventoryLocation"
+        "@happyvertical/smrt-inventory:InventoryLocation",
+        "@happyvertical/smrt-inventory:StockMovement"
       ],
       "nav": [
         {
@@ -386,6 +433,10 @@
         {
           "label": "Locations",
           "model": "@happyvertical/smrt-inventory:InventoryLocation"
+        },
+        {
+          "label": "Stock movements",
+          "model": "@happyvertical/smrt-inventory:StockMovement"
         }
       ],
       "requires": [],
@@ -503,6 +554,19 @@
               "visibility": "hidden"
             },
             "active": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-inventory:StockMovement": {
+          "fields": {
+            "sourceType": {
+              "visibility": "hidden"
+            },
+            "sourceId": {
+              "visibility": "hidden"
+            },
+            "actorProfileId": {
               "visibility": "hidden"
             }
           }
@@ -734,6 +798,1006 @@
           }
         }
       }
+    },
+    {
+      "id": "commerce.estimates",
+      "section": {
+        "id": "sales",
+        "label": "Sales"
+      },
+      "label": "Estimates",
+      "summary": "Send customers a price quote before they commit.",
+      "synonyms": [
+        "quotes",
+        "quotations",
+        "proposals",
+        "bids"
+      ],
+      "models": [
+        "@happyvertical/smrt-commerce:Estimate",
+        "@happyvertical/smrt-commerce:ContractLineItem"
+      ],
+      "nav": [
+        {
+          "label": "Estimates",
+          "model": "@happyvertical/smrt-commerce:Estimate"
+        }
+      ],
+      "requires": [
+        "commerce.customers"
+      ],
+      "options": {
+        "@happyvertical/smrt-commerce:Estimate": {
+          "fields": {
+            "contractType": {
+              "default": "estimate",
+              "visibility": "hidden",
+              "locked": true
+            },
+            "vendorId": {
+              "visibility": "hidden",
+              "locked": true
+            },
+            "customerId": {
+              "label": "Customer",
+              "order": 1
+            }
+          }
+        },
+        "@happyvertical/smrt-commerce:ContractLineItem": {
+          "fields": {
+            "sku": {
+              "visibility": "hidden"
+            },
+            "startDate": {
+              "visibility": "hidden"
+            },
+            "endDate": {
+              "visibility": "hidden"
+            },
+            "billingPeriod": {
+              "visibility": "hidden"
+            },
+            "sortOrder": {
+              "visibility": "hidden"
+            },
+            "discount": {
+              "visibility": "hidden"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "commerce.wholesale",
+      "section": {
+        "id": "sales",
+        "label": "Sales"
+      },
+      "label": "Wholesale orders",
+      "summary": "Take bulk orders from trade customers.",
+      "synonyms": [
+        "bulk orders",
+        "trade orders",
+        "b2b"
+      ],
+      "models": [
+        "@happyvertical/smrt-commerce:WholesaleOrder",
+        "@happyvertical/smrt-commerce:ContractLineItem"
+      ],
+      "nav": [
+        {
+          "label": "Wholesale Orders",
+          "model": "@happyvertical/smrt-commerce:WholesaleOrder"
+        }
+      ],
+      "requires": [
+        "commerce.customers"
+      ],
+      "options": {
+        "@happyvertical/smrt-commerce:WholesaleOrder": {
+          "fields": {
+            "contractType": {
+              "default": "wholesale_order",
+              "visibility": "hidden",
+              "locked": true
+            },
+            "vendorId": {
+              "visibility": "hidden",
+              "locked": true
+            },
+            "customerId": {
+              "label": "Customer",
+              "order": 1
+            }
+          }
+        },
+        "@happyvertical/smrt-commerce:ContractLineItem": {
+          "fields": {
+            "sku": {
+              "visibility": "hidden"
+            },
+            "startDate": {
+              "visibility": "hidden"
+            },
+            "endDate": {
+              "visibility": "hidden"
+            },
+            "billingPeriod": {
+              "visibility": "hidden"
+            },
+            "sortOrder": {
+              "visibility": "hidden"
+            },
+            "discount": {
+              "visibility": "hidden"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "commerce.invoicing",
+      "group": {
+        "id": "billing",
+        "label": "Billing & shipping",
+        "summary": "Invoice your customers, record what they pay and ship what they ordered."
+      },
+      "section": {
+        "id": "billing",
+        "label": "Billing"
+      },
+      "label": "Invoicing",
+      "summary": "Bill customers and record the payments that come in.",
+      "synonyms": [
+        "invoices",
+        "billing",
+        "payments",
+        "receivables"
+      ],
+      "models": [
+        "@happyvertical/smrt-commerce:Invoice",
+        "@happyvertical/smrt-commerce:InvoiceLineItem",
+        "@happyvertical/smrt-commerce:Payment",
+        "@happyvertical/smrt-commerce:PaymentAllocation"
+      ],
+      "nav": [
+        {
+          "label": "Invoices",
+          "model": "@happyvertical/smrt-commerce:Invoice"
+        },
+        {
+          "label": "Payments",
+          "model": "@happyvertical/smrt-commerce:Payment"
+        }
+      ],
+      "requires": [
+        "commerce.customers"
+      ],
+      "options": {
+        "@happyvertical/smrt-commerce:Invoice": {
+          "fields": {
+            "providerTaxAmount": {
+              "visibility": "hidden"
+            },
+            "arJournalId": {
+              "visibility": "hidden"
+            },
+            "revenueJournalId": {
+              "visibility": "hidden"
+            },
+            "externalId": {
+              "visibility": "hidden"
+            },
+            "customerExternalId": {
+              "visibility": "hidden"
+            },
+            "externalProvider": {
+              "visibility": "hidden"
+            },
+            "syncedAt": {
+              "visibility": "hidden"
+            },
+            "collectionMethod": {
+              "visibility": "hidden"
+            },
+            "sentAt": {
+              "visibility": "hidden"
+            },
+            "viewedAt": {
+              "visibility": "hidden"
+            },
+            "remindersSent": {
+              "visibility": "hidden"
+            },
+            "lastReminderAt": {
+              "visibility": "hidden"
+            },
+            "reference": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-commerce:InvoiceLineItem": {
+          "fields": {
+            "invoiceEditorStateJson": {
+              "visibility": "hidden"
+            },
+            "sourceType": {
+              "visibility": "hidden"
+            },
+            "sourceId": {
+              "visibility": "hidden"
+            },
+            "periodStart": {
+              "visibility": "hidden"
+            },
+            "periodEnd": {
+              "visibility": "hidden"
+            },
+            "revenueAccountId": {
+              "visibility": "hidden"
+            },
+            "sortOrder": {
+              "visibility": "hidden"
+            },
+            "sku": {
+              "visibility": "hidden"
+            },
+            "discount": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-commerce:Payment": {
+          "fields": {
+            "journalId": {
+              "visibility": "hidden"
+            },
+            "externalId": {
+              "visibility": "hidden"
+            },
+            "externalProvider": {
+              "visibility": "hidden"
+            },
+            "syncedAt": {
+              "visibility": "hidden"
+            },
+            "backendId": {
+              "visibility": "hidden"
+            },
+            "backendTxRef": {
+              "visibility": "hidden"
+            },
+            "nativeAmount": {
+              "visibility": "hidden"
+            },
+            "nativeCurrency": {
+              "visibility": "hidden"
+            },
+            "usdAtQuote": {
+              "visibility": "hidden"
+            },
+            "usdAtConfirmation": {
+              "visibility": "hidden"
+            },
+            "transactionId": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-commerce:PaymentAllocation": {
+          "fields": {
+            "allocatedBy": {
+              "visibility": "hidden"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "commerce.fulfillment",
+      "group": {
+        "id": "billing",
+        "label": "Billing & shipping",
+        "summary": "Invoice your customers, record what they pay and ship what they ordered."
+      },
+      "section": {
+        "id": "operations",
+        "label": "Operations"
+      },
+      "label": "Shipping",
+      "summary": "Pack, ship and deliver orders, with tracking.",
+      "synonyms": [
+        "fulfillment",
+        "delivery",
+        "shipments",
+        "tracking"
+      ],
+      "models": [
+        "@happyvertical/smrt-commerce:Fulfillment",
+        "@happyvertical/smrt-commerce:FulfillmentLineItem"
+      ],
+      "nav": [
+        {
+          "label": "Shipments",
+          "model": "@happyvertical/smrt-commerce:Fulfillment"
+        }
+      ],
+      "requires": [],
+      "requiresAny": [
+        [
+          "commerce.sales",
+          "commerce.wholesale"
+        ]
+      ],
+      "options": {
+        "@happyvertical/smrt-commerce:Fulfillment": {
+          "fields": {
+            "estimatedDelivery": {
+              "visibility": "hidden"
+            },
+            "shippingAddress": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-commerce:FulfillmentLineItem": {
+          "fields": {
+            "notes": {
+              "visibility": "hidden"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "commerce.agreements",
+      "group": {
+        "id": "agreements",
+        "label": "Agreements",
+        "summary": "Contracts with customers: general agreements, leases and licence sales."
+      },
+      "section": {
+        "id": "agreements",
+        "label": "Agreements"
+      },
+      "label": "General agreements",
+      "summary": "Keep signed agreements with customers, and see every contract in one list.",
+      "synonyms": [
+        "contracts",
+        "terms",
+        "deals"
+      ],
+      "models": [
+        "@happyvertical/smrt-commerce:Agreement",
+        "@happyvertical/smrt-commerce:Contract",
+        "@happyvertical/smrt-commerce:ContractLineItem"
+      ],
+      "nav": [
+        {
+          "label": "Agreements",
+          "model": "@happyvertical/smrt-commerce:Agreement"
+        },
+        {
+          "label": "All contracts",
+          "model": "@happyvertical/smrt-commerce:Contract"
+        }
+      ],
+      "requires": [
+        "commerce.customers"
+      ],
+      "options": {
+        "@happyvertical/smrt-commerce:Agreement": {
+          "fields": {
+            "contractType": {
+              "default": "agreement",
+              "visibility": "hidden",
+              "locked": true
+            },
+            "customerId": {
+              "label": "Customer",
+              "order": 1
+            },
+            "vendorId": {
+              "visibility": "hidden"
+            },
+            "subtotal": {
+              "visibility": "hidden"
+            },
+            "taxAmount": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-commerce:ContractLineItem": {
+          "fields": {
+            "sku": {
+              "visibility": "hidden"
+            },
+            "startDate": {
+              "visibility": "hidden"
+            },
+            "endDate": {
+              "visibility": "hidden"
+            },
+            "billingPeriod": {
+              "visibility": "hidden"
+            },
+            "sortOrder": {
+              "visibility": "hidden"
+            },
+            "discount": {
+              "visibility": "hidden"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "commerce.leases",
+      "group": {
+        "id": "agreements",
+        "label": "Agreements",
+        "summary": "Contracts with customers: general agreements, leases and licence sales."
+      },
+      "section": {
+        "id": "agreements",
+        "label": "Agreements"
+      },
+      "label": "Leases",
+      "summary": "Rent things out and track the term and the payments due.",
+      "synonyms": [
+        "rentals",
+        "renting",
+        "hire"
+      ],
+      "models": [
+        "@happyvertical/smrt-commerce:Lease",
+        "@happyvertical/smrt-commerce:ContractLineItem"
+      ],
+      "nav": [
+        {
+          "label": "Leases",
+          "model": "@happyvertical/smrt-commerce:Lease"
+        }
+      ],
+      "requires": [
+        "commerce.customers"
+      ],
+      "options": {
+        "@happyvertical/smrt-commerce:Lease": {
+          "fields": {
+            "contractType": {
+              "default": "lease",
+              "visibility": "hidden",
+              "locked": true
+            },
+            "customerId": {
+              "label": "Customer",
+              "order": 1
+            },
+            "vendorId": {
+              "visibility": "hidden"
+            },
+            "subtotal": {
+              "visibility": "hidden"
+            },
+            "taxAmount": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-commerce:ContractLineItem": {
+          "fields": {
+            "sku": {
+              "visibility": "hidden"
+            },
+            "startDate": {
+              "visibility": "hidden"
+            },
+            "endDate": {
+              "visibility": "hidden"
+            },
+            "billingPeriod": {
+              "visibility": "hidden"
+            },
+            "sortOrder": {
+              "visibility": "hidden"
+            },
+            "discount": {
+              "visibility": "hidden"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "commerce.licenses",
+      "group": {
+        "id": "agreements",
+        "label": "Agreements",
+        "summary": "Contracts with customers: general agreements, leases and licence sales."
+      },
+      "section": {
+        "id": "agreements",
+        "label": "Agreements"
+      },
+      "label": "Licence sales",
+      "summary": "Sell licences to software, content or other rights.",
+      "synonyms": [
+        "licenses",
+        "licensing",
+        "subscriptions"
+      ],
+      "models": [
+        "@happyvertical/smrt-commerce:LicenseSale",
+        "@happyvertical/smrt-commerce:ContractLineItem"
+      ],
+      "nav": [
+        {
+          "label": "Licence Sales",
+          "model": "@happyvertical/smrt-commerce:LicenseSale"
+        }
+      ],
+      "requires": [
+        "commerce.customers"
+      ],
+      "options": {
+        "@happyvertical/smrt-commerce:LicenseSale": {
+          "fields": {
+            "contractType": {
+              "default": "license_sale",
+              "visibility": "hidden",
+              "locked": true
+            },
+            "customerId": {
+              "label": "Customer",
+              "order": 1
+            },
+            "vendorId": {
+              "visibility": "hidden"
+            },
+            "subtotal": {
+              "visibility": "hidden"
+            },
+            "taxAmount": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-commerce:ContractLineItem": {
+          "fields": {
+            "sku": {
+              "visibility": "hidden"
+            },
+            "startDate": {
+              "visibility": "hidden"
+            },
+            "endDate": {
+              "visibility": "hidden"
+            },
+            "billingPeriod": {
+              "visibility": "hidden"
+            },
+            "sortOrder": {
+              "visibility": "hidden"
+            },
+            "discount": {
+              "visibility": "hidden"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "ledgers.bookkeeping",
+      "section": {
+        "id": "accounting",
+        "label": "Accounting"
+      },
+      "label": "Bookkeeping",
+      "summary": "Keep your books: a chart of accounts and double-entry journals.",
+      "synonyms": [
+        "accounting",
+        "ledger",
+        "general ledger",
+        "journals",
+        "chart of accounts"
+      ],
+      "models": [
+        "@happyvertical/smrt-ledgers:Account",
+        "@happyvertical/smrt-ledgers:Journal",
+        "@happyvertical/smrt-ledgers:JournalEntry"
+      ],
+      "nav": [
+        {
+          "label": "Accounts",
+          "model": "@happyvertical/smrt-ledgers:Account"
+        },
+        {
+          "label": "Journals",
+          "model": "@happyvertical/smrt-ledgers:Journal"
+        }
+      ],
+      "options": {
+        "@happyvertical/smrt-ledgers:Account": {
+          "fields": {
+            "metadata": {
+              "visibility": "hidden"
+            },
+            "parentId": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-ledgers:Journal": {
+          "fields": {
+            "sourceModule": {
+              "visibility": "hidden"
+            },
+            "sourceRef": {
+              "visibility": "hidden"
+            },
+            "voidedAt": {
+              "visibility": "hidden"
+            },
+            "voidReason": {
+              "visibility": "hidden"
+            },
+            "metadata": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-ledgers:JournalEntry": {
+          "fields": {
+            "exchangeRate": {
+              "visibility": "hidden"
+            },
+            "metadata": {
+              "visibility": "hidden"
+            }
+          }
+        }
+      },
+      "requires": []
+    },
+    {
+      "id": "projects.tracker",
+      "section": {
+        "id": "projects",
+        "label": "Projects"
+      },
+      "label": "Projects",
+      "summary": "Track projects and the issues, labels and comments inside them.",
+      "synonyms": [
+        "issues",
+        "tasks",
+        "tickets",
+        "bugs",
+        "kanban"
+      ],
+      "models": [
+        "@happyvertical/smrt-projects:Project",
+        "@happyvertical/smrt-projects:Repository",
+        "@happyvertical/smrt-projects:Issue",
+        "@happyvertical/smrt-projects:Label",
+        "@happyvertical/smrt-projects:Comment"
+      ],
+      "nav": [
+        {
+          "label": "Projects",
+          "model": "@happyvertical/smrt-projects:Project"
+        },
+        {
+          "label": "Repositories",
+          "model": "@happyvertical/smrt-projects:Repository"
+        },
+        {
+          "label": "Issues",
+          "model": "@happyvertical/smrt-projects:Issue"
+        },
+        {
+          "label": "Labels",
+          "model": "@happyvertical/smrt-projects:Label"
+        }
+      ],
+      "options": {
+        "@happyvertical/smrt-projects:Project": {
+          "fields": {
+            "projectId": {
+              "visibility": "hidden"
+            },
+            "projectNumber": {
+              "visibility": "hidden"
+            },
+            "providerType": {
+              "visibility": "hidden"
+            },
+            "tokenConfigKey": {
+              "visibility": "hidden"
+            },
+            "statuses": {
+              "visibility": "hidden"
+            },
+            "fields": {
+              "visibility": "hidden"
+            },
+            "statusFieldId": {
+              "visibility": "hidden"
+            },
+            "statusOptions": {
+              "visibility": "hidden"
+            },
+            "lastSyncedAt": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-projects:Repository": {
+          "fields": {
+            "fullName": {
+              "visibility": "hidden"
+            },
+            "baseUrl": {
+              "visibility": "hidden"
+            },
+            "tokenConfigKey": {
+              "visibility": "hidden"
+            },
+            "providerType": {
+              "visibility": "hidden"
+            },
+            "lastSyncedAt": {
+              "visibility": "hidden"
+            },
+            "defaultBranch": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-projects:Issue": {
+          "fields": {
+            "nodeId": {
+              "visibility": "hidden"
+            },
+            "originalBody": {
+              "visibility": "hidden"
+            },
+            "synthesisCount": {
+              "visibility": "hidden"
+            },
+            "lastSyncedAt": {
+              "visibility": "hidden"
+            },
+            "commentsCount": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-projects:Comment": {
+          "fields": {
+            "commentId": {
+              "visibility": "hidden"
+            },
+            "url": {
+              "visibility": "hidden"
+            }
+          }
+        }
+      },
+      "requires": []
+    },
+    {
+      "id": "events.calendar",
+      "section": {
+        "id": "calendar",
+        "label": "Calendar"
+      },
+      "label": "Events",
+      "summary": "Schedule events, group them in series and track who takes part.",
+      "synonyms": [
+        "calendar",
+        "schedule",
+        "meetings",
+        "bookings",
+        "attendees"
+      ],
+      "models": [
+        "@happyvertical/smrt-events:Event",
+        "@happyvertical/smrt-events:EventType",
+        "@happyvertical/smrt-events:EventSeries",
+        "@happyvertical/smrt-events:EventParticipant"
+      ],
+      "nav": [
+        {
+          "label": "Events",
+          "model": "@happyvertical/smrt-events:Event"
+        },
+        {
+          "label": "Event Types",
+          "model": "@happyvertical/smrt-events:EventType"
+        },
+        {
+          "label": "Event Series",
+          "model": "@happyvertical/smrt-events:EventSeries"
+        }
+      ],
+      "options": {
+        "@happyvertical/smrt-events:Event": {
+          "fields": {
+            "parentId": {
+              "visibility": "hidden"
+            },
+            "round": {
+              "visibility": "hidden"
+            },
+            "metadata": {
+              "visibility": "hidden"
+            },
+            "externalId": {
+              "visibility": "hidden"
+            },
+            "source": {
+              "visibility": "hidden"
+            },
+            "timeZone": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-events:EventType": {
+          "fields": {
+            "schema": {
+              "visibility": "hidden"
+            },
+            "participantSchema": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-events:EventSeries": {
+          "fields": {
+            "metadata": {
+              "visibility": "hidden"
+            },
+            "externalId": {
+              "visibility": "hidden"
+            },
+            "source": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-events:EventParticipant": {
+          "fields": {
+            "groupId": {
+              "visibility": "hidden"
+            },
+            "placement": {
+              "visibility": "hidden"
+            },
+            "metadata": {
+              "visibility": "hidden"
+            },
+            "externalId": {
+              "visibility": "hidden"
+            },
+            "source": {
+              "visibility": "hidden"
+            }
+          }
+        }
+      },
+      "requires": []
+    },
+    {
+      "id": "sales.pipeline",
+      "section": {
+        "id": "sales",
+        "label": "Sales"
+      },
+      "label": "Leads & pipeline",
+      "summary": "Capture leads and move them through your sales stages.",
+      "synonyms": [
+        "crm",
+        "prospects",
+        "opportunities",
+        "deals",
+        "funnel"
+      ],
+      "models": [
+        "@happyvertical/smrt-sales:Lead",
+        "@happyvertical/smrt-sales:Opportunity",
+        "@happyvertical/smrt-sales:PipelineDefinition",
+        "@happyvertical/smrt-sales:PipelineStage",
+        "@happyvertical/smrt-sales:SalesActivity"
+      ],
+      "nav": [
+        {
+          "label": "Leads",
+          "model": "@happyvertical/smrt-sales:Lead"
+        },
+        {
+          "label": "Opportunities",
+          "model": "@happyvertical/smrt-sales:Opportunity"
+        },
+        {
+          "label": "Pipelines",
+          "model": "@happyvertical/smrt-sales:PipelineDefinition"
+        }
+      ],
+      "options": {
+        "@happyvertical/smrt-sales:Lead": {
+          "fields": {
+            "profileId": {
+              "visibility": "hidden"
+            },
+            "mergedIntoId": {
+              "visibility": "hidden"
+            },
+            "sourceKind": {
+              "visibility": "hidden"
+            },
+            "sourceId": {
+              "visibility": "hidden"
+            },
+            "acquisitionContext": {
+              "visibility": "hidden"
+            },
+            "intakeRef": {
+              "visibility": "hidden"
+            },
+            "metadata": {
+              "visibility": "hidden"
+            },
+            "qualifiedAt": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-sales:Opportunity": {
+          "fields": {
+            "sourceKind": {
+              "visibility": "hidden"
+            },
+            "sourceId": {
+              "visibility": "hidden"
+            },
+            "metadata": {
+              "visibility": "hidden"
+            },
+            "outcomeReason": {
+              "visibility": "hidden"
+            },
+            "wonAt": {
+              "visibility": "hidden"
+            },
+            "lostAt": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-sales:PipelineStage": {
+          "fields": {
+            "metadata": {
+              "visibility": "hidden"
+            }
+          }
+        },
+        "@happyvertical/smrt-sales:SalesActivity": {
+          "fields": {
+            "metadata": {
+              "visibility": "hidden"
+            },
+            "actorProfileId": {
+              "visibility": "hidden"
+            }
+          }
+        }
+      },
+      "requires": []
     }
   ]
 }

@@ -78,6 +78,14 @@ describe('recipe sections', () => {
       'commerce.vendors',
       'inventory.stock',
       'products',
+      'commerce.estimates',
+      'commerce.wholesale',
+      'billing',
+      'agreements',
+      'ledgers.bookkeeping',
+      'projects.tracker',
+      'events.calendar',
+      'sales.pipeline',
     ]);
     expect(getSection('products')?.recipes.map((r) => r.id)).toEqual([
       'products.simple',

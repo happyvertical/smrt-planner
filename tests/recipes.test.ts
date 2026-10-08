@@ -79,7 +79,7 @@ const widget: CatalogModel = {
 };
 
 describe('recipes.json', () => {
-  it('has the seven recipes in declaration order, each resolving to catalog models', () => {
+  it('has the recipes in declaration order, each resolving to catalog models', () => {
     expect(recipes.map((r) => r.id)).toEqual([
       'commerce.customers',
       'commerce.purchases',
@@ -88,6 +88,17 @@ describe('recipes.json', () => {
       'inventory.stock',
       'products.simple',
       'products.clothing',
+      'commerce.estimates',
+      'commerce.wholesale',
+      'commerce.invoicing',
+      'commerce.fulfillment',
+      'commerce.agreements',
+      'commerce.leases',
+      'commerce.licenses',
+      'ledgers.bookkeeping',
+      'projects.tracker',
+      'events.calendar',
+      'sales.pipeline',
     ]);
     for (const recipe of recipes) {
       expect(recipeModels(recipe)).toHaveLength(recipe.models.length);

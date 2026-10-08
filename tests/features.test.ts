@@ -33,10 +33,17 @@ describe('feature entries', () => {
     expect(entries.some((e) => e.id === ORDER)).toBe(false);
   });
 
-  it('falls back to a field count for the description', () => {
-    expect(entries.every((e) => /^\d+ fields?$/.test(e.description))).toBe(
-      true,
+  it('uses the model description, else a field count', () => {
+    const models = new Map(
+      catalog.packages.flatMap((p) => p.models).map((m) => [m.id, m]),
     );
+    for (const e of entries) {
+      const own = models.get(e.id)?.description;
+      if (own) {
+        expect(e.described).toBe(true);
+        expect(own.startsWith(e.description)).toBe(true);
+      } else expect(e.description).toMatch(/^\d+ fields?$/);
+    }
   });
 });
 

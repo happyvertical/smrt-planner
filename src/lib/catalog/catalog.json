@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "registry": "https://npm.happyvertical.com",
+  "registry": "file:///Users/will/Work/_trees/smrt/integration",
   "packages": [
     {
       "id": "ads",
@@ -256,6 +256,7 @@
           "id": "@happyvertical/smrt-ads:AdEvent",
           "name": "AdEvent",
           "collection": "adevents",
+          "description": "AdEvent tracks ad impressions, clicks, and conversions. Events are immutable (append-only, no update/delete).",
           "fields": [
             {
               "name": "created_at",
@@ -870,6 +871,7 @@
           "id": "@happyvertical/smrt-ads:AdGroup",
           "name": "AdGroup",
           "collection": "adgroups",
+          "description": "AdGroup organizes ad creatives with targeting and budget controls.",
           "display": {
             "label": "name"
           },
@@ -1444,6 +1446,7 @@
           "id": "@happyvertical/smrt-ads:AdVariation",
           "name": "AdVariation",
           "collection": "advariations",
+          "description": "AdVariation represents a creative asset within an ad group. Supports A/B testing via weighted selection.",
           "display": {
             "label": "name"
           },
@@ -1922,6 +1925,7 @@
           "id": "@happyvertical/smrt-analytics:AnalyticsDataStream",
           "name": "AnalyticsDataStream",
           "collection": "analyticsdatastreams",
+          "description": "AnalyticsDataStream represents a data stream (web, iOS, Android) for an analytics property.",
           "fields": [
             {
               "name": "created_at",
@@ -2352,6 +2356,7 @@
           "id": "@happyvertical/smrt-analytics:AnalyticsEvent",
           "name": "AnalyticsEvent",
           "collection": "analyticsevents",
+          "description": "AnalyticsEvent represents a tracked analytics event (server-side tracking log).",
           "fields": [
             {
               "name": "created_at",
@@ -3002,6 +3007,7 @@
           "id": "@happyvertical/smrt-analytics:AnalyticsProperty",
           "name": "AnalyticsProperty",
           "collection": "analyticsproperties",
+          "description": "AnalyticsProperty represents an analytics property (GA4 property, Plausible site, or Matomo site).",
           "display": {
             "label": "name"
           },
@@ -3470,6 +3476,7 @@
           "id": "@happyvertical/smrt-analytics:AnalyticsReport",
           "name": "AnalyticsReport",
           "collection": "analyticsreports",
+          "description": "AnalyticsReport represents a saved report configuration with optional scheduling.",
           "display": {
             "label": "name"
           },
@@ -5843,6 +5850,7 @@
           "name": "Agreement",
           "collection": "contracts",
           "extends": "@happyvertical/smrt-commerce:Contract",
+          "description": "Service or maintenance agreement",
           "fields": [
             {
               "name": "created_at",
@@ -6173,6 +6181,7 @@
           "id": "@happyvertical/smrt-commerce:BillingAccount",
           "name": "BillingAccount",
           "collection": "billingaccounts",
+          "description": "One payer's account with one seller: the commerce Customer invoices are issued to, the provider customer they are pushed to, and the payer's billing terms.",
           "display": {
             "label": "name"
           },
@@ -6274,6 +6283,7 @@
           "id": "@happyvertical/smrt-commerce:BillingLineSource",
           "name": "BillingLineSource",
           "collection": "billinglinesources",
+          "description": "A claim that one billable source — a charge, an adjustment, or a window of a flat plan — is billed on exactly one period close.",
           "fields": [
             {
               "name": "sellerTenantId",
@@ -6373,6 +6383,7 @@
           "id": "@happyvertical/smrt-commerce:BillingPaymentAttempt",
           "name": "BillingPaymentAttempt",
           "collection": "billingpaymentattempts",
+          "description": "One payment attempt on a payment rail (#3138): a short-lived provider checkout (for example a BTCPay invoice) paying a credit purchase or an issued invoice.",
           "fields": [
             {
               "name": "sellerTenantId",
@@ -6618,6 +6629,7 @@
           "id": "@happyvertical/smrt-commerce:BillingPeriodClose",
           "name": "BillingPeriodClose",
           "collection": "billingperiodcloses",
+          "description": "The idempotency anchor for one payer's invoice in one currency for one period. Its id is derived from that identity, so a retried close always resumes the same row, invoice, and provider invoice.",
           "fields": [
             {
               "name": "sellerTenantId",
@@ -6766,6 +6778,7 @@
           "name": "Cart",
           "collection": "contracts",
           "extends": "@happyvertical/smrt-commerce:Contract",
+          "description": "Transient order-in-progress for a shopper.",
           "fields": [
             {
               "name": "created_at",
@@ -7096,6 +7109,7 @@
           "id": "@happyvertical/smrt-commerce:Contract",
           "name": "Contract",
           "collection": "contracts",
+          "description": "Contract is the base class for all commercial agreements.",
           "fields": [
             {
               "name": "created_at",
@@ -7605,6 +7619,7 @@
           "id": "@happyvertical/smrt-commerce:ContractLineItem",
           "name": "ContractLineItem",
           "collection": "contractlineitems",
+          "description": "ContractLineItem represents a single line item on a contract.",
           "fields": [
             {
               "name": "created_at",
@@ -7882,6 +7897,7 @@
           "id": "@happyvertical/smrt-commerce:Customer",
           "name": "Customer",
           "collection": "customers",
+          "description": "Customer represents the customer role for a Profile.",
           "fields": [
             {
               "name": "tenantId",
@@ -8208,6 +8224,7 @@
           "name": "Estimate",
           "collection": "contracts",
           "extends": "@happyvertical/smrt-commerce:Contract",
+          "description": "Quote or proposal for a customer",
           "fields": [
             {
               "name": "created_at",
@@ -8538,6 +8555,7 @@
           "id": "@happyvertical/smrt-commerce:Fulfillment",
           "name": "Fulfillment",
           "collection": "fulfillments",
+          "description": "Fulfillment tracks the delivery or completion of contract items.",
           "fields": [
             {
               "name": "tenantId",
@@ -8963,6 +8981,7 @@
           "id": "@happyvertical/smrt-commerce:FulfillmentLineItem",
           "name": "FulfillmentLineItem",
           "collection": "fulfillmentlineitems",
+          "description": "FulfillmentLineItem tracks which contract line items are included in a specific fulfillment and how much was fulfilled.",
           "fields": [
             {
               "name": "tenantId",
@@ -9192,6 +9211,7 @@
           "id": "@happyvertical/smrt-commerce:Invoice",
           "name": "Invoice",
           "collection": "invoices",
+          "description": "Invoice represents a bill sent to a customer for goods or services.",
           "fields": [
             {
               "name": "tenantId",
@@ -9282,11 +9302,9 @@
                 "draft",
                 "sent",
                 "viewed",
-                "partial",
                 "paid",
                 "overdue",
-                "cancelled",
-                "written_off"
+                "cancelled"
               ]
             },
             {
@@ -9975,6 +9993,7 @@
           "id": "@happyvertical/smrt-commerce:InvoiceLineItem",
           "name": "InvoiceLineItem",
           "collection": "invoicelineitems",
+          "description": "InvoiceLineItem represents a single line item on an invoice.",
           "fields": [
             {
               "name": "tenantId",
@@ -10491,6 +10510,7 @@
           "name": "Lease",
           "collection": "contracts",
           "extends": "@happyvertical/smrt-commerce:Contract",
+          "description": "Rental or lease agreement",
           "fields": [
             {
               "name": "created_at",
@@ -10822,6 +10842,7 @@
           "name": "LicenseSale",
           "collection": "contracts",
           "extends": "@happyvertical/smrt-commerce:Contract",
+          "description": "Industry-neutral licensing primitive.",
           "fields": [
             {
               "name": "created_at",
@@ -11191,6 +11212,7 @@
           "name": "Order",
           "collection": "contracts",
           "extends": "@happyvertical/smrt-commerce:Contract",
+          "description": "Customer purchase order",
           "fields": [
             {
               "name": "created_at",
@@ -11521,6 +11543,7 @@
           "id": "@happyvertical/smrt-commerce:Payment",
           "name": "Payment",
           "collection": "payments",
+          "description": "Payment represents a financial transaction against a contract.",
           "fields": [
             {
               "name": "tenantId",
@@ -12097,6 +12120,7 @@
           "id": "@happyvertical/smrt-commerce:PaymentAllocation",
           "name": "PaymentAllocation",
           "collection": "paymentallocations",
+          "description": "PaymentAllocation tracks how payments are applied to invoices.",
           "fields": [
             {
               "name": "tenantId",
@@ -12421,6 +12445,7 @@
           "id": "@happyvertical/smrt-commerce:PaymentInstrument",
           "name": "PaymentInstrument",
           "collection": "paymentinstruments",
+          "description": "PaymentInstrument stores a reusable payment method a customer has saved with a payment backend (e.g. a card vaulted by Stripe), so it can be charged later without the customer present.",
           "fields": [
             {
               "name": "tenantId",
@@ -13804,6 +13829,7 @@
           "name": "ProductionOrder",
           "collection": "contracts",
           "extends": "@happyvertical/smrt-commerce:Contract",
+          "description": "Instruction to commission goods from an internal or external factory.",
           "fields": [
             {
               "name": "created_at",
@@ -14135,6 +14161,7 @@
           "name": "PurchaseOrder",
           "collection": "contracts",
           "extends": "@happyvertical/smrt-commerce:Contract",
+          "description": "Order sent to vendor/supplier",
           "fields": [
             {
               "name": "created_at",
@@ -14465,6 +14492,7 @@
           "id": "@happyvertical/smrt-commerce:Vendor",
           "name": "Vendor",
           "collection": "vendors",
+          "description": "Vendor represents the vendor/supplier role for a Profile.",
           "fields": [
             {
               "name": "tenantId",
@@ -14831,6 +14859,7 @@
           "name": "WholesaleOrder",
           "collection": "contracts",
           "extends": "@happyvertical/smrt-commerce:Contract",
+          "description": "B2B order placed by a wholesale customer.",
           "fields": [
             {
               "name": "created_at",
@@ -15178,6 +15207,7 @@
           "name": "Article",
           "collection": "contents",
           "extends": "@happyvertical/smrt-content:Content",
+          "description": "Article content type",
           "display": {
             "label": "name"
           },
@@ -15916,6 +15946,7 @@
           "id": "@happyvertical/smrt-content:Content",
           "name": "Content",
           "collection": "contents",
+          "description": "Structured content object with metadata and body text",
           "display": {
             "label": "name"
           },
@@ -18789,6 +18820,7 @@
           "name": "ContentDocument",
           "collection": "contents",
           "extends": "@happyvertical/smrt-content:Content",
+          "description": "ContentDocument content type",
           "display": {
             "label": "name"
           },
@@ -21341,6 +21373,7 @@
           "id": "@happyvertical/smrt-content:Contents",
           "name": "Contents",
           "collection": "contents",
+          "description": "Collection for managing Content objects",
           "fields": [
             {
               "name": "contentDir",
@@ -21507,6 +21540,7 @@
           "name": "Mirror",
           "collection": "contents",
           "extends": "@happyvertical/smrt-content:Content",
+          "description": "Mirror content type",
           "display": {
             "label": "name"
           },
@@ -24487,6 +24521,7 @@
           "id": "@happyvertical/smrt-expenses:Expense",
           "name": "Expense",
           "collection": "expenses",
+          "description": "A cost someone incurred.",
           "fields": [
             {
               "name": "tenantId",
@@ -24741,6 +24776,7 @@
           "id": "@happyvertical/smrt-expenses:ExpenseReceipt",
           "name": "ExpenseReceipt",
           "collection": "expensereceipts",
+          "description": "A receipt file attached to an expense.",
           "fields": [
             {
               "name": "tenantId",
@@ -27407,6 +27443,7 @@
           "id": "@happyvertical/smrt-human-resources:Employment",
           "name": "Employment",
           "collection": "employments",
+          "description": "One person's employment with a tenant: the stable record applications and payroll key on. There is one per tenant and profile; a rehire adds an EmploymentTerm to the same row.",
           "fields": [
             {
               "name": "tenantId",
@@ -27487,6 +27524,7 @@
           "id": "@happyvertical/smrt-human-resources:EmploymentChange",
           "name": "EmploymentChange",
           "collection": "employmentchanges",
+          "description": "Append-only dated change to an employment, attributed to an actor.",
           "fields": [
             {
               "name": "tenantId",
@@ -27572,6 +27610,7 @@
           "id": "@happyvertical/smrt-human-resources:EmploymentTerm",
           "name": "EmploymentTerm",
           "collection": "employmentterms",
+          "description": "One continuous period of employment. endedOn is the last day employed (inclusive); null means the term is open. \"Employed on a date\" is answered from terms, never from Employment.status.",
           "fields": [
             {
               "name": "tenantId",
@@ -27629,6 +27668,7 @@
           "id": "@happyvertical/smrt-human-resources:HeldQualification",
           "name": "HeldQualification",
           "collection": "heldqualifications",
+          "description": "A person holds a qualification. employmentId is set when the definition's scope is employment; such a row is revoked when that employment ends.",
           "fields": [
             {
               "name": "tenantId",
@@ -27736,6 +27776,7 @@
           "id": "@happyvertical/smrt-human-resources:HeldQualificationChange",
           "name": "HeldQualificationChange",
           "collection": "heldqualificationchanges",
+          "description": "Append-only dated change to a held qualification, attributed to an actor.",
           "fields": [
             {
               "name": "tenantId",
@@ -27808,6 +27849,7 @@
           "id": "@happyvertical/smrt-human-resources:Qualification",
           "name": "Qualification",
           "collection": "qualifications",
+          "description": "A qualification definition: a managed list per tenant. Other packages gate work by referencing its id (@happyvertical/smrt-human-resources:Qualification).",
           "display": {
             "label": "name"
           },
@@ -33320,6 +33362,7 @@
           "id": "@happyvertical/smrt-messages:Blacklist",
           "name": "Blacklist",
           "collection": "blacklists",
+          "description": "Block entries for email filtering",
           "fields": [
             {
               "name": "pattern",
@@ -38549,6 +38592,7 @@
           "id": "@happyvertical/smrt-messages:UserNotification",
           "name": "UserNotification",
           "collection": "usernotifications",
+          "description": "One in-app notification for one person, with its own read state.",
           "display": {
             "label": "title"
           },
@@ -38631,6 +38675,7 @@
           "id": "@happyvertical/smrt-messages:Whitelist",
           "name": "Whitelist",
           "collection": "whitelists",
+          "description": "Allow-only entries for email filtering",
           "fields": [
             {
               "name": "pattern",
@@ -39992,6 +40037,7 @@
           "id": "@happyvertical/smrt-products:Category",
           "name": "Category",
           "collection": "categories",
+          "description": "Product knowledge base category for organizing product information.",
           "display": {
             "label": "name"
           },
@@ -40435,6 +40481,7 @@
           "id": "@happyvertical/smrt-products:Product",
           "name": "Product",
           "collection": "products",
+          "description": "Product information for knowledge base queries.",
           "display": {
             "label": "name"
           },
@@ -41758,6 +41805,7 @@
           "name": "Bot",
           "collection": "profiles",
           "extends": "@happyvertical/smrt-profiles:Profile",
+          "description": "Bot profile type",
           "display": {
             "label": "name"
           },
@@ -43443,6 +43491,7 @@
           "id": "@happyvertical/smrt-profiles:OidcProfileEmailReservation",
           "name": "OidcProfileEmailReservation",
           "collection": "oidcprofileemailreservations",
+          "description": "Private database arbiter for canonical OIDC email provisioning races.",
           "fields": [
             {
               "name": "profileId",
@@ -43470,6 +43519,7 @@
           "name": "Organization",
           "collection": "profiles",
           "extends": "@happyvertical/smrt-profiles:Profile",
+          "description": "Organization profile type",
           "display": {
             "label": "name"
           },
@@ -44176,6 +44226,7 @@
           "name": "Person",
           "collection": "profiles",
           "extends": "@happyvertical/smrt-profiles:Profile",
+          "description": "Person profile type",
           "display": {
             "label": "name"
           },
@@ -47067,6 +47118,7 @@
           "id": "@happyvertical/smrt-projects:AssistanceRequest",
           "name": "AssistanceRequest",
           "collection": "assistancerequests",
+          "description": "Lossless conversational intake before support/development classification.",
           "fields": [
             {
               "name": "tenantId",
@@ -47151,6 +47203,7 @@
           "id": "@happyvertical/smrt-projects:AssistanceRequestEvent",
           "name": "AssistanceRequestEvent",
           "collection": "assistancerequestevents",
+          "description": "Append-only explanation of Assistance Request routing decisions.",
           "fields": [
             {
               "name": "tenantId",
@@ -47599,6 +47652,7 @@
           "id": "@happyvertical/smrt-projects:DevelopmentRequestWorkLink",
           "name": "DevelopmentRequestWorkLink",
           "collection": "developmentrequestworklinks",
+          "description": "Provider-neutral connection from a Development Request to canonical work.",
           "fields": [
             {
               "name": "tenantId",
@@ -48360,6 +48414,7 @@
           "id": "@happyvertical/smrt-projects:PreviewApproval",
           "name": "PreviewApproval",
           "collection": "previewapprovals",
+          "description": "Client decision state for one preview produced during delivery.",
           "fields": [
             {
               "name": "tenantId",
@@ -48929,6 +48984,7 @@
           "id": "@happyvertical/smrt-projects:ProjectDeliveryEvent",
           "name": "ProjectDeliveryEvent",
           "collection": "projectdeliveryevents",
+          "description": "Ordered, idempotent delivery update emitted by the control plane.",
           "fields": [
             {
               "name": "tenantId",
@@ -51478,6 +51534,7 @@
           "name": "SmrtPrincipalReportRefreshTask",
           "collection": "smrtprincipalreportrefreshtasks",
           "extends": "@happyvertical/smrt-reports:SmrtReportRefreshTask",
+          "description": "Worker target whose authority requirement cannot be downgraded by job args.",
           "fields": [
             {
               "name": "tenantId",
@@ -53325,6 +53382,18 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/commissions"
+            },
+            {
+              "method": "GET",
+              "path": "/commissions/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/commissions"
+            },
+            {
               "method": "POST",
               "path": "/commissions/findByEarner"
             },
@@ -53359,18 +53428,6 @@
             {
               "method": "POST",
               "path": "/commissions/claimForPayout"
-            },
-            {
-              "method": "GET",
-              "path": "/commissions"
-            },
-            {
-              "method": "GET",
-              "path": "/commissions/[id]"
-            },
-            {
-              "method": "POST",
-              "path": "/commissions"
             }
           ],
           "mcp": [
@@ -53706,6 +53763,18 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/commissionadjustments"
+            },
+            {
+              "method": "GET",
+              "path": "/commissionadjustments/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/commissionadjustments"
+            },
+            {
               "method": "POST",
               "path": "/commissionadjustments/findByCommission"
             },
@@ -53728,18 +53797,6 @@
             {
               "method": "POST",
               "path": "/commissionadjustments/claimForPayout"
-            },
-            {
-              "method": "GET",
-              "path": "/commissionadjustments"
-            },
-            {
-              "method": "GET",
-              "path": "/commissionadjustments/[id]"
-            },
-            {
-              "method": "POST",
-              "path": "/commissionadjustments"
             }
           ],
           "mcp": [
@@ -53885,6 +53942,7 @@
           "id": "@happyvertical/smrt-sales:CommissionAdjustmentOperation",
           "name": "CommissionAdjustmentOperation",
           "collection": "commissionadjustmentoperations",
+          "description": "One globally unique adjustment operation UUID mapped to its adjustment.",
           "fields": [
             {
               "name": "tenantId",
@@ -54043,6 +54101,14 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/commissionpayouts"
+            },
+            {
+              "method": "GET",
+              "path": "/commissionpayouts/[id]"
+            },
+            {
               "method": "POST",
               "path": "/commissionpayouts/findByEarner"
             },
@@ -54061,14 +54127,6 @@
             {
               "method": "POST",
               "path": "/commissionpayouts/sumPaidByEarner"
-            },
-            {
-              "method": "GET",
-              "path": "/commissionpayouts"
-            },
-            {
-              "method": "GET",
-              "path": "/commissionpayouts/[id]"
             }
           ],
           "mcp": [
@@ -54385,6 +54443,18 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/commissionplans"
+            },
+            {
+              "method": "GET",
+              "path": "/commissionplans/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/commissionplans"
+            },
+            {
               "method": "POST",
               "path": "/commissionplans/findByPlanKey"
             },
@@ -54399,18 +54469,6 @@
             {
               "method": "POST",
               "path": "/commissionplans/createAmendment"
-            },
-            {
-              "method": "GET",
-              "path": "/commissionplans"
-            },
-            {
-              "method": "GET",
-              "path": "/commissionplans/[id]"
-            },
-            {
-              "method": "POST",
-              "path": "/commissionplans"
             }
           ],
           "mcp": [
@@ -54700,18 +54758,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/earners/findByProfile"
-            },
-            {
-              "method": "POST",
-              "path": "/earners/findByStatus"
-            },
-            {
-              "method": "POST",
-              "path": "/earners/findActive"
-            },
-            {
               "method": "GET",
               "path": "/earners"
             },
@@ -54726,6 +54772,18 @@
             {
               "method": "PATCH",
               "path": "/earners/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/earners/findByProfile"
+            },
+            {
+              "method": "POST",
+              "path": "/earners/findByStatus"
+            },
+            {
+              "method": "POST",
+              "path": "/earners/findActive"
             }
           ],
           "mcp": [
@@ -54921,18 +54979,6 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/earnersourceattributions/findBySource"
-            },
-            {
-              "method": "POST",
-              "path": "/earnersourceattributions/findBySources"
-            },
-            {
-              "method": "POST",
-              "path": "/earnersourceattributions/findByEarner"
-            },
-            {
               "method": "GET",
               "path": "/earnersourceattributions"
             },
@@ -54947,6 +54993,18 @@
             {
               "method": "PATCH",
               "path": "/earnersourceattributions/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/earnersourceattributions/findBySource"
+            },
+            {
+              "method": "POST",
+              "path": "/earnersourceattributions/findBySources"
+            },
+            {
+              "method": "POST",
+              "path": "/earnersourceattributions/findByEarner"
             }
           ],
           "mcp": [
@@ -55148,6 +55206,18 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/earningevents"
+            },
+            {
+              "method": "GET",
+              "path": "/earningevents/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/earningevents"
+            },
+            {
               "method": "POST",
               "path": "/earningevents/findByDedupeKey"
             },
@@ -55162,18 +55232,6 @@
             {
               "method": "POST",
               "path": "/earningevents/findByKind"
-            },
-            {
-              "method": "GET",
-              "path": "/earningevents"
-            },
-            {
-              "method": "GET",
-              "path": "/earningevents/[id]"
-            },
-            {
-              "method": "POST",
-              "path": "/earningevents"
             }
           ],
           "mcp": [
@@ -55566,6 +55624,7 @@
           "id": "@happyvertical/smrt-sales:Lead",
           "name": "Lead",
           "collection": "leads",
+          "description": "Lead is an identified prospect: a person/organization that showed intent but has not yet been qualified into an Opportunity.",
           "display": {
             "label": "name"
           },
@@ -55943,6 +56002,7 @@
           "id": "@happyvertical/smrt-sales:Opportunity",
           "name": "Opportunity",
           "collection": "opportunities",
+          "description": "Opportunity is a qualified engagement: a deal with an expected value moving through the stages of a PipelineDefinition.",
           "display": {
             "label": "name"
           },
@@ -56234,6 +56294,7 @@
           "id": "@happyvertical/smrt-sales:OpportunityConversion",
           "name": "OpportunityConversion",
           "collection": "opportunityconversions",
+          "description": "OpportunityConversion records that a WON opportunity materialized into a downstream record — a client, project, contract, subscription, or any caller-defined kind.",
           "fields": [
             {
               "name": "tenantId",
@@ -56365,6 +56426,7 @@
           "id": "@happyvertical/smrt-sales:PipelineDefinition",
           "name": "PipelineDefinition",
           "collection": "pipelinedefinitions",
+          "description": "PipelineDefinition names an ordered set of stages that opportunities move through. Pipelines are configuration rows, not code: tenants can run several (e.g.",
           "display": {
             "label": "name"
           },
@@ -56582,6 +56644,7 @@
           "id": "@happyvertical/smrt-sales:PipelineStage",
           "name": "PipelineStage",
           "collection": "pipelinestages",
+          "description": "PipelineStage is a configurable step within a pipeline.",
           "display": {
             "label": "name"
           },
@@ -57453,6 +57516,7 @@
           "id": "@happyvertical/smrt-sales:ReferralClickOperation",
           "name": "ReferralClickOperation",
           "collection": "referralclickoperations",
+          "description": "One globally unique caller replay key mapped to its immutable click touch.",
           "fields": [
             {
               "name": "tenantId",
@@ -57528,6 +57592,7 @@
           "id": "@happyvertical/smrt-sales:ReferralLink",
           "name": "ReferralLink",
           "collection": "referrallinks",
+          "description": "A ReferralLink is the shareable artifact a Referrer distributes: a globally unique code (natural key ['code'] — codes resolve without knowing the tenant/program) plus an optional destination…",
           "display": {
             "label": "label"
           },
@@ -57779,6 +57844,7 @@
           "id": "@happyvertical/smrt-sales:ReferralProgram",
           "name": "ReferralProgram",
           "collection": "referralprograms",
+          "description": "A ReferralProgram anchors links, touches, referrals, agreements, and exceptions, and carries the program-level DEFAULTS:",
           "display": {
             "label": "name"
           },
@@ -58337,6 +58403,7 @@
           "id": "@happyvertical/smrt-sales:Referrer",
           "name": "Referrer",
           "collection": "referrers",
+          "description": "Referrer is a ROLE model: it links an identity (smrt-profiles Profile) to referral activity (ReferralLinks, ReferralTouches, and Referrals reference referrerId).",
           "fields": [
             {
               "name": "tenantId",
@@ -58559,6 +58626,7 @@
           "id": "@happyvertical/smrt-sales:SalesActivity",
           "name": "SalesActivity",
           "collection": "salesactivities",
+          "description": "SalesActivity is the shared trail for Leads and Opportunities: human touchpoints (note, call, email, meeting), next actions (task with dueAt/completedAt), and framework-written audit rows…",
           "fields": [
             {
               "name": "tenantId",
@@ -58715,6 +58783,7 @@
           "id": "@happyvertical/smrt-sales:SalesRepresentative",
           "name": "SalesRepresentative",
           "collection": "salesrepresentatives",
+          "description": "SalesRepresentative is a ROLE model: it links an identity (smrt-profiles Profile) to sales ownership (Leads/Opportunities reference ownerRepId).",
           "display": {
             "label": "title"
           },
@@ -59446,6 +59515,7 @@
           "id": "@happyvertical/smrt-social:OAuthState",
           "name": "OAuthState",
           "collection": "oauthstates",
+          "description": "Temporary OAuth state for social account connection",
           "fields": [
             {
               "name": "created_at",
@@ -59658,6 +59728,7 @@
           "id": "@happyvertical/smrt-social:SocialAccount",
           "name": "SocialAccount",
           "collection": "socialaccounts",
+          "description": "Connected social media account for publishing",
           "display": {
             "label": "name"
           },
@@ -59971,6 +60042,7 @@
           "id": "@happyvertical/smrt-social:SocialPost",
           "name": "SocialPost",
           "collection": "socialposts",
+          "description": "Social media post for multi-platform publishing",
           "display": {
             "label": "title"
           },
@@ -60764,6 +60836,7 @@
           "id": "@happyvertical/smrt-subscriptions:CreditGrant",
           "name": "CreditGrant",
           "collection": "creditgrants",
+          "description": "An append-only credit on a prepaid (period: 'balance') spending policy. Positive amounts add credit; a negative amount reverses an earlier grant.",
           "fields": [
             {
               "name": "tenantId",
@@ -60855,6 +60928,7 @@
           "id": "@happyvertical/smrt-subscriptions:PriceBook",
           "name": "PriceBook",
           "collection": "pricebooks",
+          "description": "A named set of prices published by one seller tenant. Its prices are ordinary PricingRule rows that carry this book's id and the same tenant; one rule per currency gives a price in several currencies.",
           "display": {
             "label": "name"
           },
@@ -60905,6 +60979,7 @@
           "id": "@happyvertical/smrt-subscriptions:PriceBookAssignment",
           "name": "PriceBookAssignment",
           "collection": "pricebookassignments",
+          "description": "Which price books rate one child tenant's usage, keyed like the tenancy billing relationship it belongs to (one row per child).",
           "fields": [
             {
               "name": "childTenantId",
@@ -61155,6 +61230,7 @@
           "id": "@happyvertical/smrt-subscriptions:RetailCharge",
           "name": "RetailCharge",
           "collection": "retailcharges",
+          "description": "What a reseller charges one child for one usage event, priced from the reseller's retail book.",
           "fields": [
             {
               "name": "tenantId",
@@ -62430,6 +62506,7 @@
           "name": "ServiceTimeEntry",
           "collection": "servicetimeentries",
           "extends": "@happyvertical/smrt-support:ServiceTimeEntry",
+          "description": "Support subtype over the shared service_time_entries table: the shared entry plus caseId (a SupportCase) and specialistId (a SupportSpecialist).",
           "fields": [
             {
               "name": "tenantId",
@@ -66762,6 +66839,7 @@
           "id": "@happyvertical/smrt-timesheets:AttendanceBreak",
           "name": "AttendanceBreak",
           "collection": "attendancebreaks",
+          "description": "A paid or unpaid break inside one attendance punch.",
           "fields": [
             {
               "name": "tenantId",
@@ -66845,6 +66923,7 @@
           "id": "@happyvertical/smrt-timesheets:AttendancePunch",
           "name": "AttendancePunch",
           "collection": "attendancepunches",
+          "description": "A tenant-scoped interval of attendance, independent of billable work.",
           "fields": [
             {
               "name": "tenantId",
@@ -66953,6 +67032,7 @@
           "id": "@happyvertical/smrt-timesheets:AttendanceReplay",
           "name": "AttendanceReplay",
           "collection": "attendancereplays",
+          "description": "Durable offline-tap outcome; never exposed through generated operations.",
           "fields": [
             {
               "name": "tenantId",
@@ -67011,6 +67091,7 @@
           "id": "@happyvertical/smrt-timesheets:PeriodTimecard",
           "name": "PeriodTimecard",
           "collection": "periodtimecards",
+          "description": "One person's immutable-on-confirmation period snapshot, in integer seconds.",
           "fields": [
             {
               "name": "tenantId",
@@ -67135,6 +67216,7 @@
           "id": "@happyvertical/smrt-timesheets:ServiceChargeSnapshot",
           "name": "ServiceChargeSnapshot",
           "collection": "servicechargesnapshots",
+          "description": "Immutable client-charge snapshot for one approved time entry. Money is integer minor units, consistent with smrt-commerce (#2401).",
           "fields": [
             {
               "name": "tenantId",
@@ -67241,6 +67323,7 @@
           "id": "@happyvertical/smrt-timesheets:ServiceCompensationSnapshot",
           "name": "ServiceCompensationSnapshot",
           "collection": "servicecompensationsnapshots",
+          "description": "Immutable provider-compensation snapshot for one approved time entry, kept separate from the client charge so the margin is charge - compensation.",
           "fields": [
             {
               "name": "tenantId",
@@ -67337,6 +67420,7 @@
           "id": "@happyvertical/smrt-timesheets:ServiceTimeEntry",
           "name": "ServiceTimeEntry",
           "collection": "servicetimeentries",
+          "description": "A person or agent worked this long on this thing, and someone approved it.",
           "fields": [
             {
               "name": "tenantId",
@@ -67627,6 +67711,7 @@
           "id": "@happyvertical/smrt-timesheets:TimecardAdjustment",
           "name": "TimecardAdjustment",
           "collection": "timecardadjustments",
+          "description": "Attributed append-only signed seconds; the confirmed base card never changes.",
           "fields": [
             {
               "name": "tenantId",
@@ -67716,6 +67801,7 @@
           "id": "@happyvertical/smrt-users:AccessRequest",
           "name": "AccessRequest",
           "collection": "accessrequests",
+          "description": "A prospective user's request for access, captured before they become a User.",
           "display": {
             "label": "name"
           },
@@ -67929,6 +68015,7 @@
           "id": "@happyvertical/smrt-users:Group",
           "name": "Group",
           "collection": "groups",
+          "description": "Group represents a team or department within a tenant.",
           "display": {
             "label": "name"
           },
@@ -67955,20 +68042,20 @@
           ],
           "rest": [
             {
-              "method": "POST",
-              "path": "/groups/findByTenant"
-            },
-            {
-              "method": "POST",
-              "path": "/groups/findBySlug"
-            },
-            {
               "method": "GET",
               "path": "/groups"
             },
             {
               "method": "GET",
               "path": "/groups/[id]"
+            },
+            {
+              "method": "POST",
+              "path": "/groups/findByTenant"
+            },
+            {
+              "method": "POST",
+              "path": "/groups/findBySlug"
             }
           ],
           "mcp": [
@@ -68049,6 +68136,7 @@
           "id": "@happyvertical/smrt-users:GroupMember",
           "name": "GroupMember",
           "collection": "groupmembers",
+          "description": "GroupMember is a join table linking Users to Groups.",
           "fields": [
             {
               "name": "groupId",
@@ -68064,6 +68152,14 @@
             }
           ],
           "rest": [
+            {
+              "method": "GET",
+              "path": "/groupmembers"
+            },
+            {
+              "method": "GET",
+              "path": "/groupmembers/[id]"
+            },
             {
               "method": "POST",
               "path": "/groupmembers/findByGroup"
@@ -68095,14 +68191,6 @@
             {
               "method": "POST",
               "path": "/groupmembers/getUserIds"
-            },
-            {
-              "method": "GET",
-              "path": "/groupmembers"
-            },
-            {
-              "method": "GET",
-              "path": "/groupmembers/[id]"
             }
           ],
           "mcp": [
@@ -68289,6 +68377,7 @@
           "id": "@happyvertical/smrt-users:GroupRole",
           "name": "GroupRole",
           "collection": "grouproles",
+          "description": "GroupRole is a join table linking Groups to Roles.",
           "fields": [
             {
               "name": "groupId",
@@ -68304,6 +68393,14 @@
             }
           ],
           "rest": [
+            {
+              "method": "GET",
+              "path": "/grouproles"
+            },
+            {
+              "method": "GET",
+              "path": "/grouproles/[id]"
+            },
             {
               "method": "POST",
               "path": "/grouproles/findByGroup"
@@ -68327,14 +68424,6 @@
             {
               "method": "POST",
               "path": "/grouproles/getRoleIds"
-            },
-            {
-              "method": "GET",
-              "path": "/grouproles"
-            },
-            {
-              "method": "GET",
-              "path": "/grouproles/[id]"
             }
           ],
           "mcp": [
@@ -68486,6 +68575,7 @@
           "id": "@happyvertical/smrt-users:Membership",
           "name": "Membership",
           "collection": "memberships",
+          "description": "Membership represents a user's membership in a tenant with an assigned role.",
           "fields": [
             {
               "name": "userId",
@@ -68514,6 +68604,14 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/memberships"
+            },
+            {
+              "method": "GET",
+              "path": "/memberships/[id]"
+            },
+            {
               "method": "POST",
               "path": "/memberships/findByUser"
             },
@@ -68540,14 +68638,6 @@
             {
               "method": "POST",
               "path": "/memberships/findByStatus"
-            },
-            {
-              "method": "GET",
-              "path": "/memberships"
-            },
-            {
-              "method": "GET",
-              "path": "/memberships/[id]"
             }
           ],
           "mcp": [
@@ -68737,6 +68827,7 @@
           "id": "@happyvertical/smrt-users:MembershipOverride",
           "name": "MembershipOverride",
           "collection": "membershipoverrides",
+          "description": "MembershipOverride allows granting or denying specific permissions to a user beyond what their role and groups provide.",
           "fields": [
             {
               "name": "membershipId",
@@ -68757,6 +68848,14 @@
             }
           ],
           "rest": [
+            {
+              "method": "GET",
+              "path": "/membershipoverrides"
+            },
+            {
+              "method": "GET",
+              "path": "/membershipoverrides/[id]"
+            },
             {
               "method": "POST",
               "path": "/membershipoverrides/findByMembership"
@@ -68792,14 +68891,6 @@
             {
               "method": "POST",
               "path": "/membershipoverrides/denyPermission"
-            },
-            {
-              "method": "GET",
-              "path": "/membershipoverrides"
-            },
-            {
-              "method": "GET",
-              "path": "/membershipoverrides/[id]"
             }
           ],
           "mcp": [
@@ -69026,6 +69117,7 @@
           "id": "@happyvertical/smrt-users:Permission",
           "name": "Permission",
           "collection": "permissions",
+          "description": "Permission represents a named capability in the system.",
           "display": {
             "label": "name"
           },
@@ -69051,6 +69143,14 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/permissions"
+            },
+            {
+              "method": "GET",
+              "path": "/permissions/[id]"
+            },
+            {
               "method": "POST",
               "path": "/permissions/findByCategory"
             },
@@ -69069,14 +69169,6 @@
             {
               "method": "POST",
               "path": "/permissions/findOrCreate"
-            },
-            {
-              "method": "GET",
-              "path": "/permissions"
-            },
-            {
-              "method": "GET",
-              "path": "/permissions/[id]"
             }
           ],
           "mcp": [
@@ -69248,6 +69340,7 @@
           "id": "@happyvertical/smrt-users:ResourceGrant",
           "name": "ResourceGrant",
           "collection": "resourcegrants",
+          "description": "An exact tenant/resource/user/permission decision. This deliberately does not replace tenant RBAC: ResourceGrantResolver only allows after the normal operation guard has allowed the same permission.",
           "fields": [
             {
               "name": "tenantId",
@@ -69400,6 +69493,7 @@
           "id": "@happyvertical/smrt-users:Role",
           "name": "Role",
           "collection": "roles",
+          "description": "Role represents a permission template that can be assigned to users.",
           "display": {
             "label": "name"
           },
@@ -69438,6 +69532,14 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/roles"
+            },
+            {
+              "method": "GET",
+              "path": "/roles/[id]"
+            },
+            {
               "method": "POST",
               "path": "/roles/findSystemRoles"
             },
@@ -69460,14 +69562,6 @@
             {
               "method": "POST",
               "path": "/roles/seedSystemRoles"
-            },
-            {
-              "method": "GET",
-              "path": "/roles"
-            },
-            {
-              "method": "GET",
-              "path": "/roles/[id]"
             }
           ],
           "mcp": [
@@ -69654,6 +69748,7 @@
           "id": "@happyvertical/smrt-users:RolePermission",
           "name": "RolePermission",
           "collection": "rolepermissions",
+          "description": "RolePermission is a join table linking Roles to Permissions.",
           "fields": [
             {
               "name": "roleId",
@@ -69669,6 +69764,14 @@
             }
           ],
           "rest": [
+            {
+              "method": "GET",
+              "path": "/rolepermissions"
+            },
+            {
+              "method": "GET",
+              "path": "/rolepermissions/[id]"
+            },
             {
               "method": "POST",
               "path": "/rolepermissions/findByRole"
@@ -69700,14 +69803,6 @@
             {
               "method": "POST",
               "path": "/rolepermissions/seedDefaultRolePersonalizationPermissions"
-            },
-            {
-              "method": "GET",
-              "path": "/rolepermissions"
-            },
-            {
-              "method": "GET",
-              "path": "/rolepermissions/[id]"
             }
           ],
           "mcp": [
@@ -69894,6 +69989,7 @@
           "id": "@happyvertical/smrt-users:Session",
           "name": "Session",
           "collection": "sessions",
+          "description": "Session represents an authenticated user session.",
           "fields": [
             {
               "name": "userId",
@@ -69953,6 +70049,14 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/sessions/[id]"
+            },
+            {
+              "method": "DELETE",
+              "path": "/sessions/[id]"
+            },
+            {
               "method": "POST",
               "path": "/sessions/createSession"
             },
@@ -70011,14 +70115,6 @@
             {
               "method": "POST",
               "path": "/sessions/getSessionData"
-            },
-            {
-              "method": "GET",
-              "path": "/sessions/[id]"
-            },
-            {
-              "method": "DELETE",
-              "path": "/sessions/[id]"
             }
           ],
           "mcp": [
@@ -70490,6 +70586,7 @@
           "id": "@happyvertical/smrt-users:Tenant",
           "name": "Tenant",
           "collection": "tenants",
+          "description": "Tenant represents an organizational boundary in the multi-tenant system.",
           "display": {
             "label": "name"
           },
@@ -70555,6 +70652,14 @@
             }
           ],
           "rest": [
+            {
+              "method": "GET",
+              "path": "/tenants"
+            },
+            {
+              "method": "GET",
+              "path": "/tenants/[id]"
+            },
             {
               "method": "POST",
               "path": "/tenants/findByStatus"
@@ -70622,14 +70727,6 @@
             {
               "method": "POST",
               "path": "/tenants/getTree"
-            },
-            {
-              "method": "GET",
-              "path": "/tenants"
-            },
-            {
-              "method": "GET",
-              "path": "/tenants/[id]"
             }
           ],
           "mcp": [
@@ -71088,6 +71185,14 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/tenantintegrations"
+            },
+            {
+              "method": "GET",
+              "path": "/tenantintegrations/[id]"
+            },
+            {
               "method": "POST",
               "path": "/tenantintegrations/listForTenant"
             },
@@ -71098,14 +71203,6 @@
             {
               "method": "POST",
               "path": "/tenantintegrations/findOrInit"
-            },
-            {
-              "method": "GET",
-              "path": "/tenantintegrations"
-            },
-            {
-              "method": "GET",
-              "path": "/tenantintegrations/[id]"
             }
           ],
           "mcp": [
@@ -71297,6 +71394,7 @@
           "id": "@happyvertical/smrt-users:TenantPermissionOverride",
           "name": "TenantPermissionOverride",
           "collection": "tenantpermissionoverrides",
+          "description": "TenantPermissionOverride allows setting explicit permission values at the tenant level.",
           "fields": [
             {
               "name": "tenantId",
@@ -71318,6 +71416,14 @@
             }
           ],
           "rest": [
+            {
+              "method": "GET",
+              "path": "/tenantpermissionoverrides"
+            },
+            {
+              "method": "GET",
+              "path": "/tenantpermissionoverrides/[id]"
+            },
             {
               "method": "POST",
               "path": "/tenantpermissionoverrides/findByTenant"
@@ -71381,14 +71487,6 @@
             {
               "method": "POST",
               "path": "/tenantpermissionoverrides/copyOverrides"
-            },
-            {
-              "method": "GET",
-              "path": "/tenantpermissionoverrides"
-            },
-            {
-              "method": "GET",
-              "path": "/tenantpermissionoverrides/[id]"
             }
           ],
           "mcp": [
@@ -71759,6 +71857,7 @@
           "id": "@happyvertical/smrt-users:User",
           "name": "User",
           "collection": "users",
+          "description": "User represents an authenticated identity in the system.",
           "fields": [
             {
               "name": "profileId",
@@ -71790,6 +71889,14 @@
           ],
           "rest": [
             {
+              "method": "GET",
+              "path": "/users"
+            },
+            {
+              "method": "GET",
+              "path": "/users/[id]"
+            },
+            {
               "method": "POST",
               "path": "/users/findByEmail"
             },
@@ -71816,14 +71923,6 @@
             {
               "method": "POST",
               "path": "/users/getOrCreateFromOidc"
-            },
-            {
-              "method": "GET",
-              "path": "/users"
-            },
-            {
-              "method": "GET",
-              "path": "/users/[id]"
             }
           ],
           "mcp": [
@@ -72050,6 +72149,7 @@
           "id": "@happyvertical/smrt-users:UsersCliAuthApproveLimit",
           "name": "UsersCliAuthApproveLimit",
           "collection": "userscliauthapprovelimits",
+          "description": "Private database arbiter shared by every terminal-auth process.",
           "fields": [
             {
               "name": "userId",
@@ -72278,6 +72378,7 @@
           "id": "@happyvertical/smrt-users:UsersLoginAttempt",
           "name": "UsersLoginAttempt",
           "collection": "usersloginattempts",
+          "description": "Private database arbiter shared by every process that authenticates.",
           "fields": [
             {
               "name": "limiterKey",
@@ -72809,6 +72910,7 @@
           "id": "@happyvertical/smrt-video:Character",
           "name": "Character",
           "collection": "characters",
+          "description": "Virtual character for AI-powered video production",
           "display": {
             "label": "name"
           },
@@ -73589,6 +73691,7 @@
           "id": "@happyvertical/smrt-video:CompositeJob",
           "name": "CompositeJob",
           "collection": "compositejobs",
+          "description": "Composite job for tracking virtual production compositing",
           "fields": [
             {
               "name": "created_at",
@@ -73734,6 +73837,7 @@
           "id": "@happyvertical/smrt-video:Performer",
           "name": "Performer",
           "collection": "performers",
+          "description": "The physical likeness/face DNA",
           "display": {
             "label": "name"
           },
@@ -74412,6 +74516,7 @@
           "id": "@happyvertical/smrt-video:Scene",
           "name": "Scene",
           "collection": "scenes",
+          "description": "Scene for virtual production compositing",
           "display": {
             "label": "name"
           },
@@ -75111,6 +75216,7 @@
           "id": "@happyvertical/smrt-video:VideoComposition",
           "name": "VideoComposition",
           "collection": "contents",
+          "description": "Publishable video composition",
           "display": {
             "label": "name"
           },
@@ -76643,6 +76749,7 @@
           "id": "@happyvertical/smrt-video:VideoSequence",
           "name": "VideoSequence",
           "collection": "contents",
+          "description": "Thematic section of a video composition",
           "display": {
             "label": "name"
           },
@@ -78170,6 +78277,7 @@
           "id": "@happyvertical/smrt-video:VideoShot",
           "name": "VideoShot",
           "collection": "contents",
+          "description": "Atomic video generation unit",
           "display": {
             "label": "name"
           },
@@ -79785,6 +79893,7 @@
           "id": "@happyvertical/smrt-video:VideoShotCharacter",
           "name": "VideoShotCharacter",
           "collection": "videoshotcharacters",
+          "description": "Join model linking a VideoShot to a Character",
           "fields": [
             {
               "name": "created_at",
@@ -79938,6 +80047,7 @@
           "id": "@happyvertical/smrt-video:VideoWorkflow",
           "name": "VideoWorkflow",
           "collection": "videoworkflows",
+          "description": "ComfyUI workflow template for video generation",
           "display": {
             "label": "name"
           },
@@ -80099,6 +80209,7 @@
           "id": "@happyvertical/smrt-voice:VoiceOutput",
           "name": "VoiceOutput",
           "collection": "contents",
+          "description": "Generated audio output from text-to-speech synthesis",
           "display": {
             "label": "name"
           },
@@ -81204,6 +81315,7 @@
           "id": "@happyvertical/smrt-voice:VoiceProfile",
           "name": "VoiceProfile",
           "collection": "voiceprofiles",
+          "description": "Voice profile for AI-powered speech synthesis",
           "display": {
             "label": "name"
           },
@@ -81382,6 +81494,7 @@
           "id": "@happyvertical/smrt-voice:VoiceSample",
           "name": "VoiceSample",
           "collection": "voicesamples",
+          "description": "Audio sample for voice cloning",
           "fields": [
             {
               "name": "created_at",

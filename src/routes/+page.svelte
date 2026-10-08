@@ -5,6 +5,7 @@ import CookbooksPanel from '$lib/components/CookbooksPanel.svelte';
 import ExportPanel from '$lib/components/ExportPanel.svelte';
 import FeaturesPanel from '$lib/components/FeaturesPanel.svelte';
 import RecipeCards from '$lib/components/RecipeCards.svelte';
+import SettingsPanel from '$lib/components/SettingsPanel.svelte';
 import {
   PLANNER_TABS,
   type PlannerTab,
@@ -16,10 +17,11 @@ const tabs = [
   { id: 'recipes', label: 'Recipes' },
   { id: 'features', label: 'Features' },
   { id: 'layout', label: 'Layout' },
+  { id: 'settings', label: 'Settings' },
   { id: 'export', label: 'Export' },
 ];
 
-// All five panels stay mounted (the inactive ones hidden), so switching
+// All six panels stay mounted (the inactive ones hidden), so switching
 // never resets a notice or an editor; the layout keeps the URL in step.
 const select = (id: string) => {
   const tab = PLANNER_TABS.find((t) => t === id);
@@ -43,6 +45,7 @@ const select = (id: string) => {
       </p>
       <ShellLayoutEditor />
     </div>
+    <div hidden={plannerTab.active !== 'settings'}><SettingsPanel /></div>
     <div hidden={plannerTab.active !== 'export'}><ExportPanel /></div>
   </Tabs>
 </main>

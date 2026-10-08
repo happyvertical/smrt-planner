@@ -903,3 +903,18 @@ export function setSamplePack(
     (cookbookId ? COOKBOOK_PACKS[cookbookId] : undefined) ?? GENERIC_PACK;
   return active;
 }
+
+let taxRateOverride: number | undefined;
+
+/**
+ * The app's own tax-rate setting, when it states one: sample line items use it
+ * instead of the pack's. Takes effect when sample rows are next generated.
+ */
+export function setSampleTaxRate(rate: number | undefined): void {
+  taxRateOverride = rate;
+}
+
+/** The sample tax rate: the app's setting, else the pack's (omitted: random). */
+export function getSampleTaxRate(): number | undefined {
+  return taxRateOverride ?? active.taxRate;
+}

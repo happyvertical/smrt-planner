@@ -3,6 +3,7 @@ import { isLineModel } from './derived.ts';
 import {
   GENERIC_PACK,
   getSamplePack,
+  getSampleTaxRate,
   type PackLine,
   type SamplePack,
 } from './packs.ts';
@@ -283,7 +284,7 @@ export function fakeValue(
     case 'decimal':
       if (/taxrate|vatrate/i.test(field.name)) {
         // A cookbook's default rate (0: untaxed) beats a random one.
-        const rate = getSamplePack().taxRate;
+        const rate = getSampleTaxRate();
         return rate ?? pick(random, TAX_RATES);
       }
       if (/discountrate/i.test(field.name)) return pick(random, [0, 0.05, 0.1]);

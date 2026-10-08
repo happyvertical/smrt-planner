@@ -2,7 +2,14 @@ import {
   isShellLayoutEmpty,
   type ShellLayout,
 } from '@happyvertical/smrt-svelte/workspace/layout';
+import { setSampleTaxRate } from '../data/packs.ts';
 import { recipeState } from '../recipes/state.svelte.ts';
+import {
+  type AppSettings,
+  hasTaxRateRow,
+  readSettings,
+  writeSettings,
+} from '../settings/app-settings.ts';
 import { blueprintFromLegacySearch, hasLegacyState } from './legacy.ts';
 import {
   BACKUP_KEY,
@@ -77,6 +84,23 @@ export class BlueprintStore {
   apply(blueprint: Blueprint): void {
     recipeState.load(blueprint);
     this.layout = blueprint.layout;
+    setSampleTaxRate(
+      hasTaxRateRow(blueprint) ? readSettings(blueprint).taxRate : undefined,
+    );
+  }
+
+  /** The app settings (currency, tax rate, payment terms), read from the policy rows. */
+  settings(): AppSettings {
+    return readSettings(this.snapshot());
+  }
+
+  /** Write the settings as policy rows. Existing records are untouched. */
+  setSettings(settings: AppSettings): void {
+    const next = writeSettings(this.snapshot(), settings);
+    recipeState.rows = next.policies.map((row) => ({ ...row }));
+    setSampleTaxRate(
+      hasTaxRateRow(next) ? readSettings(next).taxRate : undefined,
+    );
   }
 
   /** Replace on the visitor's say-so (an import): saving is allowed again. */

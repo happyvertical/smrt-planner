@@ -5,6 +5,7 @@ export const PLANNER_TABS = [
   'recipes',
   'features',
   'layout',
+  'settings',
   'export',
 ] as const;
 export type PlannerTab = (typeof PLANNER_TABS)[number];

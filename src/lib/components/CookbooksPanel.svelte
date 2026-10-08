@@ -17,8 +17,12 @@ import {
 import { previewMenu } from '$lib/cookbooks/menu.ts';
 import { cookbookState } from '$lib/cookbooks/state.svelte.ts';
 import { useDataSource } from '$lib/data/context.ts';
-import { fractionToPercent } from '$lib/fields/percent.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
+import {
+  type AppSettings as Settings,
+  settingsOfCookbook,
+} from '$lib/settings/app-settings.ts';
+import AppSettings from './AppSettings.svelte';
 
 const dataSource = useDataSource();
 let selectedId = $state<string | null>(null);
@@ -32,23 +36,19 @@ onMount(() => {
 });
 
 const selected = $derived(cookbooks.find((c) => c.id === selectedId));
+
+// The preview's editable copy of the cookbook's settings; choosing a cookbook
+// (again) resets it to the cookbook's own values. The cookbook is never changed.
+let settings = $state<Settings>(settingsOfCookbook(undefined));
+$effect(() => {
+  settings = settingsOfCookbook(selected?.settings);
+});
 const isActive = (cookbook: Cookbook) =>
   cookbookState.active === cookbook.id &&
   holdsCookbook(cookbook, {
     recipes: recipeState.ids,
     features: recipeState.features,
   });
-
-function settingLines(cookbook: Cookbook): { label: string; value: string }[] {
-  const { currency, paymentTerms, taxRate } = cookbook.settings;
-  const lines: { label: string; value: string }[] = [];
-  if (currency) lines.push({ label: 'Currency', value: currency });
-  if (paymentTerms) lines.push({ label: 'Payment terms', value: paymentTerms });
-  if (taxRate !== undefined) {
-    lines.push({ label: 'Sales tax', value: `${fractionToPercent(taxRate)}%` });
-  }
-  return lines;
-}
 
 function use() {
   if (!selected) return;
@@ -59,7 +59,11 @@ function use() {
 function commit() {
   confirming = false;
   if (!selected) return;
-  const result = applyCookbook(selected, blueprintStore);
+  const result = applyCookbook(
+    selected,
+    blueprintStore,
+    $state.snapshot(settings),
+  );
   if (result.ok) {
     // Sample records are regenerated from the cookbook's own sample data.
     dataSource.reset?.();
@@ -117,7 +121,6 @@ function commit() {
 
   {#if selected}
     {@const menu = previewMenu(selected.blueprint)}
-    {@const settings = settingLines(selected)}
     <section class="preview" aria-labelledby="preview-heading">
       <h2 id="preview-heading">{selected.name}</h2>
       <div class="block">
@@ -143,17 +146,14 @@ function commit() {
           {/each}
         </div>
       </div>
-      {#if settings.length}
-        <div class="block">
-          <h3>Settings</h3>
-          <dl class="settings">
-            {#each settings as line (line.label)}
-              <dt>{line.label}</dt>
-              <dd>{line.value}</dd>
-            {/each}
-          </dl>
-        </div>
-      {/if}
+      <div class="block">
+        <h3>Settings</h3>
+        <AppSettings
+          value={settings}
+          onchange={(next) => (settings = next)}
+          idPrefix="cookbook-settings"
+        />
+      </div>
       <div class="actions">
         <Button onclick={use}>Use this cookbook</Button>
         <span class="meta">Replaces your current recipes and menu. Your records stay.</span>
@@ -297,17 +297,6 @@ function commit() {
     display: grid;
     gap: var(--smrt-spacing-1);
     margin-top: var(--smrt-spacing-1);
-  }
-
-  .settings {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    gap: var(--smrt-spacing-1) var(--smrt-spacing-4);
-    margin: 0;
-  }
-
-  .settings dd {
-    margin: 0;
   }
 
   .actions {

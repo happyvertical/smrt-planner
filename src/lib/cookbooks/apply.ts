@@ -3,6 +3,7 @@ import type { BlueprintStore } from '../blueprint/store.svelte.ts';
 import type { Blueprint, BlueprintResult } from '../blueprint/types.ts';
 import { parseBlueprint } from '../blueprint/validate.ts';
 import { setSamplePack } from '../data/packs.ts';
+import { type AppSettings, writeSettings } from '../settings/app-settings.ts';
 import type { Cookbook } from './types.ts';
 
 /** Nothing built yet: no recipes, features, saved options, narrowing or layout. */
@@ -31,8 +32,15 @@ export function needsConfirm(store: Pick<BlueprintStore, 'snapshot'>): boolean {
 export function applyCookbook(
   cookbook: Cookbook,
   store: Pick<BlueprintStore, 'replace'>,
+  settings?: AppSettings,
 ): BlueprintResult {
-  const result = parseBlueprint(cookbook.blueprint);
+  // `settings` are the visitor's edits of the cookbook's starting values; the
+  // cookbook's own data is never changed (writeSettings returns a copy).
+  const result = parseBlueprint(
+    settings
+      ? writeSettings(structuredClone(cookbook.blueprint), settings)
+      : cookbook.blueprint,
+  );
   if (result.ok) {
     store.replace(result.blueprint);
     setSamplePack(cookbook.id);

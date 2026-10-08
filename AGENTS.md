@@ -50,6 +50,14 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   recipes sharing a suggestion share the section (`section:<id>`), and each recipe's main item
   carries the gear to its own group/recipe options page. `group` is the Planner card + Options/Help
   pages only. `blueprint/migrate.ts` rewrites pre-section layout ids in the loader.
+- `src/lib/settings/app-settings.ts`: app settings (currency, default tax rate, default payment terms)
+  belong to the visitor's app, never to a cookbook. They are the same app-scope `defaultValue`
+  policy rows a cookbook writes (no blueprint field); `SETTING_TARGETS` is the one list of which
+  model fields each setting covers, `readSettings`/`writeSettings` read and upsert/remove the rows
+  (a row only where the value differs from the model's own default). The cookbook preview and the
+  Settings tab (`AppSettings.svelte`, `SettingsPanel.svelte`) both edit them; a cookbook only
+  supplies starting values, and settings apply to new records only. Sample tax follows the setting
+  on the next reseed (`setSampleTaxRate`).
 - `src/lib/cookbooks/`: curated starting blueprints. `cookbooks.json` holds each
   cookbook (`{ id, name, icon, summary, settings, blueprint }`); `blueprint` is the
   same document the Export tab saves and must pass `parseBlueprint` (tests check it,

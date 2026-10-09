@@ -10,6 +10,7 @@ import { createHandsFreeCapture as handsFreeCapture } from '../assistant/voice-h
 import { blueprintStore } from '../blueprint/store.svelte.ts';
 import { applyCookbook, needsConfirm } from '../cookbooks/apply.ts';
 import { getCookbook } from '../cookbooks/index.ts';
+import { previewMenu } from '../cookbooks/menu.ts';
 import { cookbookState } from '../cookbooks/state.svelte.ts';
 import { useDataSource } from '../data/context.ts';
 import { appHref } from '../planner/app.svelte.ts';
@@ -58,9 +59,24 @@ $effect(() => {
     {@const cookbook = offer ? getCookbook(offer.cookbookId) : undefined}
     {#if offer && cookbook}
       {#if offer.status === 'pending'}
-        <div class="offer" role="group" aria-label="Use {cookbook.name} cookbook">
+        {@const menu = previewMenu(cookbook.blueprint)}
+        <div class="offer" role="group" aria-label="Add the {cookbook.name} cookbook">
+          <div class="offer-text">
+            <strong>{cookbook.name} cookbook</strong>
+            <span>{cookbook.summary}</span>
+            {#if menu.length}
+              <ul class="offer-menu">
+                {#each menu as section (section.id)}
+                  <li>
+                    <b>{section.label}</b>:
+                    {section.entries.map((entry) => entry.label).join(', ')}
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
           <Button onclick={() => session.offers.accept(offer.id)}>
-            Use {cookbook.name}
+            Add {cookbook.name} cookbook
           </Button>
           <Button variant="secondary" onclick={() => session.offers.decline(offer.id)}>
             No thanks
@@ -226,6 +242,22 @@ $effect(() => {
     align-items: center;
     gap: var(--smrt-spacing-2);
     margin-top: var(--smrt-spacing-2);
+  }
+
+  .offer-text {
+    display: grid;
+    gap: var(--smrt-spacing-1);
+    flex-basis: 100%;
+  }
+
+  .offer-text span,
+  .offer-menu {
+    color: var(--smrt-color-on-surface-variant);
+  }
+
+  .offer-menu {
+    margin: 0;
+    padding-inline-start: var(--smrt-spacing-4);
   }
 
   .offer small,

@@ -38,6 +38,10 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   release adds appears with no change here. Switching on is `recipeState.add`, as on the Recipes
   tab. `FeaturesPanel` / `FeatureCard` render it; `RecordFeatures` is the older "Single records"
   list below it (models no recipe covers, `recipes/features.ts`).
+  `palette.ts` + `components/PlannerPalette.svelte`: the command palette
+  (`@happyvertical/smrt-svelte/command-palette`, Mod+K) the layout mounts in `header.center`: the
+  menu as laid out (`useShellLayout().applied`), the Planner tabs, and "Add <feature>" for each
+  recipe not on, labelled with its demo mode.
 - `src/lib/recipes/plumbing.ts`: the feature-vs-plumbing rules the Features tab
   uses to hide link tables, child records and tiny lookups by default.
 - `src/lib/recipes/`: recipes are the unit people add. `types.ts` is the

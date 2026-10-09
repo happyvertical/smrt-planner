@@ -13,6 +13,7 @@ import { catalog, exposedModels, getPackage } from '$lib/catalog/index.ts';
 import AiStatusIcons from '$lib/components/AiStatusIcons.svelte';
 import BrowserAssistant from '$lib/components/BrowserAssistant.svelte';
 import PlannerEditBridge from '$lib/components/PlannerEditBridge.svelte';
+import PlannerPalette from '$lib/components/PlannerPalette.svelte';
 import SectionActions from '$lib/components/SectionActions.svelte';
 import ThemeBridge from '$lib/components/ThemeBridge.svelte';
 import { browserStorage } from '$lib/cookbook/storage.ts';
@@ -291,6 +292,10 @@ function flushOnHide() {
   <AiStatusIcons />
 {/snippet}
 
+{#snippet palette()}
+  <PlannerPalette />
+{/snippet}
+
 <AppShell
   storageKey={SHELL_STORAGE_KEY}
   title="Planner"
@@ -308,6 +313,12 @@ function flushOnHide() {
       label: 'AI status',
       slot: 'leftSidebar.footer',
       render: aiStatus,
+    },
+    {
+      id: 'palette',
+      label: 'Search',
+      slot: 'header.center',
+      render: palette,
     },
   ]}
   dockToggles={[{ tool: 'assistant', label: 'Assistant', slot: 'header.end' }]}

@@ -2,8 +2,8 @@
  * The shape of a recipe as `SmrtRecipe` (happyvertical/smrt#3590) emits it into
  * `smrt-knowledge.json` under the top-level `recipes` key, and the only place
  * the planner depends on that shape. Until the generator reads recipes from the
- * published packages, `recipes.json` is a local file in this shape; then the
- * file goes away and `index.ts` reads the catalog instead.
+ * published packages. The catalog carries them; `overlay.json` adds the
+ * planner-local `forms` and `extends`.
  */
 
 import type { RecipeHelp } from './help.ts';
@@ -228,9 +228,4 @@ export interface Recipe {
   options?: Record<string, RecipeModelHints>;
   /** User-facing help (happyvertical/smrt#3591); see `help.ts`. */
   help?: RecipeHelp;
-}
-
-/** The slice of `smrt-knowledge.json` the planner reads. */
-export interface RecipeFile {
-  recipes: Recipe[];
 }

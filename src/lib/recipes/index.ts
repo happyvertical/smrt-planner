@@ -1,15 +1,16 @@
-import { getModelByQualifiedName } from '../catalog/index.ts';
+import { catalog, getModelByQualifiedName } from '../catalog/index.ts';
 import type { CatalogModel, CatalogPackage } from '../catalog/types.ts';
 import descriptionsFile from './help/descriptions.json';
-import { createRecipeHelp, type HelpModel } from './help.ts';
+import type { HelpModel } from './help.ts';
+import { mergeRecipes, type RecipeOverlay } from './merge.ts';
+import overlay from './overlay.json';
 import { type FieldPolicyRow, resolveFields } from './policy.ts';
-import raw from './recipes.json';
 import {
   buildSections,
   entryDescription,
   type RecipeSection,
 } from './sections.ts';
-import type { Recipe, RecipeFile } from './types.ts';
+import type { Recipe } from './types.ts';
 
 export type { RecipeSection } from './sections.ts';
 export {
@@ -21,29 +22,18 @@ export {
 } from './sections.ts';
 export type * from './types.ts';
 
-// Local stand-ins for what happyvertical/smrt#3591 puts in the catalog: the
-// `help/<recipe id>.md` next to each recipe, and the `@field({ description })`
-// of the fields it shows. Both go away with `recipes.json`.
-const helpMarkdown = import.meta.glob<string>('./help/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-});
 const descriptions = descriptionsFile as Record<string, Record<string, string>>;
 
 /**
- * The recipes the planner offers, in declaration order (which is the order of
- * sub-switches on a card). This is the one seam to swap:
- * once recipes ship in the published packages' `smrt-knowledge.json`, read
- * them from the catalog here (help included) and delete `recipes.json` and
- * `help/`.
+ * The recipes the planner offers, in the overlay's order (which is the order
+ * of sub-switches on a card). They are the ones the smrt packages declare
+ * (carried in the catalog), plus the planner-local `forms` and `extends` of
+ * `overlay.json`; see `merge.ts`.
  */
-export const recipes: readonly Recipe[] = (
-  raw as unknown as RecipeFile
-).recipes.map((recipe): Recipe => {
-  const markdown = helpMarkdown[`./help/${recipe.id}.md`];
-  return markdown ? { ...recipe, help: createRecipeHelp(markdown) } : recipe;
-});
+export const recipes: readonly Recipe[] = mergeRecipes(
+  catalog.packages.flatMap((pkg) => pkg.recipes ?? []),
+  overlay as unknown as RecipeOverlay,
+);
 
 const byId = new Map(recipes.map((recipe) => [recipe.id, recipe]));
 

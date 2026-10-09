@@ -6,6 +6,8 @@
  * Everything the browser needs is here, so the app never loads a package.
  */
 
+import type { Recipe } from '../recipes/types.ts';
+
 /** Field types as the s-m-r-t manifest names them. */
 export type CatalogFieldType =
   | 'text'
@@ -133,6 +135,12 @@ export interface CatalogPackage {
   dependencies: string[];
   /** Where the surfaces came from: the knowledge artifact or the manifest. */
   surfaceSource: 'knowledge' | 'manifest';
+  /**
+   * Recipes the package declares (smrt#3604), in declaration order. Absent
+   * when it declares none. The planner overlays its local-only parts
+   * (`forms`, `extends`) in `src/lib/recipes`.
+   */
+  recipes?: Recipe[];
 }
 
 export interface Catalog {

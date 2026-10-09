@@ -8,6 +8,9 @@ import {
   ASSISTANT_MODELS,
   formatSize,
   getModel,
+  graphicsBufferLimit,
+  hasRoomFor,
+  ROOMY_MODEL_ID,
   shortLabel,
 } from '../assistant/models.ts';
 import {
@@ -26,10 +29,26 @@ let { show = ['think', 'hear', 'speak'] }: AiSetupProps = $props();
 const session = $derived(aiState.session);
 const voice = $derived(aiState.voice);
 const summaries = $derived(aiState.capabilities);
-const state = (id: CapabilityId) =>
+const capabilityState = (id: CapabilityId) =>
   summaries.find((s) => s.id === id)?.state ?? 'available';
 
 const model = $derived(getModel(session.prefs.modelId));
+// A roomy graphics card can run the smarter model; it is only suggested, the
+// visitor's own choice is never changed for them.
+let bufferLimit = $state(0);
+$effect(() => {
+  void graphicsBufferLimit().then((limit) => {
+    bufferLimit = limit;
+  });
+});
+const roomy = $derived(getModel(ROOMY_MODEL_ID));
+const suggestRoomy = $derived(
+  !!roomy &&
+    session.prefs.modelId !== ROOMY_MODEL_ID &&
+    session.status !== 'loading' &&
+    session.status !== 'ready' &&
+    hasRoomFor(roomy, bufferLimit),
+);
 const thinkPercent = $derived(Math.round(session.progress.progress * 100));
 const hearPercent = $derived(Math.round(voice.progress * 100));
 const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
@@ -40,7 +59,7 @@ const handsFreeAvailable = $derived(voice.status === 'ready');
 
 <div class="cards">
   {#if show.includes('think')}
-    <section class="card" data-state={state('think')} aria-labelledby="ai-think">
+    <section class="card" data-state={capabilityState('think')} aria-labelledby="ai-think">
       <header>
         <span class="badge"><Icon path={THINK_ICON} size={22} /></span>
         <div>
@@ -71,6 +90,15 @@ const handsFreeAvailable = $derived(voice.status === 'ready');
             {formatSize(model.downloadMB)} to download once; needs
             {formatSize(model.vramMB)} of graphics memory. Use Wi-Fi on a
             metered connection.
+          </p>
+        {/if}
+        {#if suggestRoomy && roomy}
+          <p class="meta">
+            Your graphics card has room for {shortLabel(roomy)}, which
+            understands more.
+            <Button variant="secondary" onclick={() => session.select(ROOMY_MODEL_ID)}>
+              Use {shortLabel(roomy)}
+            </Button>
           </p>
         {/if}
         {#if session.status === 'ready'}
@@ -110,7 +138,7 @@ const handsFreeAvailable = $derived(voice.status === 'ready');
   {/if}
 
   {#if show.includes('hear')}
-    <section class="card" data-state={state('hear')} aria-labelledby="ai-hear">
+    <section class="card" data-state={capabilityState('hear')} aria-labelledby="ai-hear">
       <header>
         <span class="badge"><Icon path={HEAR_ICON} size={22} /></span>
         <div>
@@ -211,7 +239,7 @@ const handsFreeAvailable = $derived(voice.status === 'ready');
   {/if}
 
   {#if show.includes('speak')}
-    <section class="card" data-state={state('speak')} aria-labelledby="ai-speak">
+    <section class="card" data-state={capabilityState('speak')} aria-labelledby="ai-speak">
       <header>
         <span class="badge"><Icon path={SPEAK_ICON} size={22} /></span>
         <div>

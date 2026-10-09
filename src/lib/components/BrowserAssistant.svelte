@@ -4,7 +4,7 @@ import { Button } from '@happyvertical/smrt-ui';
 import type { DataSurfaceRegistry } from '@happyvertical/smrt-ui/data-surface';
 import { cancelsSpeech } from '../ai/echo-gate.ts';
 import { aiState } from '../ai/instance.ts';
-import { getModel } from '../assistant/models.ts';
+import { getModel, shortLabel } from '../assistant/models.ts';
 import { isOfferRef } from '../assistant/offers.svelte.ts';
 import { createHandsFreeCapture as handsFreeCapture } from '../assistant/voice-host.ts';
 import { blueprintStore } from '../blueprint/store.svelte.ts';
@@ -92,8 +92,25 @@ $effect(() => {
   {:else if session.status === 'ready'}
     <div class="top">
       <div class="bar">
-        <span>{model?.label}</span>
-        <Button variant="secondary" onclick={() => session.unload()}>Change model</Button>
+        <span class="model-name">{model ? shortLabel(model) : ''}</span>
+        <a
+          class="model-link"
+          href={appHref('/ai/')}
+          aria-label="AI settings: change model or voice"
+          title="AI settings"
+        >
+          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+            <path
+              d="M4 6h8M15 6h1M4 14h1M8 14h8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+            <circle cx="13.5" cy="6" r="1.8" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <circle cx="6.5" cy="14" r="1.8" fill="none" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+        </a>
       </div>
       <VoiceTyping {voice} />
     </div>
@@ -172,8 +189,35 @@ $effect(() => {
     gap: var(--smrt-spacing-2);
     padding: var(--smrt-spacing-2) var(--smrt-spacing-4);
     min-width: 0;
-    flex-wrap: wrap;
     color: var(--smrt-color-on-surface-variant);
+  }
+
+  .model-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    font-size: var(--smrt-typography-body-small-size, 0.8125rem);
+  }
+
+  .model-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--smrt-radius-full, 9999px);
+    color: var(--smrt-color-on-surface-variant);
+  }
+
+  .model-link:hover {
+    background: var(--smrt-color-surface-container);
+  }
+
+  .model-link:focus-visible {
+    outline: 2px solid var(--smrt-color-primary);
+    outline-offset: 1px;
   }
 
   .offer {

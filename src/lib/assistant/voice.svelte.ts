@@ -19,7 +19,10 @@ import {
 export type LocalSpeechModel = SpeechModelHandle;
 
 /** The speech models the visitor can pick (smrt-svelte's short names). */
-export type SpeechModelId = 'moonshine-tiny' | 'whisper-tiny.en';
+export type SpeechModelId =
+  | 'moonshine-base'
+  | 'moonshine-tiny'
+  | 'whisper-tiny.en';
 
 export interface SpeechModelChoice {
   id: SpeechModelId;
@@ -32,12 +35,22 @@ export interface SpeechModelChoice {
   bytes: number;
 }
 
-/** Moonshine tiny first: it is the fastest, so the best for live dictation. */
+/**
+ * Moonshine base first: it is accurate enough for plain talking, where the
+ * tiny model garbled words. Tiny stays for the quickest, least exact option.
+ */
 export const SPEECH_MODELS: readonly SpeechModelChoice[] = [
+  {
+    id: 'moonshine-base',
+    label: 'Moonshine base',
+    note: 'Accurate and still quick, best for talking as you go (default)',
+    adapter: 'moonshine',
+    bytes: LOCAL_SPEECH_MODELS['moonshine-base']?.bytes ?? 0,
+  },
   {
     id: 'moonshine-tiny',
     label: 'Moonshine tiny',
-    note: 'Fastest, best for talking as you go (default)',
+    note: 'Fastest, less accurate',
     adapter: 'moonshine',
     bytes: LOCAL_SPEECH_MODELS['moonshine-tiny']?.bytes ?? 0,
   },
@@ -50,7 +63,7 @@ export const SPEECH_MODELS: readonly SpeechModelChoice[] = [
   },
 ];
 
-export const DEFAULT_SPEECH_MODEL: SpeechModelId = 'moonshine-tiny';
+export const DEFAULT_SPEECH_MODEL: SpeechModelId = 'moonshine-base';
 
 export function speechModelChoice(id: SpeechModelId): SpeechModelChoice {
   return (
@@ -144,7 +157,7 @@ export function loadPreferLocal(storage: Storage | null): boolean {
   return loadVoicePrefs(storage).preferLocal;
 }
 
-/** The speech model the visitor chose (Moonshine tiny until they say). */
+/** The speech model the visitor chose (Moonshine base until they say). */
 export function loadSpeechModel(storage: Storage | null): SpeechModelId {
   return loadVoicePrefs(storage).model;
 }

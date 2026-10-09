@@ -14,6 +14,12 @@ export interface SettingsPatch {
 /** Longest payment terms the assistant will write. */
 export const MAX_TERMS_LENGTH = 40;
 
+/** Longest reply the schema allows; bounds a model that starts to loop. */
+export const MAX_REPLY_LENGTH = 200;
+
+/** Shown when the model's answer cannot be read; never the raw output. */
+export const FALLBACK_REPLY = 'Sorry, say that again?';
+
 /**
  * What the model returns each turn: a reply, recipe ids to add or remove, an
  * optional cookbook to offer (never applied without a click) and optional
@@ -62,7 +68,7 @@ export function buildResponseSchema(
   const ids = recipes.map((recipe) => recipe.id);
   const list = { type: 'array', items: { enum: ids }, maxItems: ids.length };
   const properties: Record<string, unknown> = {
-    reply: { type: 'string' },
+    reply: { type: 'string', maxLength: MAX_REPLY_LENGTH },
     add: list,
     remove: list,
   };
@@ -118,32 +124,61 @@ function parseSettings(value: unknown): SettingsPatch {
   return out;
 }
 
+/** Remove Qwen3-style thinking, including a block cut off before it closed. */
+export function stripThinking(raw: string): string {
+  return raw
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*$/i, '')
+    .trim();
+}
+
+/** Pull a `reply` string out of JSON that does not parse (e.g. cut short). */
+function lenientReply(raw: string): string | null {
+  const match = /"reply"\s*:\s*"((?:[^"\\]|\\.)*)/.exec(raw);
+  if (!match) return null;
+  let text = match[1];
+  // A cut-off escape at the very end would make JSON.parse throw.
+  text = text.replace(/\\$/, '');
+  try {
+    text = JSON.parse(`"${text}"`) as string;
+  } catch {
+    text = text.replace(/\\n/g, ' ').replace(/\\"/g, '"');
+  }
+  return text.trim() || null;
+}
+
 /**
- * Read a model reply. Anything that is not the expected shape degrades to a
- * plain reply with no changes; unknown ids are dropped, an id that is both
- * added and removed is ignored, and repeats collapse.
+ * Read a model reply. Thinking tags are dropped. Malformed JSON still yields
+ * its `reply` text when one can be found, otherwise a short fallback: raw model
+ * output is never shown. Prose with no JSON in it is kept as the reply.
+ * Unknown ids are dropped, an id that is both added and removed is ignored,
+ * and repeats collapse.
  */
 export function parseChange(
-  raw: string,
+  input: string,
   recipes: readonly Pick<Recipe, 'id'>[],
   cookbooks: readonly { id: string }[] = [],
 ): AssistantChange {
   const known = new Set(recipes.map((recipe) => recipe.id));
-  const plain = (): AssistantChange => ({
-    reply: raw.trim(),
+  const raw = stripThinking(input);
+  const plain = (reply: string): AssistantChange => ({
+    reply,
     add: [],
     remove: [],
     cookbook: null,
     settings: {},
   });
+  const looksLikeJson = /^[\s`]*[{[]/.test(raw) || /"reply"\s*:/.test(raw);
+  const unreadable = () =>
+    plain(looksLikeJson ? (lenientReply(raw) ?? FALLBACK_REPLY) : raw);
   let value: unknown;
   try {
     value = JSON.parse(raw);
   } catch {
-    return plain();
+    return unreadable();
   }
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return plain();
+    return unreadable();
   }
   const object = value as Record<string, unknown>;
   const pick = (field: unknown): string[] =>

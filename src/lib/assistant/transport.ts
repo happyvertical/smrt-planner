@@ -26,6 +26,7 @@ export interface ChatModel {
       history?: { role: 'system' | 'user' | 'assistant'; content: string }[];
       responseSchema?: Record<string, unknown> | string;
       temperature?: number;
+      maxTokens?: number;
       signal?: AbortSignal;
     },
   ): Promise<string>;
@@ -57,6 +58,8 @@ const THREAD_TITLE = 'Plan your app';
 export const GREETING = 'What would you like to build?';
 /** Earlier turns sent back to the model; a small model needs a short context. */
 const HISTORY_TURNS = 6;
+/** A turn's JSON fits well inside this; a looping model is cut off, not left running. */
+const MAX_REPLY_TOKENS = 400;
 
 /**
  * An `AssistantTransport` that runs entirely in the browser: one thread, kept
@@ -143,6 +146,7 @@ export function createBrowserAssistantTransport(
           !!options.settings,
         ),
         temperature: 0,
+        maxTokens: MAX_REPLY_TOKENS,
         signal: controller.signal,
       });
       const change = parseChange(raw, options.recipes, cookbooks);

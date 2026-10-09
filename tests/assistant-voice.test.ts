@@ -87,33 +87,36 @@ describe('loadVoiceConsent', () => {
 });
 
 describe('speech models', () => {
-  it('offers Moonshine tiny first and Whisper tiny, each with its size', () => {
+  it('offers Moonshine base first, then Moonshine tiny and Whisper tiny, each with its size', () => {
     expect(SPEECH_MODELS.map((m) => m.id)).toEqual([
+      'moonshine-base',
       'moonshine-tiny',
       'whisper-tiny.en',
     ]);
-    expect(DEFAULT_SPEECH_MODEL).toBe('moonshine-tiny');
+    expect(DEFAULT_SPEECH_MODEL).toBe('moonshine-base');
     expect(SPEECH_MODELS.map((m) => m.adapter)).toEqual([
+      'moonshine',
       'moonshine',
       'whisper-local',
     ]);
     for (const model of SPEECH_MODELS) {
       expect(model.bytes).toBeGreaterThan(20_000_000);
     }
-    // The faster model is also the smaller download.
-    expect(SPEECH_MODELS[0]?.bytes).toBeLessThan(SPEECH_MODELS[1]?.bytes ?? 0);
+    // The fastest model is the smallest download, and is labelled so.
+    expect(SPEECH_MODELS[1]?.bytes).toBeLessThan(SPEECH_MODELS[0]?.bytes ?? 0);
+    expect(SPEECH_MODELS[1]?.note).toMatch(/fastest, less accurate/i);
   });
 
   it('defaults new visitors to Moonshine and keeps Whisper for earlier downloads', () => {
-    expect(loadSpeechModel(storage())).toBe('moonshine-tiny');
-    expect(loadSpeechModel(null)).toBe('moonshine-tiny');
+    expect(loadSpeechModel(storage())).toBe('moonshine-base');
+    expect(loadSpeechModel(null)).toBe('moonshine-base');
     // Downloaded before the choice existed: that was Whisper tiny.
     expect(loadSpeechModel(storage('{"local":true}'))).toBe('whisper-tiny.en');
     expect(
       loadSpeechModel(storage('{"local":true,"model":"moonshine-tiny"}')),
     ).toBe('moonshine-tiny');
     expect(loadSpeechModel(storage('{"model":"nonsense"}'))).toBe(
-      'moonshine-tiny',
+      'moonshine-base',
     );
   });
 });
@@ -137,9 +140,9 @@ describe('VoiceSession model choice', () => {
       },
     });
     await voice.init();
-    expect(voice.model).toBe('moonshine-tiny');
+    expect(voice.model).toBe('moonshine-base');
     await voice.enable();
-    expect(created).toEqual(['moonshine-tiny']);
+    expect(created).toEqual(['moonshine-base']);
     expect(sources).toEqual(['moonshine']);
   });
 
@@ -164,7 +167,7 @@ describe('VoiceSession model choice', () => {
 
     await voice.setModel('whisper-tiny.en');
     expect(first.dispose).toHaveBeenCalled();
-    expect(created).toEqual(['moonshine-tiny', 'whisper-tiny.en']);
+    expect(created).toEqual(['moonshine-base', 'whisper-tiny.en']);
     expect(voice.model).toBe('whisper-tiny.en');
     // Consent was for downloading; the new one is not cached, so it is offered.
     expect(voice.status).toBe('offer');

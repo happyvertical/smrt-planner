@@ -18,6 +18,18 @@ import {
   createBrowserAssistantTransport,
 } from './transport.ts';
 
+/**
+ * Qwen3 reasons before it answers unless told not to; its `/no_think` switch
+ * skips that, which is slow and pointless for a short structured reply. The
+ * grammar-constrained JSON already keeps any thinking out of the output.
+ */
+export function withoutThinking(chat: ChatModel, modelId: string): ChatModel {
+  if (!/^qwen3/i.test(modelId)) return chat;
+  return {
+    message: (text, options) => chat.message(`${text} /no_think`, options),
+  };
+}
+
 export type SessionStatus =
   | 'unsupported'
   | 'idle'
@@ -112,11 +124,14 @@ export class AssistantSession {
         consented: [...new Set([...this.prefs.consented, modelId])],
       };
       savePrefs(this.options.storage, this.prefs);
-      this.chat = new WebLLMProvider({
-        type: 'webllm',
-        engine: loaded.engine,
-        model: modelId,
-      });
+      this.chat = withoutThinking(
+        new WebLLMProvider({
+          type: 'webllm',
+          engine: loaded.engine,
+          model: modelId,
+        }),
+        modelId,
+      );
       this.status = 'ready';
     } catch (error) {
       if (abort.signal.aborted) {

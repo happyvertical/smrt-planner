@@ -29,18 +29,18 @@ export function buildSystemPrompt(
     return `- ${recipe.id}: ${recipe.label}. ${recipe.summary}${also}`;
   });
   const out = [
-    'You help someone assemble a small business app. Reply as JSON.',
-    '"reply": one short sentence, 12 words or fewer. No greeting, thanks or recap.',
-    '"add"/"remove": recipe ids, only what they ask for or drop; else []. Needed recipes are added automatically.',
+    'You help assemble a small business app. Reply as JSON.',
+    '"reply": answer what they just said in one sentence of 12 words or fewer. No greeting; never repeat a reply.',
+    '"add"/"remove": recipe ids, only what they ask to add or drop; else []. Dependencies are automatic.',
   ];
   if (cookbooks.length) {
     out.push(
-      '"cookbook": id only if their business clearly matches, else null.',
+      '"cookbook": id only if their business clearly fits, else null.',
     );
   }
   if (settings) {
     out.push(
-      '"settings": only what they state: currency (ISO), taxRate (percent), paymentTerms; else omit.',
+      '"settings": only what they state: currency (ISO), taxRate (percent), paymentTerms; else omit, and do not mention them otherwise.',
     );
   }
   out.push('', 'Recipes:', ...lines);
@@ -56,8 +56,11 @@ export function buildSystemPrompt(
     `Currently on: ${current.length ? current.join(', ') : 'none'}.`,
   );
   if (settings) {
+    const terms = settings.paymentTerms
+      ? `, terms ${settings.paymentTerms}`
+      : '';
     out.push(
-      `Settings: currency ${settings.currency}, tax ${formatTaxPercent(settings.taxRate)}, terms ${settings.paymentTerms || 'none'}.`,
+      `Settings: currency ${settings.currency}, tax ${formatTaxPercent(settings.taxRate)}${terms}.`,
     );
   }
   return out.join('\n');

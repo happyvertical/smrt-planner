@@ -59,6 +59,7 @@ describe('parseChange', () => {
       remove: ['commerce.vendors'],
       cookbook: null,
       settings: {},
+      theme: {},
     });
   });
 
@@ -69,6 +70,7 @@ describe('parseChange', () => {
       remove: [],
       cookbook: null,
       settings: {},
+      theme: {},
     });
     expect(parseChange('[1]', recipes).add).toEqual([]);
     expect(parseChange('{"add":"commerce.sales"}', recipes)).toEqual({
@@ -77,6 +79,7 @@ describe('parseChange', () => {
       remove: [],
       cookbook: null,
       settings: {},
+      theme: {},
     });
   });
 });

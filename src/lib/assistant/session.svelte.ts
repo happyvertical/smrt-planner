@@ -1,7 +1,7 @@
 import { isWebGPUAvailable, WebLLMProvider } from '@happyvertical/ai/local';
 import { cookbooks, getCookbook } from '../cookbooks/index.ts';
 import type { Recipe } from '../recipes/types.ts';
-import type { RecipeStore, SettingsStore } from './change.ts';
+import type { RecipeStore, SettingsStore, ThemeStore } from './change.ts';
 import {
   browserHost,
   type EngineHost,
@@ -12,6 +12,7 @@ import {
 import { getModel } from './models.ts';
 import { CookbookOffers } from './offers.svelte.ts';
 import { type AssistantPrefs, loadPrefs, savePrefs } from './prefs.ts';
+import { ThemeUndos } from './theme-undo.svelte.ts';
 import {
   type BrowserAssistantTransport,
   type ChatModel,
@@ -42,6 +43,8 @@ export interface SessionOptions {
   recipes: readonly Recipe[];
   /** The app settings the assistant may change; omit to leave them out. */
   settings?: SettingsStore;
+  /** The app theme the assistant may change (with Undo); omit to leave it out. */
+  theme?: ThemeStore;
   storage: Storage | null;
   /** Defaults to the browser's WebGPU check. */
   webgpu?: () => boolean;
@@ -64,6 +67,8 @@ export class AssistantSession {
   readonly transport: BrowserAssistantTransport;
   /** Cookbooks the assistant proposed, applied only by the person's click. */
   readonly offers = new CookbookOffers(getCookbook);
+  /** Theme changes the assistant made, each undoable from the chat. */
+  readonly themeUndos: ThemeUndos | null;
   private loaded: LoadedModel | null = null;
   private chat: ChatModel | null = null;
   private abort: AbortController | null = null;
@@ -75,6 +80,7 @@ export class AssistantSession {
     this.status = (options.webgpu ?? isWebGPUAvailable)()
       ? 'idle'
       : 'unsupported';
+    this.themeUndos = options.theme ? new ThemeUndos(options.theme) : null;
     this.transport = createBrowserAssistantTransport({
       model: () => this.chat,
       store: options.store,
@@ -82,6 +88,8 @@ export class AssistantSession {
       cookbooks,
       offers: this.offers,
       settings: options.settings,
+      theme: options.theme,
+      themeUndos: this.themeUndos ?? undefined,
       onReply: (text) => options.onReply?.(text),
     });
   }

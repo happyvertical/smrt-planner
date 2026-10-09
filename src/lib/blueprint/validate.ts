@@ -5,6 +5,7 @@ import type { FieldPolicyRow } from '../recipes/policy.ts';
 import { withRequirements } from '../recipes/resolve.ts';
 import type { ExposureSurface } from '../recipes/types.ts';
 import { isSettingRow } from '../settings/app-settings.ts';
+import { parseTheme } from '../theme/theme.ts';
 import { migrateLegacySections, migrateNavItemIds } from './migrate.ts';
 import {
   BLUEPRINT_SCHEMA,
@@ -192,6 +193,15 @@ export function parseBlueprint(
     layout = migrateNavItemIds(migrateLegacySections(parsed));
   }
 
+  let theme: Blueprint['theme'];
+  if (input.theme !== undefined) {
+    const parsed = parseTheme(input.theme);
+    if (parsed.ok) theme = parsed.theme;
+    // A saved value from an older build may name a preset this one lacks:
+    // keep the rest rather than discarding the visitor's work.
+    else if (!options.dropUnknownRecipes) return fail(parsed.error);
+  }
+
   const blueprint: Blueprint = {
     $schema: BLUEPRINT_SCHEMA,
     version: BLUEPRINT_VERSION,
@@ -201,6 +211,7 @@ export function parseBlueprint(
   };
   if (exposure && Object.keys(exposure).length) blueprint.exposure = exposure;
   if (layout) blueprint.layout = layout;
+  if (theme) blueprint.theme = theme;
   return { ok: true, blueprint };
 }
 

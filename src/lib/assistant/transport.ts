@@ -6,18 +6,22 @@ import type {
   AssistantTransport,
 } from '@happyvertical/smrt-chat/svelte';
 import type { Recipe } from '../recipes/types.ts';
+import type { ThemeSetting } from '../theme/theme.ts';
 import {
   applyChange,
   applySettings,
+  applyThemePatch,
   buildResponseSchema,
   describeChange,
   parseChange,
   type RecipeStore,
   type SettingsStore,
+  type ThemeStore,
 } from './change.ts';
 import { buildMatchIndex, matchText } from './match.ts';
 import type { OfferRef } from './offers.svelte.ts';
 import { buildSystemPrompt, type CookbookBrief } from './prompt.ts';
+import type { ThemeUndoRef } from './theme-undo.svelte.ts';
 
 /** The slice of `@happyvertical/ai`'s provider the transport uses. */
 export interface ChatModel {
@@ -48,6 +52,9 @@ export interface BrowserTransportOptions {
   };
   /** The app settings the assistant may read and change. */
   settings?: SettingsStore;
+  /** The app theme the assistant may change; each change can be undone. */
+  theme?: ThemeStore;
+  themeUndos?: { record(previous: ThemeSetting | undefined): ThemeUndoRef };
   now?: () => number;
   /** Called with each reply the model produced (not errors), e.g. to read it aloud. */
   onReply?: (text: string) => void;
@@ -109,12 +116,14 @@ export function createBrowserAssistantTransport(
     thread.lastMessageAt = message.createdAt;
     return message;
   };
-  const index = buildMatchIndex(options.recipes, options.cookbooks ?? []);
+  const index = buildMatchIndex(options.recipes, options.cookbooks ?? [], {
+    theme: !!options.theme,
+  });
   const greeting = push('assistant', GREETING);
 
   async function turn(
     text: string,
-  ): Promise<{ content: string; offer?: OfferRef }> {
+  ): Promise<{ content: string; refs?: unknown }> {
     const model = options.model();
     if (!model) {
       return {
@@ -144,6 +153,7 @@ export function createBrowserAssistantTransport(
               cookbooks,
               options.settings?.read(),
               matches,
+              options.theme ? { current: options.theme.read() } : undefined,
             ),
           },
           ...prior,
@@ -152,6 +162,7 @@ export function createBrowserAssistantTransport(
           options.recipes,
           cookbooks,
           !!options.settings,
+          !!options.theme,
         ),
         temperature: 0,
         maxTokens: MAX_REPLY_TOKENS,
@@ -159,11 +170,19 @@ export function createBrowserAssistantTransport(
       });
       const change = parseChange(raw, options.recipes, cookbooks);
       const applied = applyChange(options.store, change);
+      const themed = options.theme
+        ? applyThemePatch(options.theme, change.theme)
+        : null;
+      const undo =
+        themed && options.themeUndos
+          ? options.themeUndos.record(themed.previous)
+          : undefined;
       const summary = [
         describeChange(applied, options.recipes),
         options.settings
           ? applySettings(options.settings, change.settings)
           : '',
+        themed?.text ?? '',
       ]
         .filter(Boolean)
         .join(' ');
@@ -188,7 +207,9 @@ export function createBrowserAssistantTransport(
       const line = change.reply || (offered ? `Set up ${offered.name}?` : '');
       const reply = [line, summary].filter(Boolean).join(' ');
       if (line) options.onReply?.(line);
-      return { content: reply || 'Done.', offer };
+      // One ref renders as is; a cookbook offer and a theme Undo in one turn ride together.
+      const refs = offer && undo ? [offer, undo] : (offer ?? undo);
+      return { content: reply || 'Done.', refs };
     } catch (error) {
       if (controller?.signal.aborted) return { content: 'Stopped.' };
       const detail = error instanceof Error ? error.message : String(error);
@@ -222,7 +243,7 @@ export function createBrowserAssistantTransport(
           'assistant',
           reply.content,
           undefined,
-          reply.offer,
+          reply.refs,
         ),
       };
       seen.set(input.clientRequestId, result);

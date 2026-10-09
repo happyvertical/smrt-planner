@@ -1,6 +1,14 @@
 import type { Recipe } from '../recipes/types.ts';
 import type { AppSettings } from '../settings/app-settings.ts';
 import { CURRENCY_CODES } from '../settings/currencies.ts';
+import {
+  COLOR_SCHEMES,
+  type ColorSchemeSetting,
+  describeTheme,
+  normalizeHex,
+  THEME_PRESETS,
+  type ThemeSetting,
+} from '../theme/theme.ts';
 import { formatTaxPercent } from './prompt.ts';
 
 /** Settings as the model states them: tax in percent. All optional. */
@@ -9,6 +17,17 @@ export interface SettingsPatch {
   /** Percent, 0 to 100. */
   taxRate?: number;
   paymentTerms?: string;
+}
+
+/**
+ * A look as the model states it: a preset, or a brand colour (hex), and
+ * optionally light or dark. Tokens only; there is no way to ask for CSS.
+ */
+export interface ThemePatch {
+  preset?: string;
+  /** `#rrggbb`. */
+  primary?: string;
+  colorScheme?: ColorSchemeSetting;
 }
 
 /** Longest payment terms the assistant will write. */
@@ -31,6 +50,13 @@ export interface AssistantChange {
   remove: string[];
   cookbook: string | null;
   settings: SettingsPatch;
+  theme: ThemePatch;
+}
+
+/** The slice of the blueprint store that holds the app theme. */
+export interface ThemeStore {
+  read(): ThemeSetting | undefined;
+  write(theme: ThemeSetting | undefined): void;
 }
 
 /** The slice of the blueprint store that holds the app settings. */
@@ -64,6 +90,7 @@ export function buildResponseSchema(
   recipes: readonly Pick<Recipe, 'id'>[],
   cookbooks: readonly { id: string }[] = [],
   withSettings = false,
+  withTheme = false,
 ): Record<string, unknown> {
   const ids = recipes.map((recipe) => recipe.id);
   const list = { type: 'array', items: { enum: ids }, maxItems: ids.length };
@@ -82,6 +109,17 @@ export function buildResponseSchema(
         currency: { type: 'string', pattern: '^[A-Z]{3}$' },
         taxRate: { type: 'number', minimum: 0, maximum: 100 },
         paymentTerms: { type: 'string', maxLength: MAX_TERMS_LENGTH },
+      },
+      additionalProperties: false,
+    };
+  }
+  if (withTheme) {
+    properties.theme = {
+      type: 'object',
+      properties: {
+        preset: { enum: [...THEME_PRESETS] },
+        primary: { type: 'string', pattern: '^#[0-9a-fA-F]{6}$' },
+        colorScheme: { enum: ['light', 'dark'] },
       },
       additionalProperties: false,
     };
@@ -120,6 +158,29 @@ function parseSettings(value: unknown): SettingsPatch {
       .join('')
       .trim();
     if (terms && terms.length <= MAX_TERMS_LENGTH) out.paymentTerms = terms;
+  }
+  return out;
+}
+
+/** Keep only a known preset, a hex colour and light or dark. */
+function parseThemePatch(value: unknown): ThemePatch {
+  const out: ThemePatch = {};
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return out;
+  const object = value as Record<string, unknown>;
+  if (
+    typeof object.preset === 'string' &&
+    THEME_PRESETS.includes(object.preset)
+  ) {
+    out.preset = object.preset;
+  }
+  const primary = normalizeHex(object.primary);
+  if (primary) out.primary = primary;
+  if (
+    object.colorScheme === 'light' ||
+    object.colorScheme === 'dark' ||
+    object.colorScheme === 'system'
+  ) {
+    out.colorScheme = object.colorScheme;
   }
   return out;
 }
@@ -167,6 +228,7 @@ export function parseChange(
     remove: [],
     cookbook: null,
     settings: {},
+    theme: {},
   });
   const looksLikeJson = /^[\s`]*[{[]/.test(raw) || /"reply"\s*:/.test(raw);
   const unreadable = () =>
@@ -204,6 +266,7 @@ export function parseChange(
         ? object.cookbook
         : null,
     settings: parseSettings(object.settings),
+    theme: parseThemePatch(object.theme),
   };
 }
 
@@ -271,4 +334,45 @@ export function applySettings(
   store.write(next);
   const text = parts.join(', ');
   return `${text[0].toUpperCase()}${text.slice(1)}.`;
+}
+
+/** What applying a theme change did, so the chat can say it and offer Undo. */
+export interface AppliedTheme {
+  /** A terse sentence, e.g. "Theme: glass." */
+  text: string;
+  /** The theme before the change, for Undo (undefined was the default). */
+  previous: ThemeSetting | undefined;
+}
+
+/**
+ * Apply a theme change (reversible, so no click) and say so tersely.
+ * Returns null when nothing would change. A preset replaces a brand colour; a
+ * brand colour sits on top of the preset; light or dark is kept either way.
+ */
+export function applyThemePatch(
+  store: ThemeStore,
+  patch: ThemePatch,
+): AppliedTheme | null {
+  if (!patch.preset && !patch.primary && !patch.colorScheme) return null;
+  const previous = store.read();
+  const next: ThemeSetting = { ...previous };
+  if (patch.preset) {
+    next.preset = patch.preset;
+    delete next.custom;
+  }
+  if (patch.primary) {
+    next.custom = {
+      primary: patch.primary,
+      ...(previous?.custom?.fontFamily
+        ? { fontFamily: previous.custom.fontFamily }
+        : {}),
+    };
+  }
+  if (patch.colorScheme && COLOR_SCHEMES.includes(patch.colorScheme)) {
+    next.colorScheme = patch.colorScheme;
+  }
+  if (JSON.stringify(next) === JSON.stringify(previous ?? {})) return null;
+  store.write(next);
+  const text = `Theme: ${describeTheme(store.read())}.`;
+  return { text, previous };
 }

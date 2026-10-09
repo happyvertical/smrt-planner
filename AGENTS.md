@@ -50,6 +50,16 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   recipes sharing a suggestion share the section (`section:<id>`), and each recipe's main item
   carries the gear to its own group/recipe options page. `group` is the Planner card + Options/Help
   pages only. `blueprint/migrate.ts` rewrites pre-section layout ids in the loader.
+- `src/lib/theme/`: the app's look, stored in the document as `theme?: { preset?, colorScheme?,
+  custom?: { primary, fontFamily? } }` (absent = default `smrt`/`system`). `theme.ts` is the pure
+  validation (known smrt-ui presets, hex colours, the `THEME_FONTS` allow-list), `runtime.ts` turns a
+  brand colour into a registered theme (`createThemeFromColor` + `registerTheme`, one id per colour
+  because `ThemeProvider` looks a preset up once). `components/ThemeBridge.svelte` (in the layout)
+  applies the document theme to AppShell's `ThemeProvider` and reads its controls back; the Settings
+  tab's `ThemeSection.svelte` uses `ThemeSwitcher`, `ColorSchemeToggle` and a brand colour picker.
+  The assistant may return `theme` (`{preset}` or `{primary}` hex, optional `colorScheme`): applied
+  live with an Undo (`assistant/theme-undo.svelte.ts`); tokens only, never CSS. Applying a library
+  cookbook that sets no theme keeps the visitor's.
 - `src/lib/settings/app-settings.ts`: app settings (currency, default tax rate, default payment terms)
   belong to the visitor's app, never to a cookbook. They are the same app-scope `defaultValue`
   policy rows a cookbook writes (no blueprint field); `SETTING_TARGETS` is the one list of which

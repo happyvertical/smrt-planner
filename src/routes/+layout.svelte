@@ -19,6 +19,7 @@ import AiStatusIcons from '$lib/components/AiStatusIcons.svelte';
 import BrowserAssistant from '$lib/components/BrowserAssistant.svelte';
 import PlannerEditBridge from '$lib/components/PlannerEditBridge.svelte';
 import SectionActions from '$lib/components/SectionActions.svelte';
+import ThemeBridge from '$lib/components/ThemeBridge.svelte';
 import { cookbookState } from '$lib/cookbooks/state.svelte.ts';
 import { provideDataSource } from '$lib/data/context.ts';
 import { humanize } from '$lib/data/format.ts';
@@ -329,6 +330,7 @@ function flushOnHide() {
     <p class="storage-notice" role="status">{blueprintStore.loadNotice}</p>
   {/if}
   <PlannerEditBridge />
+  <ThemeBridge />
   {@render children()}
 </AppShell>
 

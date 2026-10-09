@@ -1,6 +1,7 @@
 import type { ShellLayout } from '@happyvertical/smrt-svelte/workspace/layout';
 import type { FieldPolicyRow } from '../recipes/policy.ts';
 import type { ExposureSurface } from '../recipes/types.ts';
+import type { ThemeSetting } from '../theme/theme.ts';
 
 /**
  * Placeholder until happyvertical/smrt#3604 publishes the real schema URL.
@@ -38,6 +39,11 @@ export interface Blueprint {
   exposure?: Record<string, ExposureSurface[]>;
   /** The shell layout (smrt-svelte `ShellLayout`), applied by `AppShell`. */
   layout?: ShellLayout;
+  /**
+   * The app's look: a smrt-ui preset, colour scheme and optional brand colour.
+   * Absent in older files, read as the default theme.
+   */
+  theme?: ThemeSetting;
 }
 
 export type BlueprintResult =

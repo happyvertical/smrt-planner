@@ -15,6 +15,10 @@ export const aiState = new AiState({
       read: () => blueprintStore.settings(),
       write: (settings) => blueprintStore.setSettings(settings),
     },
+    theme: {
+      read: () => blueprintStore.snapshot().theme,
+      write: (theme) => blueprintStore.setTheme(theme),
+    },
   },
   voice: { createModel: createSpeechModel },
 });

@@ -10,6 +10,7 @@ import {
   readSettings,
   writeSettings,
 } from '../settings/app-settings.ts';
+import { compactTheme, type ThemeSetting } from '../theme/theme.ts';
 import { blueprintFromLegacySearch, hasLegacyState } from './legacy.ts';
 import {
   BACKUP_KEY,
@@ -43,6 +44,8 @@ export type PersistState = 'unknown' | 'ok' | 'memory';
 export class BlueprintStore {
   /** The shell layout, owned here and passed to `AppShell`. */
   layout = $state<ShellLayout | undefined>();
+  /** The app's theme; undefined is the default. The shell applies it live. */
+  theme = $state<ThemeSetting | undefined>();
   persist = $state<PersistState>('unknown');
   /** False until the saved blueprint has been read; nothing saves before. */
   loaded = $state(false);
@@ -72,6 +75,10 @@ export class BlueprintStore {
       ...recipeState.snapshot(),
     };
     if (this.layout) blueprint.layout = this.layout;
+    const theme = compactTheme(
+      $state.snapshot(this.theme) as ThemeSetting | undefined,
+    );
+    if (theme) blueprint.theme = theme;
     return blueprint;
   }
 
@@ -84,9 +91,15 @@ export class BlueprintStore {
   apply(blueprint: Blueprint): void {
     recipeState.load(blueprint);
     this.layout = blueprint.layout;
+    this.theme = blueprint.theme;
     setSampleTaxRate(
       hasTaxRateRow(blueprint) ? readSettings(blueprint).taxRate : undefined,
     );
+  }
+
+  /** Change the theme; the default (or an empty one) clears it. */
+  setTheme(next: ThemeSetting | undefined): void {
+    this.theme = compactTheme(next);
   }
 
   /** The app settings (currency, tax rate, payment terms), read from the policy rows. */
@@ -115,6 +128,7 @@ export class BlueprintStore {
   reset(): void {
     recipeState.clear();
     this.layout = undefined;
+    this.theme = undefined;
     try {
       globalThis.localStorage?.removeItem(SHELL_STORAGE_KEY);
     } catch {

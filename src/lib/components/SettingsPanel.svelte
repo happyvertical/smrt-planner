@@ -2,6 +2,7 @@
 import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
 import type { AppSettings as Settings } from '$lib/settings/app-settings.ts';
 import AppSettings from './AppSettings.svelte';
+import ThemeSection from './ThemeSection.svelte';
 
 // The editor holds its own copy so typing is never fought by the store;
 // changes reach the blueprint after a short pause (and its save follows).
@@ -34,6 +35,7 @@ $effect(() => {
     keep their values.
   </p>
   <AppSettings value={draft} onchange={change} idPrefix="app-settings-tab" />
+  <ThemeSection />
 </div>
 
 <svelte:window onpagehide={commit} />

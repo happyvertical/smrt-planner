@@ -1,6 +1,7 @@
 import type { Cookbook } from '../cookbooks/types.ts';
 import type { Recipe } from '../recipes/types.ts';
 import type { AppSettings } from '../settings/app-settings.ts';
+import { describeTheme, type ThemeSetting } from '../theme/theme.ts';
 import type { Match } from './match.ts';
 
 /** The slice of a cookbook the model needs to pick one. */
@@ -24,6 +25,7 @@ interface PromptExample {
   recipes?: string[];
   cookbook?: string;
   settings?: boolean;
+  theme?: boolean;
 }
 
 const EXAMPLES: readonly PromptExample[] = [
@@ -66,6 +68,16 @@ const EXAMPLES: readonly PromptExample[] = [
     },
   },
   {
+    says: 'make it warmer',
+    theme: true,
+    answer: {
+      reply: 'Gave it a warm amber brand colour.',
+      add: [],
+      remove: [],
+      theme: { primary: '#d97706' },
+    },
+  },
+  {
     says: 'hello',
     answer: { reply: 'Hi. What kind of business is it?', add: [], remove: [] },
   },
@@ -75,12 +87,14 @@ function examples(
   recipeIds: ReadonlySet<string>,
   cookbookIds: ReadonlySet<string>,
   withSettings: boolean,
+  withTheme: boolean,
 ): string[] {
   return EXAMPLES.filter(
     (e) =>
       (e.recipes ?? []).every((id) => recipeIds.has(id)) &&
       (!e.cookbook || cookbookIds.has(e.cookbook)) &&
-      (!e.settings || withSettings),
+      (!e.settings || withSettings) &&
+      (!e.theme || withTheme),
   ).map((e) => `"${e.says}" -> ${JSON.stringify(e.answer)}`);
 }
 
@@ -106,6 +120,7 @@ export function buildSystemPrompt(
   cookbooks: readonly CookbookBrief[] = [],
   settings?: AppSettings,
   matches?: readonly Match[],
+  themeInfo?: { current: ThemeSetting | undefined },
 ): string {
   const focused = matches !== undefined;
   const matchedRecipes = (matches ?? [])
@@ -137,14 +152,23 @@ export function buildSystemPrompt(
       '"settings": only what they state: currency (ISO), taxRate (percent), paymentTerms; else omit, and do not mention them otherwise.',
     );
   }
+  if (themeInfo) {
+    out.push(
+      '"theme": only if they ask for a look: {"preset": material|glass|studio|smrt|happyvertical} or {"primary": "#rrggbb"}, optional "colorScheme": light|dark; else omit.',
+    );
+  }
   const shown = examples(
     new Set(recipes.map((r) => r.id)),
     new Set(cookbooks.map((c) => c.id)),
     Boolean(settings),
+    Boolean(themeInfo),
   );
   if (shown.length) out.push('', 'Examples:', ...shown);
-  if (matchedRecipes.length || matchedCookbooks.length) {
+  const themeHint =
+    !!themeInfo && (matches ?? []).some((m) => m.kind === 'theme');
+  if (matchedRecipes.length || matchedCookbooks.length || themeHint) {
     const parts: string[] = [];
+    if (themeHint) parts.push('theming (use "theme")');
     if (matchedCookbooks.length) {
       parts.push(`cookbook ${matchedCookbooks.join(', ')}`);
     }
@@ -194,6 +218,9 @@ export function buildSystemPrompt(
     out.push(
       `Settings: currency ${settings.currency}, tax ${formatTaxPercent(settings.taxRate)}${terms}.`,
     );
+  }
+  if (themeInfo) {
+    out.push(`Theme: ${describeTheme(themeInfo.current)}.`);
   }
   return out.join('\n');
 }

@@ -6,6 +6,7 @@ import { cancelsSpeech } from '../ai/echo-gate.ts';
 import { aiState } from '../ai/instance.ts';
 import { getModel, shortLabel } from '../assistant/models.ts';
 import { isOfferRef } from '../assistant/offers.svelte.ts';
+import { isThemeUndoRef } from '../assistant/theme-undo.svelte.ts';
 import { createHandsFreeCapture as handsFreeCapture } from '../assistant/voice-host.ts';
 import { blueprintStore } from '../blueprint/store.svelte.ts';
 import { applyCookbook, needsConfirm } from '../cookbooks/apply.ts';
@@ -53,9 +54,31 @@ $effect(() => {
 });
 </script>
 
-{#snippet offerCard(message: { toolCallData?: unknown })}
-  {#if isOfferRef(message.toolCallData)}
-    {@const offer = session.offers.offers[message.toolCallData.offerId]}
+{#snippet themeUndo(ref: unknown)}
+  {#if isThemeUndoRef(ref) && session.themeUndos}
+    {@const entry = session.themeUndos.undos[ref.undoId]}
+    {#if entry?.status === 'available'}
+      <div class="offer" role="group" aria-label="Theme change">
+        <Button variant="secondary" onclick={() => session.themeUndos?.undo(entry.id)}>
+          Undo theme change
+        </Button>
+      </div>
+    {:else if entry?.status === 'undone'}
+      <p class="offer-note" role="status">Theme restored.</p>
+    {/if}
+  {/if}
+{/snippet}
+
+{#snippet toolCard(message: { toolCallData?: unknown })}
+  {#each Array.isArray(message.toolCallData) ? message.toolCallData : [message.toolCallData] as ref, i (i)}
+    {@render offerCard(ref)}
+    {@render themeUndo(ref)}
+  {/each}
+{/snippet}
+
+{#snippet offerCard(data: unknown)}
+  {#if isOfferRef(data)}
+    {@const offer = session.offers.offers[data.offerId]}
     {@const cookbook = offer ? getCookbook(offer.cookbookId) : undefined}
     {#if offer && cookbook}
       {#if offer.status === 'pending'}
@@ -147,7 +170,7 @@ $effect(() => {
         contextMode="server"
         conversations="single"
         composerPlaceholder="I run a bakery…"
-        toolCall={offerCard}
+        toolCall={toolCard}
         dictation={voice.dictation}
         dictationMode={aiState.handsFreeActive ? 'hands-free' : 'push'}
         {handsFreeCapture}

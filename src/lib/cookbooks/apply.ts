@@ -31,7 +31,8 @@ export function needsConfirm(store: Pick<BlueprintStore, 'snapshot'>): boolean {
  */
 export function applyCookbook(
   cookbook: Cookbook,
-  store: Pick<BlueprintStore, 'replace'>,
+  store: Pick<BlueprintStore, 'replace'> &
+    Partial<Pick<BlueprintStore, 'theme'>>,
   settings?: AppSettings,
 ): BlueprintResult {
   // `settings` are the visitor's edits of the cookbook's starting values; the
@@ -42,7 +43,10 @@ export function applyCookbook(
       : cookbook.blueprint,
   );
   if (result.ok) {
+    // A cookbook without a theme leaves the visitor's own look alone.
+    const keep = result.blueprint.theme ? undefined : store.theme;
     store.replace(result.blueprint);
+    if (keep) store.theme = keep;
     setSamplePack(cookbook.id);
   }
   return result;

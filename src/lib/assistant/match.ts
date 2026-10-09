@@ -7,7 +7,7 @@ import type { Recipe } from '../recipes/types.ts';
  * what to do; matches only focus its prompt and back up a cookbook offer.
  */
 
-export type MatchKind = 'recipe' | 'cookbook';
+export type MatchKind = 'recipe' | 'cookbook' | 'theme';
 export type Confidence = 'strong' | 'weak';
 
 export interface Match {
@@ -215,11 +215,28 @@ function wordsOf(raw: string): string[] {
     .filter((w) => w && !STOPWORDS.has(w));
 }
 
-/** Build the index for a set of recipes and cookbooks. */
+/** Words that mean the person is talking about how the app looks. */
+export const THEME_KEYWORDS: readonly string[] = [
+  'theme',
+  'colour',
+  'color',
+  'colour scheme',
+  'dark mode',
+  'light mode',
+  'brand',
+  'branding',
+  'style',
+  'warmer',
+  'cooler',
+  'font',
+];
+
+/** Build the index for a set of recipes and cookbooks (and theming, when asked). */
 export function buildMatchIndex(
   recipes: readonly Pick<Recipe, 'id' | 'label' | 'synonyms'>[],
   cookbooks: readonly (Pick<Cookbook, 'id' | 'name'> &
     Partial<Pick<Cookbook, 'keywords'>>)[] = [],
+  options: { theme?: boolean } = {},
 ): MatchIndex {
   const entries: Entry[] = [];
   for (const recipe of recipes) {
@@ -242,6 +259,11 @@ export function buildMatchIndex(
     for (const keyword of cookbook.keywords ?? []) {
       collect(entry, keyword, 'keyword');
     }
+    entries.push(entry);
+  }
+  if (options.theme) {
+    const entry: Entry = { kind: 'theme', id: 'theme', terms: [] };
+    for (const word of THEME_KEYWORDS) collect(entry, word, 'keyword');
     entries.push(entry);
   }
   return { entries };

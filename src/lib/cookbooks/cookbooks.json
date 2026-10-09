@@ -14,6 +14,7 @@
       "blueprint": {
         "$schema": "https://s-m-r-t.dev/schemas/blueprint/v1.json",
         "version": 1,
+        "theme": { "custom": { "primary": "#b45309", "fontFamily": "Georgia" } },
         "recipes": [
           "commerce.customers",
           "commerce.invoicing",
@@ -213,6 +214,7 @@
       "blueprint": {
         "$schema": "https://s-m-r-t.dev/schemas/blueprint/v1.json",
         "version": 1,
+        "theme": { "preset": "smrt" },
         "recipes": [
           "commerce.customers",
           "commerce.estimates",
@@ -418,6 +420,7 @@
       "blueprint": {
         "$schema": "https://s-m-r-t.dev/schemas/blueprint/v1.json",
         "version": 1,
+        "theme": { "preset": "studio" },
         "recipes": [
           "commerce.agreements",
           "commerce.customers",
@@ -609,6 +612,7 @@
       "blueprint": {
         "$schema": "https://s-m-r-t.dev/schemas/blueprint/v1.json",
         "version": 1,
+        "theme": { "custom": { "primary": "#0f766e", "fontFamily": "ui-rounded" } },
         "recipes": [
           "commerce.agreements",
           "commerce.customers",

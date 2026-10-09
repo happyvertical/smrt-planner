@@ -1,5 +1,6 @@
 import { catalog, getModelByQualifiedName } from '../catalog/index.ts';
 import type { CatalogModel, CatalogPackage } from '../catalog/types.ts';
+import { FEATURE_ENTRY_ICON } from './features.ts';
 import descriptionsFile from './help/descriptions.json';
 import type { HelpModel } from './help.ts';
 import { mergeRecipes, type RecipeOverlay } from './merge.ts';
@@ -81,7 +82,7 @@ export function recipeNav(recipe: Recipe): RecipeNavTarget[] {
       ? [
           {
             label: entry.label,
-            icon: entry.icon,
+            icon: entry.icon ?? FEATURE_ENTRY_ICON,
             description: entryDescription(entry.description, found.model),
             ...(entry.key ? { key: entry.key } : {}),
             ...(entry.noun ? { noun: entry.noun } : {}),
@@ -125,10 +126,23 @@ export function helpModels(
   recipe: Recipe,
   rows: readonly FieldPolicyRow[] = [],
 ): HelpModel[] {
+  // A recipe with no menu entry has no list or form, so no field is shown to
+  // describe (the assistant's session records, a policy table).
+  if (recipe.nav.length === 0) return [];
   return recipeModels(recipe).map(({ model }) => ({
     id: model.id,
     name: model.name,
-    descriptions: descriptions[model.id] ?? {},
+    // The curated local text first (it is plain language, checked by tests);
+    // a field it does not cover falls back to the description its package
+    // declares, which is how feature recipes' models get a glossary.
+    descriptions: {
+      ...Object.fromEntries(
+        model.fields.flatMap((f) =>
+          f.description ? [[f.name, f.description]] : [],
+        ),
+      ),
+      ...descriptions[model.id],
+    },
     fields: resolveFields(model, recipe.options?.[model.id], rows).map((r) => ({
       name: r.field.name,
       label: r.label,

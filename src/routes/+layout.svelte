@@ -86,7 +86,9 @@ const recipeGroups: ShellNavGroup[] = $derived.by(() => {
     const recipe = recipes.find((r) => r.id === id);
     return recipe ? [recipe] : [];
   });
-  return buildNavSections(added).map((section) => {
+  // A section none of whose recipes has a menu entry (an assistant, a settings
+  // panel) is left out rather than shown empty.
+  return buildNavSections(added).flatMap((section) => {
     const seen = new Set<string>();
     const items: ShellNavItem[] = [];
     for (const recipe of section.recipes) {
@@ -118,14 +120,17 @@ const recipeGroups: ShellNavGroup[] = $derived.by(() => {
         main = false;
       }
     }
+    if (items.length === 0) return [];
     const id = `section:${section.id}`;
-    return {
-      id,
-      heading: section.label,
-      icon: section.icon,
-      href: appHref(sectionPath(id)),
-      items,
-    };
+    return [
+      {
+        id,
+        heading: section.label,
+        icon: section.icon,
+        href: appHref(sectionPath(id)),
+        items,
+      },
+    ];
   });
 });
 

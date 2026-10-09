@@ -269,10 +269,9 @@ describe('every recipe', () => {
         recipe.help ?? { markdown: '', fieldRefs: [] },
         models,
       );
-      // Overview plus two or three tasks.
+      // Overview plus at least two tasks (feature recipes' help lists more).
       const tasks = blocks.filter((b) => b.type === 'heading' && b.level === 3);
       expect(tasks.length).toBeGreaterThanOrEqual(2);
-      expect(tasks.length).toBeLessThanOrEqual(3);
       // Every shown field has a glossary entry.
       for (const m of models) {
         const shown = m.fields.filter((x) => x.visibility === 'basic');
@@ -292,6 +291,11 @@ describe('every recipe', () => {
 
   it('declares only fields the catalog models declare', () => {
     for (const recipe of recipes) {
+      // No menu entry, no list or form: nothing is shown to describe.
+      if (recipe.nav.length === 0) {
+        expect(effective(recipe.id).models).toEqual([]);
+        continue;
+      }
       for (const id of recipe.models) {
         const catalog = getModelByQualifiedName(id)?.model;
         const { models } = effective(recipe.id);

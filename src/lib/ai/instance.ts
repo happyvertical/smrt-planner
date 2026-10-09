@@ -1,4 +1,4 @@
-import { createLocalSpeechModel } from '../assistant/voice-host.ts';
+import { createSpeechModel } from '../assistant/voice-host.ts';
 import { browserStorage } from '../blueprint/storage.ts';
 import { recipes } from '../recipes/index.ts';
 import { recipeState } from '../recipes/state.svelte.ts';
@@ -8,5 +8,5 @@ import { AiState } from './state.svelte.ts';
 export const aiState = new AiState({
   storage: browserStorage(),
   session: { store: recipeState, recipes },
-  voice: { createModel: createLocalSpeechModel },
+  voice: { createModel: createSpeechModel },
 });

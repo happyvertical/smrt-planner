@@ -1,9 +1,10 @@
 import {
   type BrowserSpeechSupport,
   createSttDictationSource,
+  LOCAL_SPEECH_MODELS,
   probeBrowserSpeech,
+  type LocalSpeechModel as SpeechModelHandle,
   type STTAdapter,
-  type WhisperLocalModel,
 } from '@happyvertical/smrt-svelte/browser-ai';
 
 /**
@@ -14,8 +15,49 @@ import {
  * own device. Nothing is downloaded without their say-so.
  */
 
-/** The downloadable model the offer drives (smrt-svelte's `WhisperLocalModel`). */
-export type LocalSpeechModel = WhisperLocalModel;
+/** The downloadable model the offer drives (smrt-svelte's `LocalSpeechModel`). */
+export type LocalSpeechModel = SpeechModelHandle;
+
+/** The speech models the visitor can pick (smrt-svelte's short names). */
+export type SpeechModelId = 'moonshine-tiny' | 'whisper-tiny.en';
+
+export interface SpeechModelChoice {
+  id: SpeechModelId;
+  label: string;
+  /** One line on what it is good for. */
+  note: string;
+  /** smrt-svelte adapter type that runs it. */
+  adapter: 'moonshine' | 'whisper-local';
+  /** First-download size in bytes (smrt-svelte's estimate). */
+  bytes: number;
+}
+
+/** Moonshine tiny first: it is the fastest, so the best for live dictation. */
+export const SPEECH_MODELS: readonly SpeechModelChoice[] = [
+  {
+    id: 'moonshine-tiny',
+    label: 'Moonshine tiny',
+    note: 'Fastest, best for talking as you go (default)',
+    adapter: 'moonshine',
+    bytes: LOCAL_SPEECH_MODELS['moonshine-tiny']?.bytes ?? 0,
+  },
+  {
+    id: 'whisper-tiny.en',
+    label: 'Whisper tiny',
+    note: 'English, the original choice',
+    adapter: 'whisper-local',
+    bytes: LOCAL_SPEECH_MODELS['whisper-tiny.en']?.bytes ?? 0,
+  },
+];
+
+export const DEFAULT_SPEECH_MODEL: SpeechModelId = 'moonshine-tiny';
+
+export function speechModelChoice(id: SpeechModelId): SpeechModelChoice {
+  return (
+    SPEECH_MODELS.find((choice) => choice.id === id) ??
+    (SPEECH_MODELS[0] as SpeechModelChoice)
+  );
+}
 
 export type VoiceStatus =
   /** Probing the browser. */
@@ -35,12 +77,15 @@ export type DictationSource = () => Promise<STTAdapter>;
 export interface VoiceOptions {
   storage: Storage | null;
   /** Makes the downloadable model. Not called when the browser's works. */
-  createModel: () => LocalSpeechModel;
+  createModel: (model: SpeechModelId) => LocalSpeechModel;
   probe?: () => Promise<BrowserSpeechSupport>;
   /** Builds the dictation source for the browser's own recogniser. */
   browserSource?: () => DictationSource;
   /** Builds the dictation source that records and transcribes locally. */
-  localSource?: (model: LocalSpeechModel) => DictationSource;
+  localSource?: (
+    model: LocalSpeechModel,
+    choice: SpeechModelChoice,
+  ) => DictationSource;
 }
 
 export const VOICE_PREFS_KEY = 'smrt-planner:voice:v1';
@@ -50,6 +95,8 @@ interface VoicePrefs {
   local: boolean;
   /** Use the downloadable model even where the browser's own works. */
   preferLocal: boolean;
+  /** Which downloadable model. */
+  model: SpeechModelId;
 }
 
 function loadVoicePrefs(storage: Storage | null): VoicePrefs {
@@ -57,15 +104,19 @@ function loadVoicePrefs(storage: Storage | null): VoicePrefs {
     const raw = storage?.getItem(VOICE_PREFS_KEY);
     if (raw) {
       const value = JSON.parse(raw) as Partial<VoicePrefs>;
+      const local = value.local === true;
+      const known = SPEECH_MODELS.find((m) => m.id === value.model)?.id;
       return {
-        local: value.local === true,
+        local,
         preferLocal: value.preferLocal === true,
+        // Someone who downloaded before the choice existed has Whisper tiny.
+        model: known ?? (local ? 'whisper-tiny.en' : DEFAULT_SPEECH_MODEL),
       };
     }
   } catch {
     // Unreadable or unavailable: the defaults.
   }
-  return { local: false, preferLocal: false };
+  return { local: false, preferLocal: false, model: DEFAULT_SPEECH_MODEL };
 }
 
 function saveVoicePrefs(storage: Storage | null, prefs: VoicePrefs): void {
@@ -91,6 +142,11 @@ export function saveVoiceConsent(
 /** Whether the visitor chose the downloadable model over the browser's own. */
 export function loadPreferLocal(storage: Storage | null): boolean {
   return loadVoicePrefs(storage).preferLocal;
+}
+
+/** The speech model the visitor chose (Moonshine tiny until they say). */
+export function loadSpeechModel(storage: Storage | null): SpeechModelId {
+  return loadVoicePrefs(storage).model;
 }
 
 /** What to do for a probe result, given what is on the device. */
@@ -119,11 +175,15 @@ export class VoiceSession {
   preferLocal = $state(false);
   /** The size the offer shows, in bytes. */
   size = $state(0);
+  /** The chosen downloadable model. */
+  model = $state<SpeechModelId>(DEFAULT_SPEECH_MODEL);
+  /** Every byte is in and the model is being prepared ("Getting ready"). */
+  preparing = $state(false);
 
   /** The dictation source for the composer, or null when voice is off. */
   dictation = $state.raw<DictationSource | null>(null);
 
-  private model: LocalSpeechModel | null = null;
+  private handle: LocalSpeechModel | null = null;
   private abort: AbortController | null = null;
   private readonly options: VoiceOptions;
 
@@ -136,6 +196,7 @@ export class VoiceSession {
     const probed = await (this.options.probe ?? probeBrowserSpeech)();
     this.browserWorks = probed === 'works';
     this.preferLocal = loadPreferLocal(this.options.storage);
+    this.model = loadSpeechModel(this.options.storage);
     // Choosing the download treats the browser's recogniser as unavailable.
     const support =
       this.preferLocal && probed === 'works' ? 'unreliable' : probed;
@@ -147,8 +208,8 @@ export class VoiceSession {
       this.status = 'browser';
       return;
     }
-    const model = this.options.createModel();
-    this.model = model;
+    const model = this.options.createModel(this.model);
+    this.handle = model;
     this.size = model.estimateSize();
     this.cached = await model.isCached().catch(() => false);
     const plan = planVoice(
@@ -162,32 +223,36 @@ export class VoiceSession {
 
   /** Download (or read from the cache) and turn voice typing on. */
   async enable(): Promise<void> {
-    const model = this.model;
+    const model = this.handle;
     if (!model || this.status === 'downloading') return;
     this.status = 'downloading';
     this.error = '';
     this.progress = 0;
+    this.preparing = false;
     const abort = new AbortController();
     this.abort = abort;
     try {
       await model.load({
         onProgress: (p) => {
           this.progress = p.bytesTotal > 0 ? p.bytesLoaded / p.bytesTotal : 0;
+          // The bytes are in; compiling the model for this device takes a moment.
+          this.preparing = p.state === 'extracting';
         },
         signal: abort.signal,
       });
       // Consent is kept only once the download completed.
       saveVoiceConsent(this.options.storage, true);
       this.cached = true;
+      const choice = speechModelChoice(this.model);
       this.dictation = (
         this.options.localSource ??
-        ((m) =>
+        ((m, c) =>
           createSttDictationSource({
-            type: 'whisper-local',
+            type: c.adapter,
             // The consent flow and the dictation share one loaded model.
             modelHandle: m,
           }))
-      )(model);
+      )(model, choice);
       this.status = 'ready';
     } catch (error) {
       if (abort.signal.aborted) {
@@ -198,19 +263,31 @@ export class VoiceSession {
       }
     } finally {
       this.abort = null;
+      this.preparing = false;
     }
   }
 
   /** Switch between the browser's recogniser and the downloadable model. */
   async setPreferLocal(on: boolean): Promise<void> {
     if (!this.browserWorks || on === this.preferLocal) return;
+    await this.restart({ preferLocal: on });
+  }
+
+  /** Pick the downloadable model; the new one is offered (or turned on if cached). */
+  async setModel(id: SpeechModelId): Promise<void> {
+    if (id === this.model || !SPEECH_MODELS.some((m) => m.id === id)) return;
+    await this.restart({ model: id });
+  }
+
+  /** Save a changed choice, let go of the current model, and decide again. */
+  private async restart(change: Partial<VoicePrefs>): Promise<void> {
     this.abort?.abort();
-    this.model?.dispose();
-    this.model = null;
+    this.handle?.dispose();
+    this.handle = null;
     this.dictation = null;
     saveVoicePrefs(this.options.storage, {
       ...loadVoicePrefs(this.options.storage),
-      preferLocal: on,
+      ...change,
     });
     this.status = 'checking';
     await this.init();
@@ -228,8 +305,8 @@ export class VoiceSession {
 
   dispose(): void {
     this.abort?.abort();
-    this.model?.dispose();
-    this.model = null;
+    this.handle?.dispose();
+    this.handle = null;
     this.dictation = null;
   }
 }

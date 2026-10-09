@@ -219,10 +219,15 @@ describe('AiState', () => {
   });
 
   it('tolerates unavailable or corrupt storage', () => {
-    expect(loadAiPrefs(null)).toEqual({ dismissed: false, readAloud: false });
+    expect(loadAiPrefs(null)).toEqual({
+      dismissed: false,
+      readAloud: false,
+      handsFree: false,
+    });
     expect(loadAiPrefs(storage({ [AI_PREFS_KEY]: '{nope' }))).toEqual({
       dismissed: false,
       readAloud: false,
+      handsFree: false,
     });
     const throwing = {
       getItem: () => {
@@ -236,6 +241,26 @@ describe('AiState', () => {
     state.hydrate(false);
     state.dismissFirstRun();
     expect(state.prefs.dismissed).toBe(true);
+  });
+
+  it('remembers hands-free, and only acts on it once the downloaded model is on', async () => {
+    const store = storage();
+    const state = makeState(store);
+    state.hydrate(false);
+    expect(state.prefs.handsFree).toBe(false);
+    state.setHandsFree(true);
+    expect(loadAiPrefs(store).handsFree).toBe(true);
+    // Saved, but the browser's own recogniser cannot write sentences down.
+    expect(state.handsFreeActive).toBe(false);
+    state.voice.status = 'ready';
+    expect(state.handsFreeActive).toBe(true);
+    state.setHandsFree(false);
+    expect(state.handsFreeActive).toBe(false);
+    expect(loadAiPrefs(store).handsFree).toBe(false);
+
+    const later = makeState(storage({ [AI_PREFS_KEY]: '{"handsFree":true}' }));
+    later.hydrate(false);
+    expect(later.prefs.handsFree).toBe(true);
   });
 
   it('reads replies aloud only when switched on, and persists the choice', () => {

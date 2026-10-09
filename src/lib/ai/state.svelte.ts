@@ -20,18 +20,28 @@ export interface AiPrefs {
   dismissed: boolean;
   /** Speak the assistant's replies with the browser's voices. */
   readAloud: boolean;
+  /**
+   * Hands-free voice typing: start when the visitor talks, stop when they
+   * pause, one tap to end. Needs the downloaded speech model.
+   */
+  handsFree: boolean;
 }
 
 export const AI_PREFS_KEY = 'smrt-planner:ai:v1';
 
 export function loadAiPrefs(storage: Storage | null): AiPrefs {
-  const prefs: AiPrefs = { dismissed: false, readAloud: false };
+  const prefs: AiPrefs = {
+    dismissed: false,
+    readAloud: false,
+    handsFree: false,
+  };
   try {
     const raw = storage?.getItem(AI_PREFS_KEY);
     if (!raw) return prefs;
     const value = JSON.parse(raw) as Partial<AiPrefs>;
     prefs.dismissed = value.dismissed === true;
     prefs.readAloud = value.readAloud === true;
+    prefs.handsFree = value.handsFree === true;
   } catch {
     // Unreadable or unavailable: the defaults.
   }
@@ -69,7 +79,11 @@ export interface AiStateOptions {
 export class AiState {
   readonly session: AssistantSession;
   readonly voice: VoiceSession;
-  prefs = $state<AiPrefs>({ dismissed: false, readAloud: false });
+  prefs = $state<AiPrefs>({
+    dismissed: false,
+    readAloud: false,
+    handsFree: false,
+  });
   /** True once the browser has read its saved state (nothing before). */
   hydrated = $state(false);
   /** The first-visit setup form is showing. */
@@ -160,6 +174,19 @@ export class AiState {
     if (on && !this.synth) return;
     if (!on) this.synth?.cancel();
     this.setPrefs({ ...this.prefs, readAloud: on });
+  }
+
+  /** "Start when I talk, stop when I pause": remembered across visits. */
+  setHandsFree(on: boolean): void {
+    this.setPrefs({ ...this.prefs, handsFree: on });
+  }
+
+  /**
+   * Hands-free dictation is on and possible: the downloaded model is what
+   * writes the sentences down (the browser's own recogniser cannot).
+   */
+  get handsFreeActive(): boolean {
+    return this.prefs.handsFree && this.voice.status === 'ready';
   }
 
   /** Speak a reply when the visitor switched read-aloud on. */

@@ -4,6 +4,7 @@ import { Button } from '@happyvertical/smrt-ui';
 import type { DataSurfaceRegistry } from '@happyvertical/smrt-ui/data-surface';
 import { aiState } from '../ai/instance.ts';
 import { getModel } from '../assistant/models.ts';
+import { createHandsFreeCapture as handsFreeCapture } from '../assistant/voice-host.ts';
 import { appHref } from '../planner/app.svelte.ts';
 import AiSetup from './AiSetup.svelte';
 import VoiceTyping from './VoiceTyping.svelte';
@@ -49,6 +50,8 @@ const model = $derived(getModel(session.prefs.modelId));
         conversations="single"
         composerPlaceholder="Describe your business, e.g. I sell clothes online"
         dictation={voice.dictation}
+        dictationMode={aiState.handsFreeActive ? 'hands-free' : 'push'}
+        {handsFreeCapture}
       />
     </div>
   {:else}

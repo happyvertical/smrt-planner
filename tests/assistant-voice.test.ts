@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  DEFAULT_SPEECH_MODEL,
   type LocalSpeechModel,
+  loadSpeechModel,
   loadVoiceConsent,
   planVoice,
+  SPEECH_MODELS,
   VOICE_PREFS_KEY,
   VoiceSession,
 } from '../src/lib/assistant/voice.svelte.ts';
@@ -80,6 +83,136 @@ describe('loadVoiceConsent', () => {
       },
     } as unknown as Storage;
     expect(loadVoiceConsent(throwing)).toBe(false);
+  });
+});
+
+describe('speech models', () => {
+  it('offers Moonshine tiny first and Whisper tiny, each with its size', () => {
+    expect(SPEECH_MODELS.map((m) => m.id)).toEqual([
+      'moonshine-tiny',
+      'whisper-tiny.en',
+    ]);
+    expect(DEFAULT_SPEECH_MODEL).toBe('moonshine-tiny');
+    expect(SPEECH_MODELS.map((m) => m.adapter)).toEqual([
+      'moonshine',
+      'whisper-local',
+    ]);
+    for (const model of SPEECH_MODELS) {
+      expect(model.bytes).toBeGreaterThan(20_000_000);
+    }
+    // The faster model is also the smaller download.
+    expect(SPEECH_MODELS[0]?.bytes).toBeLessThan(SPEECH_MODELS[1]?.bytes ?? 0);
+  });
+
+  it('defaults new visitors to Moonshine and keeps Whisper for earlier downloads', () => {
+    expect(loadSpeechModel(storage())).toBe('moonshine-tiny');
+    expect(loadSpeechModel(null)).toBe('moonshine-tiny');
+    // Downloaded before the choice existed: that was Whisper tiny.
+    expect(loadSpeechModel(storage('{"local":true}'))).toBe('whisper-tiny.en');
+    expect(
+      loadSpeechModel(storage('{"local":true,"model":"moonshine-tiny"}')),
+    ).toBe('moonshine-tiny');
+    expect(loadSpeechModel(storage('{"model":"nonsense"}'))).toBe(
+      'moonshine-tiny',
+    );
+  });
+});
+
+describe('VoiceSession model choice', () => {
+  it('builds the chosen model, and hands its adapter type to the local source', async () => {
+    const created: string[] = [];
+    const sources: string[] = [];
+    const model = fakeModel();
+    model.load.mockResolvedValue(undefined);
+    const voice = new VoiceSession({
+      storage: storage(),
+      createModel: (id) => {
+        created.push(id);
+        return model;
+      },
+      probe: async () => 'missing',
+      localSource: (_m, choice) => {
+        sources.push(choice.adapter);
+        return () => Promise.reject(new Error('unused'));
+      },
+    });
+    await voice.init();
+    expect(voice.model).toBe('moonshine-tiny');
+    await voice.enable();
+    expect(created).toEqual(['moonshine-tiny']);
+    expect(sources).toEqual(['moonshine']);
+  });
+
+  it('switching model drops the loaded one, remembers the pick, and offers the new download', async () => {
+    const store = storage();
+    const first = fakeModel();
+    first.load.mockResolvedValue(undefined);
+    const second = fakeModel();
+    const created: string[] = [];
+    const voice = new VoiceSession({
+      storage: store,
+      createModel: (id) => {
+        created.push(id);
+        return created.length === 1 ? first : second;
+      },
+      probe: async () => 'missing',
+      localSource: () => () => Promise.reject(new Error('unused')),
+    });
+    await voice.init();
+    await voice.enable();
+    expect(voice.status).toBe('ready');
+
+    await voice.setModel('whisper-tiny.en');
+    expect(first.dispose).toHaveBeenCalled();
+    expect(created).toEqual(['moonshine-tiny', 'whisper-tiny.en']);
+    expect(voice.model).toBe('whisper-tiny.en');
+    // Consent was for downloading; the new one is not cached, so it is offered.
+    expect(voice.status).toBe('offer');
+    expect(voice.dictation).toBeNull();
+    expect(loadSpeechModel(store)).toBe('whisper-tiny.en');
+
+    // Same pick, or nonsense: nothing happens.
+    await voice.setModel('whisper-tiny.en');
+    await voice.setModel('bogus' as never);
+    expect(created).toHaveLength(2);
+  });
+
+  it('reports "getting ready" once every byte is in, until it is on', async () => {
+    const model = fakeModel();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    model.load.mockImplementation(async (o) => {
+      o?.onProgress?.({
+        state: 'downloading',
+        bytesLoaded: 40,
+        bytesTotal: 40,
+        percent: 100,
+      } as never);
+      o?.onProgress?.({
+        state: 'extracting',
+        bytesLoaded: 40,
+        bytesTotal: 40,
+        percent: 100,
+      } as never);
+      await gate;
+    });
+    const voice = new VoiceSession({
+      storage: storage(),
+      createModel: () => model,
+      probe: async () => 'missing',
+      localSource: () => () => Promise.reject(new Error('unused')),
+    });
+    await voice.init();
+    const enabling = voice.enable();
+    await Promise.resolve();
+    expect(voice.status).toBe('downloading');
+    expect(voice.preparing).toBe(true);
+    release();
+    await enabling;
+    expect(voice.status).toBe('ready');
+    expect(voice.preparing).toBe(false);
   });
 });
 

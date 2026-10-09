@@ -10,6 +10,11 @@ import {
   getModel,
   shortLabel,
 } from '../assistant/models.ts';
+import {
+  SPEECH_MODELS,
+  type SpeechModelId,
+  speechModelChoice,
+} from '../assistant/voice.svelte.ts';
 
 interface AiSetupProps {
   /** Which cards to show; all three by default. */
@@ -28,6 +33,9 @@ const model = $derived(getModel(session.prefs.modelId));
 const thinkPercent = $derived(Math.round(session.progress.progress * 100));
 const hearPercent = $derived(Math.round(voice.progress * 100));
 const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
+const speechChoice = $derived(speechModelChoice(voice.model));
+// Hands-free needs the downloaded model; say so instead of a dead switch.
+const handsFreeAvailable = $derived(voice.status === 'ready');
 </script>
 
 <div class="cards">
@@ -116,18 +124,24 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
         <p class="status">Built into your browser.</p>
       {:else if voice.status === 'downloading'}
         <div role="status" aria-live="polite">
-          <progress max="100" value={hearPercent} aria-label="Speech model download"
-            >{hearPercent}%</progress
-          >
-          <p class="meta">
-            {voice.cached ? 'Turning on' : 'Downloading'} {hearPercent}%
-          </p>
+          {#if voice.preparing}
+            <p class="meta">Getting ready…</p>
+          {:else}
+            <progress max="100" value={hearPercent} aria-label="Speech model download"
+              >{hearPercent}%</progress
+            >
+            <p class="meta">
+              {voice.cached ? 'Turning on' : 'Downloading'} {hearPercent}%
+            </p>
+          {/if}
         </div>
         <div class="actions">
           <Button variant="secondary" onclick={() => voice.cancel()}>Cancel</Button>
         </div>
       {:else if voice.status === 'ready'}
-        <p class="status">Downloaded speech model, running on this device.</p>
+        <p class="status">
+          {speechChoice.label}, running on this device.
+        </p>
       {:else}
         <p class="meta">
           {voice.browserWorks
@@ -147,12 +161,42 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
           </Button>
         </div>
       {/if}
+      {#if voice.status !== 'browser' && voice.status !== 'checking'}
+        <label>
+          Speech model
+          <Select
+            value={voice.model}
+            disabled={voice.status === 'downloading'}
+            onchange={(event) =>
+              void voice.setModel(event.currentTarget.value as SpeechModelId)}
+          >
+            {#each SPEECH_MODELS as option (option.id)}
+              <option value={option.id}>
+                {option.label}, {formatSize(Math.round(option.bytes / 1_000_000))}
+              </option>
+            {/each}
+          </Select>
+        </label>
+        <p class="meta">{speechChoice.note}.</p>
+      {/if}
       {#if voice.browserWorks && voice.status !== 'downloading'}
         <Switch
           checked={voice.preferLocal}
           label="Use the downloadable model instead"
           onchange={(event) => void voice.setPreferLocal(event.currentTarget.checked)}
         />
+      {/if}
+      {#if voice.status !== 'checking'}
+        <Switch
+          checked={aiState.prefs.handsFree}
+          disabled={!handsFreeAvailable && !aiState.prefs.handsFree}
+          label="Hands-free"
+          onchange={(event) => aiState.setHandsFree(event.currentTarget.checked)}
+        />
+        <p class="meta">
+          Start when I talk, stop when I pause.
+          {handsFreeAvailable ? '' : 'Needs the downloaded speech model.'}
+        </p>
       {/if}
     </section>
   {/if}

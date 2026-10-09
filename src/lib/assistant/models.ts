@@ -43,3 +43,8 @@ export function formatSize(megabytes: number): string {
     ? `about ${(megabytes / 1000).toFixed(1)} GB`
     : `about ${megabytes} MB`;
 }
+
+/** The label without its advice: "Qwen3 1.7B (recommended)" -> "Qwen3 1.7B". */
+export function shortLabel(model: AssistantModel): string {
+  return model.label.replace(/\s*\(.*\)\s*$/, '');
+}

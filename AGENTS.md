@@ -107,6 +107,17 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `applyChange` through `recipeState`, `prompt.ts` the recipe vocabulary,
   `models.ts` the offered models, `prefs.ts` the localStorage preference
   (model choice and consent; not part of the blueprint). It never navigates.
+- `src/lib/ai/`: THINK (the language model), HEAR (voice typing) and SPEAK
+  (read replies aloud with `speechSynthesis`) as one store. `state.svelte.ts`
+  (`AiState`, singleton in `instance.ts`) owns the `AssistantSession`, the
+  `VoiceSession` and the read-aloud / "I don't need AI" prefs (`smrt-planner:ai:v1`);
+  `status.ts` is the pure derivation (`ready` / `available` / `off`, accessible names,
+  `needsFirstRunSetup`); `icons.ts` the three icon paths. The sidebar icons
+  (`AiStatusIcons`, a `slotItems` entry `ai-status` in `leftSidebar.footer`), the
+  `/ai/` page and the assistant dock all render `AiSetup.svelte` / read `aiState`.
+  First visit: `aiState.hydrate` decides once (nothing downloaded, no read-aloud,
+  nothing built, not dismissed) and the Planner page then shows the setup form
+  before the tabs; Continue is per visit, "I don't need AI" is remembered.
 - `src/lib/data/`: `DataSource` (async, `apply` for related multi-model saves), the seeded in-memory fakes, money and
   value formatting. Sample packs (`packs.ts`) keep a vocabulary per field kind: `notes` (documents), `customerNotes`/`vendorNotes`, `descriptions` by model, `instructors` (staff Profiles that organise events), `quantity` ranges on lines. Never reuse one list for another kind of field. Views only talk to `DataSource` via context; live
   collections later replace `createMemoryDataSource()` in `+layout.svelte`.
@@ -124,7 +135,7 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `data/labels.ts` (with `data/display.ts`) labels related records (Customer/Vendor via their Profile).
 - `src/lib/components/`: generated list/form (`ModelWorkspace`), the collapsed "Connect other tools"
   list (`ConnectTools`), the Help view (`HelpView`), `BrowserAssistant` (the dock slot: consent, progress, then smrt-chat's `AssistantDock`).
-- `src/routes/`: `/` Planner with `?tab=cookbooks|recipes|features|layout|export` tabs (`planner/tab.svelte.ts`; a visitor with nothing built lands on Cookbooks; smrt-ui `Tabs`: Cookbooks cards + preview, Recipes cards with switches only, Layout `ShellLayoutEditor`, Export / Import / Reset in `ExportPanel`), `/blueprint/` a client-side redirect to `/?tab=export`, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
+- `src/routes/`: `/` Planner with `?tab=cookbooks|recipes|features|layout|export` tabs (`planner/tab.svelte.ts`; a visitor with nothing built lands on Cookbooks; smrt-ui `Tabs`: Cookbooks cards + preview, Recipes cards with switches only, Layout `ShellLayoutEditor`, Export / Import / Reset in `ExportPanel`), `/ai/` the AI models page (Set up your assistant), `/blueprint/` a client-side redirect to `/?tab=export`, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
   `/packages/` and `/packages/[id]/` the package browser, `/m/[package]/[model]/`.
   All prerendered; `entries()` come from the catalog.
 

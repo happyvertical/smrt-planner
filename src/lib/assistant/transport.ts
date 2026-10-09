@@ -34,6 +34,8 @@ export interface BrowserTransportOptions {
   store: RecipeStore;
   recipes: readonly Recipe[];
   now?: () => number;
+  /** Called with each reply the model produced (not errors), e.g. to read it aloud. */
+  onReply?: (text: string) => void;
 }
 
 export interface BrowserAssistantTransport extends AssistantTransport {
@@ -116,7 +118,9 @@ export function createBrowserAssistantTransport(
       const change = parseChange(raw, options.recipes);
       const applied = applyChange(options.store, change);
       const summary = describeChange(applied, options.recipes);
-      return [change.reply, summary].filter(Boolean).join('\n\n') || 'Done.';
+      const reply = [change.reply, summary].filter(Boolean).join('\n\n');
+      if (change.reply) options.onReply?.(change.reply);
+      return reply || 'Done.';
     } catch (error) {
       if (controller?.signal.aborted) return 'Stopped.';
       const detail = error instanceof Error ? error.message : String(error);

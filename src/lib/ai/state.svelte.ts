@@ -1,0 +1,176 @@
+import { getModel, shortLabel } from '../assistant/models.ts';
+import {
+  AssistantSession,
+  type SessionOptions,
+} from '../assistant/session.svelte.ts';
+import {
+  loadVoiceConsent,
+  type VoiceOptions,
+  VoiceSession,
+} from '../assistant/voice.svelte.ts';
+import {
+  type CapabilitySummary,
+  deriveCapabilities,
+  needsFirstRunSetup,
+} from './status.ts';
+
+/** UI choices that are not part of the blueprint. */
+export interface AiPrefs {
+  /** "I don't need AI": the first visit never shows the setup form again. */
+  dismissed: boolean;
+  /** Speak the assistant's replies with the browser's voices. */
+  readAloud: boolean;
+}
+
+export const AI_PREFS_KEY = 'smrt-planner:ai:v1';
+
+export function loadAiPrefs(storage: Storage | null): AiPrefs {
+  const prefs: AiPrefs = { dismissed: false, readAloud: false };
+  try {
+    const raw = storage?.getItem(AI_PREFS_KEY);
+    if (!raw) return prefs;
+    const value = JSON.parse(raw) as Partial<AiPrefs>;
+    prefs.dismissed = value.dismissed === true;
+    prefs.readAloud = value.readAloud === true;
+  } catch {
+    // Unreadable or unavailable: the defaults.
+  }
+  return prefs;
+}
+
+export function saveAiPrefs(storage: Storage | null, prefs: AiPrefs): void {
+  try {
+    storage?.setItem(AI_PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    // Not saved; the choice still holds for this visit.
+  }
+}
+
+/** The slice of `speechSynthesis` the reader uses. */
+export interface Synth {
+  speak(utterance: SpeechSynthesisUtterance): void;
+  cancel(): void;
+}
+
+export interface AiStateOptions {
+  storage: Storage | null;
+  session: Omit<SessionOptions, 'storage' | 'onReply'>;
+  voice: Omit<VoiceOptions, 'storage'>;
+  /** Defaults to the browser's `speechSynthesis`. */
+  synth?: Synth | null;
+  mic?: boolean;
+}
+
+/**
+ * The one store behind the sidebar icons, the AI models page, the first-visit
+ * form and the assistant: it owns the language-model session, the voice-typing
+ * session and the read-aloud choice, and reads them as three capabilities.
+ */
+export class AiState {
+  readonly session: AssistantSession;
+  readonly voice: VoiceSession;
+  prefs = $state<AiPrefs>({ dismissed: false, readAloud: false });
+  /** True once the browser has read its saved state (nothing before). */
+  hydrated = $state(false);
+  /** The first-visit setup form is showing. */
+  firstRun = $state(false);
+
+  private readonly options: AiStateOptions;
+  private readonly synth: Synth | null;
+  private readonly mic: boolean;
+
+  constructor(options: AiStateOptions) {
+    this.options = options;
+    this.session = new AssistantSession({
+      ...options.session,
+      storage: options.storage,
+      onReply: (text) => this.speak(text),
+    });
+    this.voice = new VoiceSession({
+      ...options.voice,
+      storage: options.storage,
+    });
+    this.synth =
+      options.synth !== undefined
+        ? options.synth
+        : typeof speechSynthesis !== 'undefined'
+          ? speechSynthesis
+          : null;
+    this.mic =
+      options.mic ??
+      (typeof navigator !== 'undefined' && !!navigator.mediaDevices);
+  }
+
+  /**
+   * Read the saved choices, probe the browser's speech, and decide whether
+   * this is a first visit. Call once, in the browser, after the blueprint.
+   */
+  hydrate(built: boolean): void {
+    if (this.hydrated) return;
+    this.prefs = loadAiPrefs(this.options.storage);
+    this.hydrated = true;
+    this.firstRun = needsFirstRunSetup({
+      thinkDownloaded: this.session.prefs.consented.length > 0,
+      hearDownloaded: loadVoiceConsent(this.options.storage),
+      readAloud: this.prefs.readAloud,
+      dismissed: this.prefs.dismissed,
+      built,
+    });
+    void this.voice.init();
+  }
+
+  /** Before hydration every capability reads as not set up, as on the server. */
+  get capabilities(): CapabilitySummary[] {
+    const model = getModel(this.session.prefs.modelId);
+    const ready = this.hydrated;
+    return deriveCapabilities({
+      think: {
+        status: ready ? this.session.status : 'idle',
+        model: model ? shortLabel(model) : 'model',
+        progress: this.session.progress.progress,
+        downloaded: ready && this.session.prefs.consented.length > 0,
+      },
+      hear: {
+        status: ready ? this.voice.status : 'checking',
+        mic: !ready || this.mic,
+      },
+      speak: {
+        supported: !ready || this.synth !== null,
+        readAloud: ready && this.prefs.readAloud,
+      },
+    });
+  }
+
+  get speakSupported(): boolean {
+    return this.synth !== null;
+  }
+
+  /** "Continue": leave the first-visit form for now. */
+  continueFirstRun(): void {
+    this.firstRun = false;
+  }
+
+  /** "I don't need AI": remembered, so the form never leads again. */
+  dismissFirstRun(): void {
+    this.firstRun = false;
+    this.setPrefs({ ...this.prefs, dismissed: true });
+  }
+
+  setReadAloud(on: boolean): void {
+    if (on && !this.synth) return;
+    if (!on) this.synth?.cancel();
+    this.setPrefs({ ...this.prefs, readAloud: on });
+  }
+
+  /** Speak a reply when the visitor switched read-aloud on. */
+  speak(text: string): void {
+    if (!this.prefs.readAloud || !this.synth || !text.trim()) return;
+    this.synth.cancel();
+    this.synth.speak(new SpeechSynthesisUtterance(text));
+  }
+
+  private setPrefs(prefs: AiPrefs): void {
+    this.prefs = prefs;
+    saveAiPrefs(this.options.storage, prefs);
+  }
+}

@@ -1,6 +1,8 @@
 <script lang="ts">
 import { ShellLayoutEditor } from '@happyvertical/smrt-svelte/workspace';
 import { Tabs } from '@happyvertical/smrt-ui';
+import { aiState } from '$lib/ai/instance.ts';
+import AiSetup from '$lib/components/AiSetup.svelte';
 import CookbooksPanel from '$lib/components/CookbooksPanel.svelte';
 import ExportPanel from '$lib/components/ExportPanel.svelte';
 import FeaturesPanel from '$lib/components/FeaturesPanel.svelte';
@@ -34,6 +36,23 @@ const select = (id: string) => {
 </svelte:head>
 
 <main>
+  {#if aiState.firstRun}
+    <section class="first-run" aria-labelledby="first-run-title">
+      <h1 id="first-run-title">Set up your assistant</h1>
+      <p class="meta">
+        Everything runs on this device. Nothing you type or say leaves the page.
+      </p>
+      <AiSetup />
+      <div class="actions">
+        <button type="button" onclick={() => aiState.continueFirstRun()}>
+          Continue
+        </button>
+        <button type="button" onclick={() => aiState.dismissFirstRun()}>
+          I don't need AI, let's just build
+        </button>
+      </div>
+    </section>
+  {:else}
   <Tabs {tabs} active={plannerTab.active} onchange={select} aria-label="Planner">
     <div hidden={plannerTab.active !== 'cookbooks'}><CookbooksPanel /></div>
     <div hidden={plannerTab.active !== 'recipes'}><RecipeCards /></div>
@@ -48,6 +67,7 @@ const select = (id: string) => {
     <div hidden={plannerTab.active !== 'settings'}><SettingsPanel /></div>
     <div hidden={plannerTab.active !== 'export'}><ExportPanel /></div>
   </Tabs>
+  {/if}
 </main>
 
 <style>
@@ -59,6 +79,22 @@ const select = (id: string) => {
 
   main :global(.tab-panel) {
     padding-top: var(--smrt-spacing-4);
+  }
+
+  .first-run {
+    display: grid;
+    gap: var(--smrt-spacing-4);
+  }
+
+  .first-run h1,
+  .first-run p {
+    margin: 0;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--smrt-spacing-2);
   }
 
   .pane {

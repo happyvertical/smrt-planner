@@ -7,6 +7,7 @@ import {
 } from '@happyvertical/smrt-svelte/workspace';
 import { afterNavigate, replaceState } from '$app/navigation';
 import { page } from '$app/state';
+import { aiState } from '$lib/ai/instance.ts';
 import smrtMark from '$lib/assets/smrt-mark.svg';
 import { browserStorage } from '$lib/blueprint/storage.ts';
 import {
@@ -14,6 +15,7 @@ import {
   SHELL_STORAGE_KEY,
 } from '$lib/blueprint/store.svelte.ts';
 import { catalog, exposedModels, getPackage } from '$lib/catalog/index.ts';
+import AiStatusIcons from '$lib/components/AiStatusIcons.svelte';
 import BrowserAssistant from '$lib/components/BrowserAssistant.svelte';
 import PlannerEditBridge from '$lib/components/PlannerEditBridge.svelte';
 import SectionActions from '$lib/components/SectionActions.svelte';
@@ -229,6 +231,9 @@ afterNavigate((navigation) => {
   if (!hydrated) {
     hydrated = true;
     blueprintStore.hydrate(location.search);
+    // The AI state reads its saved choices and decides whether this is a first
+    // visit (nothing set up, nothing built, "no AI" not chosen).
+    aiState.hydrate(!!(recipeState.ids.length || recipeState.features.length));
   }
   if (hasAppState(location.search)) selection.fromSearch(location.search);
   if (onPlanner()) {
@@ -276,6 +281,10 @@ function flushOnHide() {
 <svelte:window onpagehide={() => blueprintStore.flush()} />
 <svelte:document onvisibilitychange={flushOnHide} />
 
+{#snippet aiStatus()}
+  <AiStatusIcons />
+{/snippet}
+
 <AppShell
   storageKey={SHELL_STORAGE_KEY}
   title="Planner"
@@ -287,6 +296,14 @@ function flushOnHide() {
   environment="static demo"
   layout={blueprintStore.layout ?? null}
   onlayoutchange={(next) => blueprintStore.setLayout(next)}
+  slotItems={[
+    {
+      id: 'ai-status',
+      label: 'AI status',
+      slot: 'leftSidebar.footer',
+      render: aiStatus,
+    },
+  ]}
   dockToggles={[{ tool: 'assistant', label: 'Assistant', slot: 'header.end' }]}
   config={{ right: { initial: 'collapsed', rail: false, presentation: 'overlay' } }}
   layoutEditing={{ slot: 'header.start' }}

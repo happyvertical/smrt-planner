@@ -30,6 +30,8 @@ export interface SessionOptions {
   /** Defaults to the browser's WebGPU check. */
   webgpu?: () => boolean;
   host?: EngineHost;
+  /** Called with each reply the model produced, e.g. to read it aloud. */
+  onReply?: (text: string) => void;
 }
 
 /**
@@ -59,6 +61,7 @@ export class AssistantSession {
       model: () => this.chat,
       store: options.store,
       recipes: options.recipes,
+      onReply: (text) => options.onReply?.(text),
     });
   }
 

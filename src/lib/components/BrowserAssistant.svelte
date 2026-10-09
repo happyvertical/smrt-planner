@@ -1,14 +1,10 @@
 <script lang="ts">
 import { AssistantDock } from '@happyvertical/smrt-chat/svelte';
 import type { DataSurfaceRegistry } from '@happyvertical/smrt-ui/data-surface';
-import { onDestroy } from 'svelte';
-import { ASSISTANT_MODELS, formatSize, getModel } from '../assistant/models.ts';
-import { AssistantSession } from '../assistant/session.svelte.ts';
-import { VoiceSession } from '../assistant/voice.svelte.ts';
-import { createLocalSpeechModel } from '../assistant/voice-host.ts';
-import { browserStorage } from '../blueprint/storage.ts';
-import { recipes } from '../recipes/index.ts';
-import { recipeState } from '../recipes/state.svelte.ts';
+import { aiState } from '../ai/instance.ts';
+import { getModel } from '../assistant/models.ts';
+import { appHref } from '../planner/app.svelte.ts';
+import AiSetup from './AiSetup.svelte';
 import VoiceTyping from './VoiceTyping.svelte';
 
 interface BrowserAssistantProps {
@@ -18,34 +14,11 @@ interface BrowserAssistantProps {
 
 let { registry }: BrowserAssistantProps = $props();
 
-const session = new AssistantSession({
-  store: recipeState,
-  recipes,
-  storage: browserStorage(),
-});
-
-// Voice typing is decided once the chat model is ready: the browser's own
-// recogniser where it works, else an optional download.
-const voice = new VoiceSession({
-  storage: browserStorage(),
-  createModel: createLocalSpeechModel,
-});
-let voiceStarted = false;
-
-$effect(() => {
-  if (session.status === 'ready' && !voiceStarted) {
-    voiceStarted = true;
-    void voice.init();
-  }
-});
-
-onDestroy(() => {
-  session.unload();
-  voice.dispose();
-});
-
+// The model and voice live in the shared AI state (the sidebar icons and the
+// AI models page read the same), so closing the dock keeps them loaded.
+const session = $derived(aiState.session);
+const voice = $derived(aiState.voice);
 const model = $derived(getModel(session.prefs.modelId));
-const percent = $derived(Math.round(session.progress.progress * 100));
 </script>
 
 <div class="assistant">
@@ -77,60 +50,16 @@ const percent = $derived(Math.round(session.progress.progress * 100));
         dictation={voice.dictation}
       />
     </div>
-  {:else if session.status === 'loading'}
-    <div class="panel" role="status" aria-live="polite">
-      <h2>Getting {model?.label} ready</h2>
-      <progress max="100" value={percent} aria-label="Model download progress"
-        >{percent}%</progress
-      >
-      <p>{percent}%. {session.progress.text}</p>
-      <button type="button" onclick={() => session.cancel()}>Cancel</button>
-    </div>
   {:else}
-    <form
-      class="panel"
-      onsubmit={(event) => {
-        event.preventDefault();
-        void session.start();
-      }}
-    >
+    <div class="panel">
       <h2>Assistant</h2>
       <p>
         Describe your business and an assistant adds the matching recipes. It
         runs on your own device, so nothing you type leaves this page.
       </p>
-      {#if session.status === 'error'}
-        <p class="error" role="alert">
-          The model could not start: {session.error}
-        </p>
-      {/if}
-      <label>
-        Model
-        <select
-          value={session.prefs.modelId}
-          onchange={(event) => session.select(event.currentTarget.value)}
-        >
-          {#each ASSISTANT_MODELS as option (option.id)}
-            <option value={option.id}>{option.label}</option>
-          {/each}
-        </select>
-      </label>
-      {#if model}
-        <p class="size">
-          {#if session.consented}
-            You already agreed to this download, so it is probably cached and
-            starts quickly.
-          {:else}
-            This downloads {formatSize(model.downloadMB)} once and keeps it in
-            your browser. It needs {formatSize(model.vramMB)} of graphics
-            memory. Use Wi-Fi if you are on a metered connection.
-          {/if}
-        </p>
-      {/if}
-      <button type="submit">
-        {session.consented ? 'Start assistant' : 'Download and start'}
-      </button>
-    </form>
+      <AiSetup show={['think']} />
+      <a href={appHref('/ai/')}>All AI settings</a>
+    </div>
   {/if}
 </div>
 
@@ -164,14 +93,6 @@ const percent = $derived(Math.round(session.progress.progress * 100));
     overflow-wrap: anywhere;
   }
 
-  .panel button,
-  .panel select {
-    box-sizing: border-box;
-    width: 100%;
-    max-width: 100%;
-    white-space: normal;
-  }
-
   .bar {
     display: flex;
     align-items: center;
@@ -188,21 +109,7 @@ const percent = $derived(Math.round(session.progress.progress * 100));
     margin: 0;
   }
 
-  p,
-  label {
+  p {
     color: var(--smrt-color-on-surface-variant);
-  }
-
-  label {
-    display: grid;
-    gap: var(--smrt-spacing-1);
-  }
-
-  progress {
-    width: 100%;
-  }
-
-  .error {
-    color: var(--smrt-color-error);
   }
 </style>

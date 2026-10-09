@@ -45,26 +45,52 @@ export interface VoiceOptions {
 
 export const VOICE_PREFS_KEY = 'smrt-planner:voice:v1';
 
-/** Whether the visitor has downloaded (and so accepted) the local model. */
-export function loadVoiceConsent(storage: Storage | null): boolean {
+interface VoicePrefs {
+  /** The visitor has downloaded (and so accepted) the local model. */
+  local: boolean;
+  /** Use the downloadable model even where the browser's own works. */
+  preferLocal: boolean;
+}
+
+function loadVoicePrefs(storage: Storage | null): VoicePrefs {
   try {
     const raw = storage?.getItem(VOICE_PREFS_KEY);
-    if (!raw) return false;
-    return (JSON.parse(raw) as { local?: unknown }).local === true;
+    if (raw) {
+      const value = JSON.parse(raw) as Partial<VoicePrefs>;
+      return {
+        local: value.local === true,
+        preferLocal: value.preferLocal === true,
+      };
+    }
   } catch {
-    return false;
+    // Unreadable or unavailable: the defaults.
   }
+  return { local: false, preferLocal: false };
+}
+
+function saveVoicePrefs(storage: Storage | null, prefs: VoicePrefs): void {
+  try {
+    storage?.setItem(VOICE_PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    // Not saved; the choice still holds for this visit.
+  }
+}
+
+/** Whether the visitor has downloaded (and so accepted) the local model. */
+export function loadVoiceConsent(storage: Storage | null): boolean {
+  return loadVoicePrefs(storage).local;
 }
 
 export function saveVoiceConsent(
   storage: Storage | null,
   local: boolean,
 ): void {
-  try {
-    storage?.setItem(VOICE_PREFS_KEY, JSON.stringify({ local }));
-  } catch {
-    // Not saved; the choice still holds for this visit.
-  }
+  saveVoicePrefs(storage, { ...loadVoicePrefs(storage), local });
+}
+
+/** Whether the visitor chose the downloadable model over the browser's own. */
+export function loadPreferLocal(storage: Storage | null): boolean {
+  return loadVoicePrefs(storage).preferLocal;
 }
 
 /** What to do for a probe result, given what is on the device. */
@@ -87,6 +113,10 @@ export class VoiceSession {
   /** Download progress, 0 to 1. */
   progress = $state(0);
   error = $state('');
+  /** Whether the browser's own recogniser works here (whatever is in use). */
+  browserWorks = $state(false);
+  /** The visitor chose the downloadable model even where the browser's works. */
+  preferLocal = $state(false);
   /** The size the offer shows, in bytes. */
   size = $state(0);
 
@@ -103,7 +133,12 @@ export class VoiceSession {
 
   /** Probe the browser and decide what to offer. Call once. */
   async init(): Promise<void> {
-    const support = await (this.options.probe ?? probeBrowserSpeech)();
+    const probed = await (this.options.probe ?? probeBrowserSpeech)();
+    this.browserWorks = probed === 'works';
+    this.preferLocal = loadPreferLocal(this.options.storage);
+    // Choosing the download treats the browser's recogniser as unavailable.
+    const support =
+      this.preferLocal && probed === 'works' ? 'unreliable' : probed;
     if (support === 'works') {
       this.dictation = (
         this.options.browserSource ??
@@ -164,6 +199,21 @@ export class VoiceSession {
     } finally {
       this.abort = null;
     }
+  }
+
+  /** Switch between the browser's recogniser and the downloadable model. */
+  async setPreferLocal(on: boolean): Promise<void> {
+    if (!this.browserWorks || on === this.preferLocal) return;
+    this.abort?.abort();
+    this.model?.dispose();
+    this.model = null;
+    this.dictation = null;
+    saveVoicePrefs(this.options.storage, {
+      ...loadVoicePrefs(this.options.storage),
+      preferLocal: on,
+    });
+    this.status = 'checking';
+    await this.init();
   }
 
   /** Stop a download in progress. */

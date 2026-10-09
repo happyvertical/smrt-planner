@@ -1,6 +1,7 @@
 import { isWebGPUAvailable, WebLLMProvider } from '@happyvertical/ai/local';
+import { cookbooks, getCookbook } from '../cookbooks/index.ts';
 import type { Recipe } from '../recipes/types.ts';
-import type { RecipeStore } from './change.ts';
+import type { RecipeStore, SettingsStore } from './change.ts';
 import {
   browserHost,
   type EngineHost,
@@ -9,6 +10,7 @@ import {
   loadModel,
 } from './engine.ts';
 import { getModel } from './models.ts';
+import { CookbookOffers } from './offers.svelte.ts';
 import { type AssistantPrefs, loadPrefs, savePrefs } from './prefs.ts';
 import {
   type BrowserAssistantTransport,
@@ -26,6 +28,8 @@ export type SessionStatus =
 export interface SessionOptions {
   store: RecipeStore;
   recipes: readonly Recipe[];
+  /** The app settings the assistant may change; omit to leave them out. */
+  settings?: SettingsStore;
   storage: Storage | null;
   /** Defaults to the browser's WebGPU check. */
   webgpu?: () => boolean;
@@ -46,6 +50,8 @@ export class AssistantSession {
   error = $state('');
 
   readonly transport: BrowserAssistantTransport;
+  /** Cookbooks the assistant proposed, applied only by the person's click. */
+  readonly offers = new CookbookOffers(getCookbook);
   private loaded: LoadedModel | null = null;
   private chat: ChatModel | null = null;
   private abort: AbortController | null = null;
@@ -61,6 +67,9 @@ export class AssistantSession {
       model: () => this.chat,
       store: options.store,
       recipes: options.recipes,
+      cookbooks,
+      offers: this.offers,
+      settings: options.settings,
       onReply: (text) => options.onReply?.(text),
     });
   }

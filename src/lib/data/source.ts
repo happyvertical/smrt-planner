@@ -12,6 +12,7 @@ import {
   withTotals,
 } from './derived.ts';
 import {
+  EPOCH,
   fakeId,
   fakeRecords,
   type ModelRecord,
@@ -175,7 +176,7 @@ export interface MemoryDataSourceOptions {
    * line items are never out of step.
    */
   storage?: Storage | null;
-  /** The clock an invoice's overdue status is read against; defaults to now. */
+  /** The clock an invoice's overdue status is read against; defaults to the fixed sample clock. */
   now?: () => number;
 }
 
@@ -305,7 +306,11 @@ export function createMemoryDataSource(
         amount: Number(a.amount ?? 0),
         at: String(a.allocatedAt ?? ''),
       }));
-    const settled = settleInvoice(row, counted, (options.now ?? Date.now)());
+    const settled = settleInvoice(
+      row,
+      counted,
+      (options.now ?? (() => EPOCH))(),
+    );
     const next: ModelRecord = {
       ...row,
       amountPaid: settled.amountPaid,

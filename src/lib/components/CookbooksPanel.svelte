@@ -156,7 +156,7 @@ function commit() {
       </div>
       <div class="actions">
         <Button onclick={use}>Use this cookbook</Button>
-        <span class="meta">Replaces your current recipes and menu. Your records stay.</span>
+        <span class="meta">Replaces your current recipes, menu and sample records.</span>
       </div>
     </section>
   {/if}

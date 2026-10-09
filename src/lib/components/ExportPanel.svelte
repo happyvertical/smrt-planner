@@ -125,7 +125,7 @@ function confirmReset() {
 <ConfirmDialog
   open={confirmingReset}
   title="Reset the cookbook?"
-  message="This removes every recipe and saved option. Export first to keep a copy."
+  message="This removes every recipe and saved option, and the sample records you added or changed. Export first to keep a copy."
   confirmLabel="Reset"
   destructive
   onconfirm={confirmReset}

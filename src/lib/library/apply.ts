@@ -6,13 +6,14 @@ import { setSamplePack } from '../data/packs.ts';
 import { type AppSettings, writeSettings } from '../settings/app-settings.ts';
 import type { LibraryCookbook } from './types.ts';
 
-/** Nothing built yet: no recipes, features, saved options, narrowing or layout. */
+/** Nothing built yet: no recipes, features, saved options, narrowing, layout or theme. */
 export function isCookbookEmpty(cookbook: Cookbook): boolean {
   return (
     cookbook.recipes.length === 0 &&
     cookbook.features.length === 0 &&
     cookbook.policies.length === 0 &&
     Object.keys(cookbook.exposure ?? {}).length === 0 &&
+    cookbook.theme === undefined &&
     isShellLayoutEmpty(cookbook.layout)
   );
 }

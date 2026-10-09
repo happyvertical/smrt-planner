@@ -82,6 +82,20 @@ function parseLayout(value: unknown): ShellLayout | string {
       return `layout.${key} must be an object`;
     }
   }
+  const itemOrder = value.itemOrder;
+  if (isObject(itemOrder)) {
+    for (const [key, ids] of Object.entries(itemOrder)) {
+      if (key === '__proto__' || !isStrings(ids))
+        return `layout.itemOrder.${key} must be a list of strings`;
+    }
+  }
+  const moved = value.moved;
+  if (isObject(moved)) {
+    for (const [key, to] of Object.entries(moved)) {
+      if (key === '__proto__' || typeof to !== 'string')
+        return `layout.moved.${key} must be a string`;
+    }
+  }
   return value as unknown as ShellLayout;
 }
 
@@ -236,5 +250,9 @@ export function parseCookbookText(
   } catch {
     return fail('This file is not valid JSON.');
   }
-  return parseCookbook(value, options);
+  try {
+    return parseCookbook(value, options);
+  } catch {
+    return fail('This file is not a valid cookbook.');
+  }
 }

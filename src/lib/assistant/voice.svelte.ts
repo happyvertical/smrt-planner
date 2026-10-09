@@ -206,6 +206,15 @@ export class VoiceSession {
 
   /** Probe the browser and decide what to offer. Call once. */
   async init(): Promise<void> {
+    try {
+      await this.probeAndOffer();
+    } catch (cause) {
+      this.status = 'error';
+      this.error = cause instanceof Error ? cause.message : String(cause);
+    }
+  }
+
+  private async probeAndOffer(): Promise<void> {
     const probed = await (this.options.probe ?? probeBrowserSpeech)();
     this.browserWorks = probed === 'works';
     this.preferLocal = loadPreferLocal(this.options.storage);

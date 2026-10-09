@@ -91,7 +91,7 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   catalog default differs, plus `terms` and `paymentTerms` always. `menu.ts` previews
   a library cookbook's menu (same `applyShellLayout`), `apply.ts` replaces the document
   (confirm when non-empty), `state.svelte.ts` remembers the last applied id in
-  localStorage (not in the document). Nothing about records changes. Add a
+  localStorage (not in the document). Applying regenerates the sample records from the cookbook's pack (the panel says so). Add a
   library cookbook by adding an entry; use only existing recipe ids.
 - `src/lib/sections/` and `src/routes/s/[section]/`: the sidebar is `navMode="sections"`, so it lists only
   sections (icon + name); each opens its own page at `/s/<slug>/` (`path.ts`: `section:sales` ->

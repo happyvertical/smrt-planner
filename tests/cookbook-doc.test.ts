@@ -516,3 +516,25 @@ describe('rename from blueprint', () => {
     expect(exportFileName('***')).toBe('my-app.cookbook.json');
   });
 });
+
+describe('malformed layouts', () => {
+  const doc = (layout: unknown) =>
+    JSON.stringify({
+      $schema: COOKBOOK_SCHEMA,
+      version: 1,
+      recipes: [],
+      features: [],
+      policies: [],
+      layout,
+    });
+
+  it('rejects bad itemOrder and moved values without throwing', () => {
+    for (const layout of [
+      { version: 1, itemOrder: { 'section:a': 'x' } },
+      { version: 1, moved: { a: 1 } },
+      JSON.parse('{"version":1,"itemOrder":{"__proto__":["a"]}}'),
+    ]) {
+      expect(parseCookbookText(doc(layout)).ok).toBe(false);
+    }
+  });
+});

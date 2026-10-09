@@ -329,9 +329,12 @@ export interface Recipe {
   providers?: RecipeProvider[];
   runtime?: RecipeRuntime;
   demoSeed?: RecipeDemoSeed;
-  /**
-   * Browser-demo classification of this recipe on its own. For the answer
-   * including what it requires use `effectiveDemo` (`features/demo.ts`).
-   */
+  /** Browser-demo classification of this recipe on its own (smrt#3709). */
   demo?: RecipeDemo;
+  /**
+   * LOCAL, written by the catalog generator: `demo` once what the recipe
+   * requires is counted (smrt-core's `effectiveRecipeDemo`). Present only when
+   * it differs from `demo`; read both through `features/demo.ts`.
+   */
+  effectiveDemo?: RecipeDemo;
 }

@@ -7,6 +7,7 @@ import {
   resolveDependencies,
 } from './extract.ts';
 import { readLocalPackages } from './local.ts';
+import { withEffectiveDemo } from './recipe-demo.ts';
 import { discoverPackageNames, fetchPackage } from './registry.ts';
 
 export interface BuildOptions {
@@ -50,7 +51,11 @@ export function assembleCatalog(
     extracted.push(pkg);
   }
   extracted.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  return { schema: 1, registry, packages: resolveDependencies(extracted) };
+  return {
+    schema: 1,
+    registry,
+    packages: withEffectiveDemo(resolveDependencies(extracted)),
+  };
 }
 
 /**

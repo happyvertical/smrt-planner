@@ -59,6 +59,11 @@ export interface CatalogField {
   /** `@field({ ui })` hints: `basic`, `group`, `order`, `locked`. */
   ui?: CatalogFieldUI;
   /**
+   * The user-facing description from `@field({ description })`, when the
+   * package declares one. It feeds the help glossary.
+   */
+  description?: string;
+  /**
    * Framework-managed (tenant id, timestamps): shown in the catalog but never
    * in generated forms.
    */

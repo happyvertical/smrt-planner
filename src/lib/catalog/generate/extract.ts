@@ -41,10 +41,11 @@ interface RawMethod {
 interface RawField {
   type: string;
   required?: boolean;
+  description?: string;
   default?: unknown;
   related?: string;
   enum?: unknown;
-  _meta?: { ui?: unknown; [key: string]: unknown };
+  _meta?: { ui?: unknown; description?: unknown; [key: string]: unknown };
 }
 
 interface RawObject {
@@ -174,6 +175,10 @@ function extractFields(raw: RawObject): CatalogField[] {
     if (values) entry.enum = values;
     const ui = extractUi(field._meta?.ui);
     if (ui) entry.ui = ui;
+    const described = field.description ?? field._meta?.description;
+    if (typeof described === 'string' && described.trim()) {
+      entry.description = described.trim();
+    }
     if (SYSTEM_FIELDS.has(name)) entry.system = true;
     fields.push(entry);
   }

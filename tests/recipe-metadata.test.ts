@@ -191,6 +191,69 @@ describe('extractRecipeMetadata drops what the catalogue cannot render', () => {
   });
 });
 
+describe('effective demo', () => {
+  const entry = (id: string, extra: Record<string, unknown>) => ({
+    ...base,
+    id,
+    className: id,
+    ...extra,
+  });
+  const pkg = (name: string, recipes: unknown[]): RawPackage => ({
+    ...raw(recipes),
+    packageName: `@happyvertical/smrt-${name}`,
+    manifest: {
+      ...raw(recipes).manifest,
+      packageName: `@happyvertical/smrt-${name}`,
+      objects: {
+        [`@happyvertical/smrt-${name}:Thing`]: {
+          className: 'Thing',
+          qualifiedName: `@happyvertical/smrt-${name}:Thing`,
+          collection: 'things',
+          fields: { name: { type: 'text' } },
+          methods: {},
+          decoratorConfig: {},
+        },
+      },
+      recipes,
+    },
+  });
+  const catalog = assembleCatalog(
+    [
+      pkg('mail', [
+        entry('mail.box', {
+          demo: { mode: 'mock', reasons: ['SMTP is faked.'], mocked: ['smtp'] },
+        }),
+      ]),
+      pkg('bell', [
+        entry('bell.ring', {
+          requires: ['mail.box'],
+          demo: { mode: 'live', reasons: [] },
+        }),
+        entry('bell.plain', { demo: { mode: 'live', reasons: [] } }),
+        entry('bell.unmeasured', { requires: ['mail.box'] }),
+      ]),
+    ],
+    'x',
+  );
+  const recipe = (id: string) =>
+    catalog.packages.flatMap((p) => p.recipes ?? []).find((r) => r.id === id);
+
+  it("folds a requirement's mode across packages with smrt-core's rule", () => {
+    expect(recipe('bell.ring')?.demo?.mode).toBe('live');
+    expect(recipe('bell.ring')?.effectiveDemo?.mode).toBe('mock');
+    expect(recipe('bell.ring')?.effectiveDemo?.reasons.join(' ')).toContain(
+      'mail.box',
+    );
+  });
+
+  it('writes nothing when the effective demo is the recipe own, or none was measured', () => {
+    expect(recipe('mail.box')?.effectiveDemo).toBeUndefined();
+    expect(recipe('bell.plain')?.effectiveDemo).toBeUndefined();
+    expect(recipe('bell.unmeasured')?.demo).toBeUndefined();
+    expect(recipe('bell.unmeasured')?.effectiveDemo).toBeUndefined();
+  });
+});
+
 describe('catalog assembly and local sources', () => {
   it('is deterministic for the same inputs', () => {
     const a = assembleCatalog([raw([assistant])], 'x');

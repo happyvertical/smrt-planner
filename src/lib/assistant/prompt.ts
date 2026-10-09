@@ -34,9 +34,7 @@ export function buildSystemPrompt(
     '"add"/"remove": recipe ids, only what they ask to add or drop; else []. Dependencies are automatic.',
   ];
   if (cookbooks.length) {
-    out.push(
-      '"cookbook": id only if their business clearly fits, else null.',
-    );
+    out.push('"cookbook": id only if their business clearly fits, else null.');
   }
   if (settings) {
     out.push(

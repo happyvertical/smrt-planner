@@ -1,6 +1,10 @@
 <script lang="ts">
 import { NumberInput } from '@happyvertical/smrt-svelte/forms';
-import { CurrencySelect, FieldLabel } from '@happyvertical/smrt-ui/forms';
+import {
+  CurrencySelect,
+  FieldLabel,
+  Input,
+} from '@happyvertical/smrt-ui/forms';
 import { fractionToPercent, percentToFraction } from '../fields/percent.ts';
 import type { AppSettings } from '../settings/app-settings.ts';
 
@@ -49,7 +53,7 @@ const set = (patch: Partial<AppSettings>) => onchange({ ...value, ...patch });
 
   <div class="field">
     <FieldLabel for="{idPrefix}-terms" label="Default payment terms" />
-    <input
+    <Input
       id="{idPrefix}-terms"
       type="text"
       list="{idPrefix}-terms-options"

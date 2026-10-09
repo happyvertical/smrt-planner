@@ -1,6 +1,6 @@
 <script lang="ts">
 import { Button } from '@happyvertical/smrt-ui';
-import { FieldLabel } from '@happyvertical/smrt-ui/forms';
+import { FieldLabel, Input, Select } from '@happyvertical/smrt-ui/forms';
 import {
   ColorSchemeToggle,
   ThemeSwitcher,
@@ -56,11 +56,13 @@ function resetToPreset() {
       <div class="pick">
         <input
           id="theme-brand-colour"
+          class="swatch"
           type="color"
+          aria-label="Brand colour picker"
           value={custom?.primary ?? '#e68a00'}
           oninput={(event) => setBrand(event.currentTarget.value)}
         />
-        <input
+        <Input
           type="text"
           aria-label="Brand colour hex"
           placeholder="#c2410c"
@@ -75,20 +77,24 @@ function resetToPreset() {
         />
       </div>
     </div>
+    <div class="field">
+      <FieldLabel for="theme-brand-font" label="Font" />
+      <Select
+        id="theme-brand-font"
+        value={custom?.fontFamily ?? ''}
+        disabled={!custom}
+        onchange={(event) => setFont(event.currentTarget.value)}
+      >
+        <option value="">Default</option>
+        {#each Object.keys(THEME_FONTS) as font (font)}
+          <option value={font}>{font}</option>
+        {/each}
+      </Select>
+      {#if !custom}
+        <span class="hint">Pick a brand colour to choose a font.</span>
+      {/if}
+    </div>
     {#if custom}
-      <div class="field">
-        <FieldLabel for="theme-brand-font" label="Font" />
-        <select
-          id="theme-brand-font"
-          value={custom.fontFamily ?? ''}
-          onchange={(event) => setFont(event.currentTarget.value)}
-        >
-          <option value="">Default</option>
-          {#each Object.keys(THEME_FONTS) as font (font)}
-            <option value={font}>{font}</option>
-          {/each}
-        </select>
-      </div>
       <Button variant="secondary" onclick={resetToPreset}>Reset to preset</Button>
     {/if}
   </div>
@@ -131,9 +137,18 @@ function resetToPreset() {
     align-items: center;
   }
 
-  input[type='color'] {
+  .swatch {
     inline-size: 3rem;
-    block-size: 2.25rem;
-    padding: 0;
+    block-size: 2.5rem;
+    padding: var(--smrt-spacing-1);
+    border: 1px solid var(--smrt-color-outline-variant);
+    border-radius: var(--smrt-radius-md, 0.5rem);
+    background: var(--smrt-color-surface);
+    cursor: pointer;
+  }
+
+  .hint {
+    color: var(--smrt-color-on-surface-variant);
+    font-size: 0.8125rem;
   }
 </style>

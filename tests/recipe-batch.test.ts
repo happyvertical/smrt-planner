@@ -145,7 +145,7 @@ describe('suggested nav sections', () => {
     expect(navSectionOf(get(id)).id).toBe(section);
   });
 
-  it('groups a sample blueprint into few sections with no child entries', () => {
+  it('groups a sample cookbook into few sections with no child entries', () => {
     const ids = withRequirements(
       [
         'commerce.sales',

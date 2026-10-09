@@ -1,5 +1,5 @@
-import type { Blueprint } from '../blueprint/types.ts';
 import type { CatalogModel } from '../catalog/types.ts';
+import type { Cookbook } from '../cookbook/types.ts';
 import { isSettingRow } from '../settings/app-settings.ts';
 import { recipesById } from './index.ts';
 import {
@@ -30,7 +30,7 @@ export interface AppliedModel {
 /**
  * The visitor's added recipes and their saved options. Like the package
  * selection, it is the one store the planner page, navigation and a future
- * chat assistant drive. The blueprint (`blueprint/`) is its persisted form:
+ * chat assistant drive. The cookbook (`cookbook/`) is its persisted form:
  * `snapshot()` and `load()` are the only way in or out. Policy rows live in
  * memory here; smrt-planner#4 makes them real rows.
  */
@@ -148,11 +148,8 @@ class RecipeState {
     this.save(modelId, [], []);
   }
 
-  /** The recipes and options as blueprint fields, in a stable order. */
-  snapshot(): Pick<
-    Blueprint,
-    'recipes' | 'features' | 'policies' | 'exposure'
-  > {
+  /** The recipes and options as cookbook fields, in a stable order. */
+  snapshot(): Pick<Cookbook, 'recipes' | 'features' | 'policies' | 'exposure'> {
     const policies = [...this.rows].sort(
       (a, b) =>
         a.objectRef.localeCompare(b.objectRef) ||
@@ -165,7 +162,7 @@ class RecipeState {
         .map((ref) => [ref, [...this.narrowed[ref]].sort()]),
     );
     const out: Pick<
-      Blueprint,
+      Cookbook,
       'recipes' | 'features' | 'policies' | 'exposure'
     > = {
       recipes: [...this.ids].sort(),
@@ -176,18 +173,15 @@ class RecipeState {
     return out;
   }
 
-  /** Replace everything from a validated blueprint. */
+  /** Replace everything from a validated cookbook. */
   load(
-    blueprint: Pick<
-      Blueprint,
-      'recipes' | 'features' | 'policies' | 'exposure'
-    >,
+    cookbook: Pick<Cookbook, 'recipes' | 'features' | 'policies' | 'exposure'>,
   ): void {
-    this.ids = withRequirements(blueprint.recipes, recipesById);
-    this.features = [...new Set(blueprint.features)].sort();
-    this.rows = blueprint.policies.map((row) => ({ ...row }));
+    this.ids = withRequirements(cookbook.recipes, recipesById);
+    this.features = [...new Set(cookbook.features)].sort();
+    this.rows = cookbook.policies.map((row) => ({ ...row }));
     this.narrowed = Object.fromEntries(
-      Object.entries(blueprint.exposure ?? {}).map(([ref, s]) => [ref, [...s]]),
+      Object.entries(cookbook.exposure ?? {}).map(([ref, s]) => [ref, [...s]]),
     );
     this.prune();
   }

@@ -1,8 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { BlueprintStore } from '../src/lib/blueprint/store.svelte.ts';
 import { catalog, getModelByQualifiedName } from '../src/lib/catalog/index.ts';
-import { applyCookbook } from '../src/lib/cookbooks/apply.ts';
-import { cookbooks, getCookbook } from '../src/lib/cookbooks/index.ts';
+import { CookbookStore } from '../src/lib/cookbook/store.svelte.ts';
 import { fakeRecords } from '../src/lib/data/fakes.ts';
 import {
   COOKBOOK_PACKS,
@@ -13,6 +11,11 @@ import {
 import { createMemoryDataSource } from '../src/lib/data/source.ts';
 import { catalogModels } from '../src/lib/forms/shared.ts';
 import { stockSamples } from '../src/lib/forms/stock.ts';
+import { applyLibraryCookbook } from '../src/lib/library/apply.ts';
+import {
+  getLibraryCookbook,
+  libraryCookbooks,
+} from '../src/lib/library/index.ts';
 import { recipes } from '../src/lib/recipes/index.ts';
 import { childLinks } from '../src/lib/recipes/plumbing.ts';
 
@@ -46,7 +49,7 @@ afterEach(() => setSamplePack(null));
 describe('sample packs', () => {
   it('ship one per cookbook, each with the vocabulary it needs', () => {
     expect(Object.keys(COOKBOOK_PACKS).sort()).toEqual(
-      cookbooks.map((c) => c.id).sort(),
+      libraryCookbooks.map((c) => c.id).sort(),
     );
     for (const pack of Object.values(COOKBOOK_PACKS)) {
       expect(pack.products.length, pack.id).toBeGreaterThanOrEqual(8);
@@ -142,14 +145,14 @@ describe('sample packs', () => {
   });
 
   it('applying a cookbook switches the pack; the generic pack comes back', () => {
-    const store = new BlueprintStore();
-    for (const cookbook of cookbooks) {
-      expect(applyCookbook(cookbook, store).ok).toBe(true);
+    const store = new CookbookStore();
+    for (const cookbook of libraryCookbooks) {
+      expect(applyLibraryCookbook(cookbook, store).ok).toBe(true);
       expect(getSamplePack().id).toBe(cookbook.id);
     }
-    const welder = getCookbook('welder');
+    const welder = getLibraryCookbook('welder');
     if (!welder) throw new Error('no welder');
-    applyCookbook(welder, store);
+    applyLibraryCookbook(welder, store);
     expect(fakeRecords(model(`${P}Product`), 1)[0]?.name).toBe(
       COOKBOOK_PACKS.welder?.products[0]?.name,
     );

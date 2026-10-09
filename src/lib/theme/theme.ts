@@ -69,7 +69,7 @@ export type ThemeParse =
 export function parseTheme(value: unknown): ThemeParse {
   if (value === undefined) return { ok: true, theme: undefined };
   if (!isObject(value)) {
-    return { ok: false, error: 'The blueprint "theme" must be an object.' };
+    return { ok: false, error: 'The cookbook "theme" must be an object.' };
   }
   const theme: ThemeSetting = {};
   if (value.preset !== undefined) {

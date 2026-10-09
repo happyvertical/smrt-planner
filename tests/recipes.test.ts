@@ -440,7 +440,7 @@ describe('recipe state', () => {
     expect(applied.model.cli).toEqual([]);
     expect(applied.model.rest.length).toBeGreaterThan(0);
 
-    // The URL carries only the package selection now; the blueprint keeps the rest.
+    // The URL carries only the package selection now; the cookbook keeps the rest.
     expect(appQuery()).toBe('');
     const saved = JSON.parse(JSON.stringify(recipeState.snapshot()));
 

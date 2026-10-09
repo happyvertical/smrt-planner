@@ -10,9 +10,9 @@ import {
   useShellLayout,
 } from '@happyvertical/smrt-svelte/workspace';
 import { page } from '$app/state';
-import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
 import SectionActions from '$lib/components/SectionActions.svelte';
 import SectionIcons from '$lib/components/SectionIcons.svelte';
+import { cookbookStore } from '$lib/cookbook/store.svelte.ts';
 import { useDataSource } from '$lib/data/context.ts';
 import { navNoun, recordCount } from '$lib/data/format.ts';
 import { appHref } from '$lib/planner/app.svelte.ts';
@@ -103,7 +103,7 @@ function startNew(entry: ShellSectionMenuEntry) {
   {/if}
 {/snippet}
 
-{#if blueprintStore.loaded}
+{#if cookbookStore.loaded}
   <main>
     {#if section}
       <header>

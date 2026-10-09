@@ -5,13 +5,13 @@ import {
   ColorSchemeToggle,
   ThemeSwitcher,
 } from '@happyvertical/smrt-ui/themes';
-import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
+import { cookbookStore } from '$lib/cookbook/store.svelte.ts';
 import { normalizeHex, THEME_FONTS } from '$lib/theme/theme.ts';
 
 // The app's look. The preset and scheme controls change the shell's theme
 // provider, which ThemeBridge reads back into the document; the brand colour
 // writes the document and the bridge applies it.
-const custom = $derived(blueprintStore.theme?.custom);
+const custom = $derived(cookbookStore.theme?.custom);
 let hex = $state('');
 let invalid = $state(false);
 
@@ -24,8 +24,8 @@ function setBrand(primary: string, fontFamily = custom?.fontFamily) {
   const normalized = normalizeHex(primary);
   invalid = !normalized;
   if (!normalized) return;
-  blueprintStore.setTheme({
-    ...blueprintStore.theme,
+  cookbookStore.setTheme({
+    ...cookbookStore.theme,
     custom: { primary: normalized, ...(fontFamily ? { fontFamily } : {}) },
   });
 }
@@ -36,7 +36,7 @@ function setFont(fontFamily: string) {
 }
 
 function resetToPreset() {
-  blueprintStore.setTheme({ ...blueprintStore.theme, custom: undefined });
+  cookbookStore.setTheme({ ...cookbookStore.theme, custom: undefined });
 }
 </script>
 

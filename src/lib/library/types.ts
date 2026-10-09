@@ -1,5 +1,5 @@
 import type { ShellLayout } from '@happyvertical/smrt-svelte/workspace/layout';
-import type { Blueprint } from '../blueprint/types.ts';
+import type { Cookbook } from '../cookbook/types.ts';
 
 /**
  * `ShellLayout` plus the per-entry rename smrt-svelte is adding
@@ -21,8 +21,8 @@ export interface CookbookSettings {
   taxRate?: number;
 }
 
-/** A curated, ready-made blueprint with the words that introduce it. */
-export interface Cookbook {
+/** A curated, ready-made cookbook with the words that introduce it. */
+export interface LibraryCookbook {
   id: string;
   name: string;
   /** A key of `COOKBOOK_ICONS`. */
@@ -37,15 +37,15 @@ export interface Cookbook {
   settings: CookbookSettings;
   /**
    * One line per custom section (`custom:<id>`), shown under its title on the
-   * section's page. The section's icon is in `blueprint.layout.sections`.
+   * section's page. The section's icon is in `cookbook.layout.sections`.
    */
   sectionDescriptions?: Record<string, string>;
   /** The same document the Export tab saves. */
-  blueprint: Blueprint;
+  document: Cookbook;
 }
 
-export interface CookbookFile {
-  cookbooks: Cookbook[];
+export interface LibraryFile {
+  cookbooks: LibraryCookbook[];
 }
 
 export interface MenuEntry {

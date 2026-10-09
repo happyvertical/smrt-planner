@@ -7,9 +7,15 @@ import type { ThemeSetting } from '../theme/theme.ts';
  * Placeholder until happyvertical/smrt#3604 publishes the real schema URL.
  * The planner writes it so a file says what it is; it does not fetch it.
  */
-export const BLUEPRINT_SCHEMA = 'https://s-m-r-t.dev/schemas/blueprint/v1.json';
+export const COOKBOOK_SCHEMA = 'https://s-m-r-t.dev/schemas/cookbook/v1.json';
 
-export const BLUEPRINT_VERSION = 1;
+/**
+ * The URL files carried while the document was called a blueprint. Import
+ * still accepts it; nothing writes it.
+ */
+export const PREVIOUS_SCHEMA = 'https://s-m-r-t.dev/schemas/blueprint/v1.json';
+
+export const COOKBOOK_VERSION = 1;
 
 /**
  * Everything a visitor builds, in one portable document. This is the first
@@ -20,9 +26,9 @@ export const BLUEPRINT_VERSION = 1;
  * Sample or created records are NOT part of it: they are demo data the
  * in-memory `DataSource` reseeds, not something that scaffolds an app.
  */
-export interface Blueprint {
+export interface Cookbook {
   $schema: string;
-  version: typeof BLUEPRINT_VERSION;
+  version: typeof COOKBOOK_VERSION;
   /** Added recipe ids, sorted; requirements are already included. */
   recipes: string[];
   /**
@@ -46,6 +52,6 @@ export interface Blueprint {
   theme?: ThemeSetting;
 }
 
-export type BlueprintResult =
-  | { ok: true; blueprint: Blueprint }
+export type CookbookResult =
+  | { ok: true; cookbook: Cookbook }
   | { ok: false; error: string };

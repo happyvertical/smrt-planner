@@ -1,4 +1,4 @@
-import type { Cookbook } from '../cookbooks/types.ts';
+import type { LibraryCookbook } from '../library/types.ts';
 import type { Recipe } from '../recipes/types.ts';
 
 /**
@@ -234,8 +234,8 @@ export const THEME_KEYWORDS: readonly string[] = [
 /** Build the index for a set of recipes and cookbooks (and theming, when asked). */
 export function buildMatchIndex(
   recipes: readonly Pick<Recipe, 'id' | 'label' | 'synonyms'>[],
-  cookbooks: readonly (Pick<Cookbook, 'id' | 'name'> &
-    Partial<Pick<Cookbook, 'keywords'>>)[] = [],
+  cookbooks: readonly (Pick<LibraryCookbook, 'id' | 'name'> &
+    Partial<Pick<LibraryCookbook, 'keywords'>>)[] = [],
   options: { theme?: boolean } = {},
 ): MatchIndex {
   const entries: Entry[] = [];

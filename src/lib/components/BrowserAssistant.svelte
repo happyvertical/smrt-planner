@@ -8,12 +8,12 @@ import { getModel, shortLabel } from '../assistant/models.ts';
 import { isOfferRef } from '../assistant/offers.svelte.ts';
 import { isThemeUndoRef } from '../assistant/theme-undo.svelte.ts';
 import { createHandsFreeCapture as handsFreeCapture } from '../assistant/voice-host.ts';
-import { blueprintStore } from '../blueprint/store.svelte.ts';
-import { applyCookbook, needsConfirm } from '../cookbooks/apply.ts';
-import { getCookbook } from '../cookbooks/index.ts';
-import { previewMenu } from '../cookbooks/menu.ts';
-import { cookbookState } from '../cookbooks/state.svelte.ts';
+import { cookbookStore } from '../cookbook/store.svelte.ts';
 import { useDataSource } from '../data/context.ts';
+import { applyLibraryCookbook, needsConfirm } from '../library/apply.ts';
+import { getLibraryCookbook } from '../library/index.ts';
+import { previewMenu } from '../library/menu.ts';
+import { libraryState } from '../library/state.svelte.ts';
 import { appHref } from '../planner/app.svelte.ts';
 import { settingsOfCookbook } from '../settings/app-settings.ts';
 import AiSetup from './AiSetup.svelte';
@@ -38,14 +38,14 @@ const dataSource = useDataSource();
 $effect(() => {
   const offers = session.offers;
   offers.applier = (cookbook) => {
-    const result = applyCookbook(
+    const result = applyLibraryCookbook(
       cookbook,
-      blueprintStore,
+      cookbookStore,
       settingsOfCookbook(cookbook.settings),
     );
     if (!result.ok) return result.error;
     dataSource.reset?.();
-    cookbookState.select(cookbook.id);
+    libraryState.select(cookbook.id);
     return null;
   };
   return () => {
@@ -79,10 +79,10 @@ $effect(() => {
 {#snippet offerCard(data: unknown)}
   {#if isOfferRef(data)}
     {@const offer = session.offers.offers[data.offerId]}
-    {@const cookbook = offer ? getCookbook(offer.cookbookId) : undefined}
+    {@const cookbook = offer ? getLibraryCookbook(offer.cookbookId) : undefined}
     {#if offer && cookbook}
       {#if offer.status === 'pending'}
-        {@const menu = previewMenu(cookbook.blueprint)}
+        {@const menu = previewMenu(cookbook.document)}
         <div class="offer" role="group" aria-label="Add the {cookbook.name} cookbook">
           <div class="offer-text">
             <strong>{cookbook.name} cookbook</strong>
@@ -104,7 +104,7 @@ $effect(() => {
           <Button variant="secondary" onclick={() => session.offers.decline(offer.id)}>
             No thanks
           </Button>
-          {#if needsConfirm(blueprintStore)}
+          {#if needsConfirm(cookbookStore)}
             <small>Replaces your recipes, menu and sample records.</small>
           {/if}
         </div>

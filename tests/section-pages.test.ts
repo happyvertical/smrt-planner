@@ -4,10 +4,10 @@ import {
 } from '@happyvertical/smrt-svelte/workspace';
 import { resolveShellNavModel } from '@happyvertical/smrt-svelte/workspace/layout';
 import { describe, expect, it } from 'vitest';
-import { cookbooks } from '../src/lib/cookbooks/index.ts';
-import { blueprintNavGroups } from '../src/lib/cookbooks/menu.ts';
 import { navNoun } from '../src/lib/data/format.ts';
 import { createMemoryDataSource } from '../src/lib/data/source.ts';
+import { libraryCookbooks } from '../src/lib/library/index.ts';
+import { cookbookNavGroups } from '../src/lib/library/menu.ts';
 import { requestCreate, takeCreate } from '../src/lib/planner/create.ts';
 import { FEATURE_SECTION } from '../src/lib/recipes/features.ts';
 import {
@@ -68,8 +68,8 @@ describe('section icons and descriptions', () => {
   });
 
   it('every cookbook custom section has an icon (in its layout) and a description', () => {
-    for (const cookbook of cookbooks) {
-      const layout = cookbook.blueprint.layout;
+    for (const cookbook of libraryCookbooks) {
+      const layout = cookbook.document.layout;
       const ids = (layout?.customSections ?? []).map((s) => s.id);
       expect(ids.length, cookbook.id).toBeGreaterThan(0);
       for (const id of ids) {
@@ -89,8 +89,8 @@ describe('section icons and descriptions', () => {
   it('the picker offers the icons the data uses', () => {
     const used = new Set<string>();
     for (const s of buildNavSections(recipes)) if (s.icon) used.add(s.icon);
-    for (const c of cookbooks) {
-      for (const section of Object.values(c.blueprint.layout?.sections ?? {})) {
+    for (const c of libraryCookbooks) {
+      for (const section of Object.values(c.document.layout?.sections ?? {})) {
         if (section.icon) used.add(section.icon);
       }
     }
@@ -114,24 +114,24 @@ describe('section page paths', () => {
 });
 
 describe('a section page lists its entries', () => {
-  for (const cookbook of cookbooks) {
-    it(`${cookbook.id}: applied order, renames and hides, each backed by an entry`, () => {
-      const { blueprint } = cookbook;
-      const groups = blueprintNavGroups(blueprint);
-      const model = resolveShellNavModel([], groups, blueprint.layout);
-      const added = blueprint.recipes.flatMap((id) => {
+  for (const entry of libraryCookbooks) {
+    it(`${entry.id}: applied order, renames and hides, each backed by an entry`, () => {
+      const { document: cookbook } = entry;
+      const groups = cookbookNavGroups(cookbook);
+      const model = resolveShellNavModel([], groups, cookbook.layout);
+      const added = cookbook.recipes.flatMap((id) => {
         const recipe = recipesById.get(id);
         return recipe ? [recipe] : [];
       });
-      const index = entryIndex(added, blueprint.features);
+      const index = entryIndex(added, cookbook.features);
       const first = model.find(
-        (s) => s.id === blueprint.layout?.sectionOrder?.[0],
+        (s) => s.id === cookbook.layout?.sectionOrder?.[0],
       );
       expect(first, 'first section').toBeDefined();
       for (const section of model.slice(1)) {
         const shown = section.items.filter((i) => !i.hidden);
         // Row order is the layout's itemOrder for the section.
-        const ordered = blueprint.layout?.itemOrder?.[section.id];
+        const ordered = cookbook.layout?.itemOrder?.[section.id];
         if (ordered) {
           expect(shown.map((i) => i.id).slice(0, ordered.length)).toEqual(
             ordered.filter((id) => shown.some((i) => i.id === id)),
@@ -139,7 +139,7 @@ describe('a section page lists its entries', () => {
         }
         for (const item of shown) {
           expect(index.has(item.id), `${section.id} ${item.id}`).toBe(true);
-          const label = blueprint.layout?.items?.[item.id]?.label;
+          const label = cookbook.layout?.items?.[item.id]?.label;
           if (label) expect(item.label).toBe(label);
         }
       }
@@ -207,7 +207,7 @@ describe('entry icons', () => {
   });
 
   it('the nav groups carry each entry icon', () => {
-    const groups = blueprintNavGroups({
+    const groups = cookbookNavGroups({
       recipes: recipes.map((r) => r.id),
       features: [],
     });
@@ -231,9 +231,9 @@ describe('entry icons are in the picker set; descriptions are friendly', () => {
       }
     }
     expect(picker.has(FEATURE_SECTION.icon ?? '')).toBe(true);
-    for (const cookbook of cookbooks) {
+    for (const cookbook of libraryCookbooks) {
       for (const section of Object.values(
-        cookbook.blueprint.layout?.sections ?? {},
+        cookbook.document.layout?.sections ?? {},
       )) {
         if (section.icon)
           expect(picker.has(section.icon), cookbook.id).toBe(true);
@@ -266,14 +266,14 @@ describe('entry icons are in the picker set; descriptions are friendly', () => {
   });
 
   it('cookbook description overrides point at real entries', () => {
-    const groups = blueprintNavGroups({
+    const groups = cookbookNavGroups({
       recipes: recipes.map((r) => r.id),
-      features: cookbooks.flatMap((c) => c.blueprint.features ?? []),
+      features: libraryCookbooks.flatMap((c) => c.document.features ?? []),
     });
     const ids = new Set(groups.flatMap((g) => g.items.map((i) => i.id)));
     for (const trade of ['yoga-studio', 'mechanic', 'bakery', 'welder']) {
-      const cookbook = cookbooks.find((c) => c.id === trade);
-      const items = cookbook?.blueprint.layout?.items ?? {};
+      const cookbook = libraryCookbooks.find((c) => c.id === trade);
+      const items = cookbook?.document.layout?.items ?? {};
       for (const [id, override] of Object.entries(items)) {
         expect(ids.has(id), `${trade} ${id}`).toBe(true);
         expect(

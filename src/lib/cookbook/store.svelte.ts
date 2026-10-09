@@ -11,21 +11,23 @@ import {
   writeSettings,
 } from '../settings/app-settings.ts';
 import { compactTheme, type ThemeSetting } from '../theme/theme.ts';
-import { blueprintFromLegacySearch, hasLegacyState } from './legacy.ts';
+import { cookbookFromLegacySearch, hasLegacyState } from './legacy.ts';
 import {
   BACKUP_KEY,
   browserStorage,
-  loadBlueprint,
-  saveBlueprint,
+  loadCookbook,
+  PREVIOUS_STORAGE_KEY,
+  removeKey,
+  saveCookbook,
   writeKey,
 } from './storage.ts';
 import {
-  BLUEPRINT_SCHEMA,
-  BLUEPRINT_VERSION,
-  type Blueprint,
-  type BlueprintResult,
+  COOKBOOK_SCHEMA,
+  COOKBOOK_VERSION,
+  type Cookbook,
+  type CookbookResult,
 } from './types.ts';
-import { parseBlueprintText } from './validate.ts';
+import { parseCookbookText } from './validate.ts';
 
 /** Where the planner's AppShell keeps its own settings (panel states, sizes). */
 export const SHELL_STORAGE_KEY = 'smrt-planner:shell';
@@ -39,22 +41,22 @@ export type PersistState = 'unknown' | 'ok' | 'memory';
  * The single source of truth for what a visitor has built. Recipes and
  * options stay in `recipeState` (the one store views read); this adds the
  * `layout` field and the persistence around both. `snapshot()` is the
- * Blueprint, whether it is saved, exported or compared.
+ * Cookbook, whether it is saved, exported or compared.
  */
-export class BlueprintStore {
+export class CookbookStore {
   /** The shell layout, owned here and passed to `AppShell`. */
   layout = $state<ShellLayout | undefined>();
   /** The app's theme; undefined is the default. The shell applies it live. */
   theme = $state<ThemeSetting | undefined>();
   persist = $state<PersistState>('unknown');
-  /** False until the saved blueprint has been read; nothing saves before. */
+  /** False until the saved cookbook has been read; nothing saves before. */
   loaded = $state(false);
-  /** Why the saved blueprint was not used, if it was not. */
+  /** Why the saved cookbook was not used, if it was not. */
   loadNotice = $state('');
 
   /**
    * True when saving would destroy the only copy of something (an unreadable
-   * value that could not be kept aside, or a saved blueprint a legacy link
+   * value that could not be kept aside, or a saved cookbook a legacy link
    * replaced without a backup). Nothing is written until the visitor imports
    * or resets.
    */
@@ -62,24 +64,27 @@ export class BlueprintStore {
   /** A migrated legacy link whose data is not safely stored: keep the URL. */
   keepLegacyUrl = $state(false);
 
-  /** A blueprint was chosen (cookbook, import) before the saved one was read. */
+  /** A cookbook was chosen (cookbook, import) before the saved one was read. */
   private replacedBeforeLoad = false;
+
+  /** The pre-rename key still holds a backup; the next good save removes it. */
+  private previousKept = false;
 
   private storage: Storage | null = null;
   private timer: ReturnType<typeof setTimeout> | undefined;
 
-  snapshot(): Blueprint {
-    const blueprint: Blueprint = {
-      $schema: BLUEPRINT_SCHEMA,
-      version: BLUEPRINT_VERSION,
+  snapshot(): Cookbook {
+    const cookbook: Cookbook = {
+      $schema: COOKBOOK_SCHEMA,
+      version: COOKBOOK_VERSION,
       ...recipeState.snapshot(),
     };
-    if (this.layout) blueprint.layout = this.layout;
+    if (this.layout) cookbook.layout = this.layout;
     const theme = compactTheme(
       $state.snapshot(this.theme) as ThemeSetting | undefined,
     );
-    if (theme) blueprint.theme = theme;
-    return blueprint;
+    if (theme) cookbook.theme = theme;
+    return cookbook;
   }
 
   /** An edit from the shell or its layout editor; an empty one clears it. */
@@ -87,13 +92,13 @@ export class BlueprintStore {
     this.layout = isShellLayoutEmpty(next) ? undefined : next;
   }
 
-  /** Replace everything from a validated blueprint. */
-  apply(blueprint: Blueprint): void {
-    recipeState.load(blueprint);
-    this.layout = blueprint.layout;
-    this.theme = blueprint.theme;
+  /** Replace everything from a validated cookbook. */
+  apply(cookbook: Cookbook): void {
+    recipeState.load(cookbook);
+    this.layout = cookbook.layout;
+    this.theme = cookbook.theme;
     setSampleTaxRate(
-      hasTaxRateRow(blueprint) ? readSettings(blueprint).taxRate : undefined,
+      hasTaxRateRow(cookbook) ? readSettings(cookbook).taxRate : undefined,
     );
   }
 
@@ -117,14 +122,14 @@ export class BlueprintStore {
   }
 
   /** Replace on the visitor's say-so (an import): saving is allowed again. */
-  replace(blueprint: Blueprint): void {
-    this.apply(blueprint);
+  replace(cookbook: Cookbook): void {
+    this.apply(cookbook);
     if (!this.loaded) this.replacedBeforeLoad = true;
     this.saveBlocked = false;
     this.keepLegacyUrl = false;
   }
 
-  /** Back to an empty blueprint, and the shell's own settings to defaults. */
+  /** Back to an empty cookbook, and the shell's own settings to defaults. */
   reset(): void {
     recipeState.clear();
     this.layout = undefined;
@@ -132,36 +137,37 @@ export class BlueprintStore {
     try {
       globalThis.localStorage?.removeItem(SHELL_STORAGE_KEY);
     } catch {
-      // Storage may be unavailable (private mode); the blueprint still resets.
+      // Storage may be unavailable (private mode); the cookbook still resets.
     }
     this.saveBlocked = false;
     this.keepLegacyUrl = false;
   }
 
   /** Validate and apply JSON text, e.g. a chosen file. Applies nothing on failure. */
-  importText(text: string): BlueprintResult {
-    const result = parseBlueprintText(text);
-    if (result.ok) this.replace(result.blueprint);
+  importText(text: string): CookbookResult {
+    const result = parseCookbookText(text);
+    if (result.ok) this.replace(result.cookbook);
     return result;
   }
 
   /**
-   * Read the saved blueprint, then migrate a legacy `?r=` / `?o=` link into it.
+   * Read the saved cookbook, then migrate a legacy `?r=` / `?o=` link into it.
    * Call once in the browser, before `loaded` lets saving start. Returns true
    * when a legacy link was imported, so the caller can clean the URL.
    */
   hydrate(search: string, storage: Storage | null = browserStorage()): boolean {
     this.storage = storage;
-    const outcome = loadBlueprint(storage);
+    const outcome = loadCookbook(storage);
+    if (outcome.status === 'loaded') this.previousKept = outcome.previousKept;
     // What the visitor chose a moment ago (before the first navigation settled)
     // wins over what was saved; the next save keeps it.
     if (outcome.status === 'loaded' && !this.replacedBeforeLoad) {
-      this.apply(outcome.blueprint);
+      this.apply(outcome.cookbook);
     } else if (outcome.status === 'unreadable') {
       this.saveBlocked = !outcome.keptAside;
       this.loadNotice = outcome.keptAside
-        ? `The saved blueprint could not be read (${outcome.reason}) and was kept aside; starting empty.`
-        : `The saved blueprint could not be read (${outcome.reason}). Starting empty without overwriting it; import or reset to save again.`;
+        ? `The saved cookbook could not be read (${outcome.reason}) and was kept aside; starting empty.`
+        : `The saved cookbook could not be read (${outcome.reason}). Starting empty without overwriting it; import or reset to save again.`;
     }
 
     let migrated = false;
@@ -169,11 +175,11 @@ export class BlueprintStore {
       // An explicit link wins, but what it replaces is backed up first.
       if (
         outcome.status === 'loaded' &&
-        !writeKey(storage, BACKUP_KEY, JSON.stringify(outcome.blueprint))
+        !writeKey(storage, BACKUP_KEY, JSON.stringify(outcome.cookbook))
       ) {
         this.saveBlocked = true;
       }
-      this.apply(blueprintFromLegacySearch(search));
+      this.apply(cookbookFromLegacySearch(search));
       migrated = true;
     }
 
@@ -197,8 +203,11 @@ export class BlueprintStore {
       this.persist = 'memory';
       return false;
     }
-    const saved = saveBlueprint(this.storage, this.snapshot());
+    const saved = saveCookbook(this.storage, this.snapshot());
     this.persist = saved ? 'ok' : 'memory';
+    if (saved && this.previousKept) {
+      this.previousKept = !removeKey(this.storage, PREVIOUS_STORAGE_KEY);
+    }
     // Once stored, the legacy parameters are redundant and may be cleaned.
     if (saved) this.keepLegacyUrl = false;
     return saved;
@@ -217,4 +226,4 @@ export class BlueprintStore {
   }
 }
 
-export const blueprintStore = new BlueprintStore();
+export const cookbookStore = new CookbookStore();

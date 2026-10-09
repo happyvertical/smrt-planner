@@ -12,14 +12,17 @@ import {
   type ChatModel,
   createBrowserAssistantTransport,
 } from '../src/lib/assistant/transport.ts';
-import { cookbooks, getCookbook } from '../src/lib/cookbooks/index.ts';
+import {
+  getLibraryCookbook,
+  libraryCookbooks,
+} from '../src/lib/library/index.ts';
 import { recipes } from '../src/lib/recipes/index.ts';
 import { recipeState } from '../src/lib/recipes/state.svelte.ts';
 import { DEFAULT_SETTINGS } from '../src/lib/settings/app-settings.ts';
 
 beforeEach(() => recipeState.clear());
 
-const index = buildMatchIndex(recipes, cookbooks);
+const index = buildMatchIndex(recipes, libraryCookbooks);
 const top = (text: string) => matchText(index, text)[0];
 const ids = (text: string, kind: 'recipe' | 'cookbook') =>
   matchText(index, text)
@@ -45,7 +48,7 @@ describe('coverage', () => {
   });
 
   it('gives every cookbook at least 3 distinct match terms and keywords', () => {
-    for (const cookbook of cookbooks) {
+    for (const cookbook of libraryCookbooks) {
       const terms = new Set(termsOf(index, 'cookbook', cookbook.id));
       expect(terms.size, cookbook.id).toBeGreaterThanOrEqual(3);
       expect(cookbook.keywords.length, cookbook.id).toBeGreaterThanOrEqual(3);
@@ -59,7 +62,7 @@ describe('coverage', () => {
         id: recipe.id,
       });
     }
-    for (const cookbook of cookbooks) {
+    for (const cookbook of libraryCookbooks) {
       expect(top(cookbook.name), cookbook.name).toMatchObject({
         kind: 'cookbook',
         id: cookbook.id,
@@ -138,7 +141,7 @@ describe('focused prompt', () => {
     buildSystemPrompt(
       recipes,
       current,
-      cookbooks,
+      libraryCookbooks,
       settings,
       matchText(index, text),
     );
@@ -170,7 +173,12 @@ describe('focused prompt', () => {
   });
 
   it('reports sizes: matched and unmatched are smaller than the full prompt', () => {
-    const full = buildSystemPrompt(recipes, [], cookbooks, settings).length;
+    const full = buildSystemPrompt(
+      recipes,
+      [],
+      libraryCookbooks,
+      settings,
+    ).length;
     const bakery = build('I run a bakery').length;
     const none = build('hello there').length;
     try {
@@ -192,14 +200,14 @@ describe('cookbook backstop', () => {
     const message = vi.fn<ChatModel['message']>(async () =>
       JSON.stringify(reply),
     );
-    const offers = new CookbookOffers(getCookbook);
+    const offers = new CookbookOffers(getLibraryCookbook);
     const applier = vi.fn(() => null);
     offers.applier = applier;
     const transport = createBrowserAssistantTransport({
       model: () => ({ message }),
       store: recipeState,
       recipes,
-      cookbooks,
+      cookbooks: libraryCookbooks,
       offers,
     });
     const send = (content: string) =>

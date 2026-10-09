@@ -1,4 +1,4 @@
-import { cookbooks } from '../cookbooks/index.ts';
+import { libraryCookbooks } from '../library/index.ts';
 import { FEATURE_SECTION } from '../recipes/features.ts';
 import { buildNavSections, recipes } from '../recipes/index.ts';
 
@@ -17,7 +17,7 @@ const NAV_SECTIONS = new Map(
 
 /** `custom:` descriptions come with the cookbooks; ids are shared by name. */
 const CUSTOM_DESCRIPTIONS = new Map<string, string>(
-  cookbooks.flatMap((cookbook) =>
+  libraryCookbooks.flatMap((cookbook) =>
     Object.entries(cookbook.sectionDescriptions ?? {}),
   ),
 );

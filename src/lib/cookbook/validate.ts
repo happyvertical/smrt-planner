@@ -8,16 +8,17 @@ import { isSettingRow } from '../settings/app-settings.ts';
 import { parseTheme } from '../theme/theme.ts';
 import { migrateLegacySections, migrateNavItemIds } from './migrate.ts';
 import {
-  BLUEPRINT_SCHEMA,
-  BLUEPRINT_VERSION,
-  type Blueprint,
-  type BlueprintResult,
+  COOKBOOK_SCHEMA,
+  COOKBOOK_VERSION,
+  type Cookbook,
+  type CookbookResult,
+  PREVIOUS_SCHEMA,
 } from './types.ts';
 
 const VISIBILITIES = new Set(['basic', 'advanced', 'hidden']);
 const SURFACES = new Set<string>(['api', 'mcp', 'cli']);
 
-const fail = (error: string): BlueprintResult => ({ ok: false, error });
+const fail = (error: string): CookbookResult => ({ ok: false, error });
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -86,40 +87,50 @@ function parseLayout(value: unknown): ShellLayout | string {
 
 /**
  * Check an unknown value (a parsed file or stored JSON) and return a
- * normalised blueprint, or one clear sentence saying why not. Strict on
+ * normalised cookbook, or one clear sentence saying why not. Strict on
  * purpose: nothing is silently dropped, so a bad file never half-applies.
  */
-export function parseBlueprint(
+export function parseCookbook(
   input: unknown,
   options: { dropUnknownRecipes?: boolean } = {},
-): BlueprintResult {
+): CookbookResult {
   if (!isObject(input))
-    return fail('This is not a blueprint: expected a JSON object.');
+    return fail('This is not a cookbook: expected a JSON object.');
+
+  if (
+    input.$schema !== undefined &&
+    input.$schema !== COOKBOOK_SCHEMA &&
+    input.$schema !== PREVIOUS_SCHEMA
+  ) {
+    return fail(
+      'This is not a cookbook: its "$schema" is not a cookbook schema this planner knows.',
+    );
+  }
 
   const { version } = input;
   if (version === undefined) {
-    return fail('This is not a blueprint: it has no "version".');
+    return fail('This is not a cookbook: it has no "version".');
   }
   if (typeof version !== 'number' || !Number.isInteger(version)) {
-    return fail('The blueprint "version" must be a whole number.');
+    return fail('The cookbook "version" must be a whole number.');
   }
-  if (version > BLUEPRINT_VERSION) {
+  if (version > COOKBOOK_VERSION) {
     return fail(
-      `This blueprint is version ${version}, newer than this planner understands (${BLUEPRINT_VERSION}). Update the planner or re-export it.`,
+      `This cookbook is version ${version}, newer than this planner understands (${COOKBOOK_VERSION}). Update the planner or re-export it.`,
     );
   }
-  if (version !== BLUEPRINT_VERSION) {
+  if (version !== COOKBOOK_VERSION) {
     return fail(
-      `Blueprint version ${version} is not supported (this planner reads version ${BLUEPRINT_VERSION}).`,
+      `Cookbook version ${version} is not supported (this planner reads version ${COOKBOOK_VERSION}).`,
     );
   }
 
   if (!isStrings(input.recipes)) {
-    return fail('The blueprint "recipes" must be a list of recipe ids.');
+    return fail('The cookbook "recipes" must be a list of recipe ids.');
   }
   const unknown = input.recipes.filter((id) => !recipesById.has(id));
   if (unknown.length && !options.dropUnknownRecipes) {
-    return fail(`The blueprint names unknown recipes: ${unknown.join(', ')}.`);
+    return fail(`The cookbook names unknown recipes: ${unknown.join(', ')}.`);
   }
   const recipes = withRequirements(
     input.recipes.filter((id) => recipesById.has(id)),
@@ -129,12 +140,12 @@ export function parseBlueprint(
   let features: string[] = [];
   if (input.features !== undefined) {
     if (!isStrings(input.features)) {
-      return fail('The blueprint "features" must be a list of model names.');
+      return fail('The cookbook "features" must be a list of model names.');
     }
     const seen = new Set<string>();
     for (const name of input.features) {
       if (seen.has(name)) {
-        return fail(`The blueprint lists the feature ${name} more than once.`);
+        return fail(`The cookbook lists the feature ${name} more than once.`);
       }
       seen.add(name);
     }
@@ -143,7 +154,7 @@ export function parseBlueprint(
     );
     if (bad.length) {
       return fail(
-        `The blueprint names features that are not in the catalog: ${bad.join(', ')}.`,
+        `The cookbook names features that are not in the catalog: ${bad.join(', ')}.`,
       );
     }
     features = [...input.features].sort();
@@ -156,25 +167,25 @@ export function parseBlueprint(
   ]);
 
   if (!Array.isArray(input.policies)) {
-    return fail('The blueprint "policies" must be a list.');
+    return fail('The cookbook "policies" must be a list.');
   }
   const policies: FieldPolicyRow[] = [];
   for (const [index, value] of input.policies.entries()) {
     const row = parseRow(value, `policies[${index}]`);
-    if (typeof row === 'string') return fail(`Invalid blueprint: ${row}.`);
+    if (typeof row === 'string') return fail(`Invalid cookbook: ${row}.`);
     if (covered.has(row.objectRef) || isSettingRow(row)) policies.push(row);
   }
 
   let exposure: Record<string, ExposureSurface[]> | undefined;
   if (input.exposure !== undefined) {
     if (!isObject(input.exposure)) {
-      return fail('The blueprint "exposure" must be an object.');
+      return fail('The cookbook "exposure" must be an object.');
     }
     const entries: [string, ExposureSurface[]][] = [];
     for (const [ref, surfaces] of Object.entries(input.exposure)) {
       if (!isStrings(surfaces) || !surfaces.every((s) => SURFACES.has(s))) {
         return fail(
-          `Invalid blueprint: exposure for ${ref} must list api, mcp or cli.`,
+          `Invalid cookbook: exposure for ${ref} must list api, mcp or cli.`,
         );
       }
       if (surfaces.length && covered.has(ref)) {
@@ -188,12 +199,11 @@ export function parseBlueprint(
   let layout: ShellLayout | undefined;
   if (input.layout !== undefined) {
     const parsed = parseLayout(input.layout);
-    if (typeof parsed === 'string')
-      return fail(`Invalid blueprint: ${parsed}.`);
+    if (typeof parsed === 'string') return fail(`Invalid cookbook: ${parsed}.`);
     layout = migrateNavItemIds(migrateLegacySections(parsed));
   }
 
-  let theme: Blueprint['theme'];
+  let theme: Cookbook['theme'];
   if (input.theme !== undefined) {
     const parsed = parseTheme(input.theme);
     if (parsed.ok) theme = parsed.theme;
@@ -202,29 +212,29 @@ export function parseBlueprint(
     else if (!options.dropUnknownRecipes) return fail(parsed.error);
   }
 
-  const blueprint: Blueprint = {
-    $schema: BLUEPRINT_SCHEMA,
-    version: BLUEPRINT_VERSION,
+  const cookbook: Cookbook = {
+    $schema: COOKBOOK_SCHEMA,
+    version: COOKBOOK_VERSION,
     recipes,
     features,
     policies,
   };
-  if (exposure && Object.keys(exposure).length) blueprint.exposure = exposure;
-  if (layout) blueprint.layout = layout;
-  if (theme) blueprint.theme = theme;
-  return { ok: true, blueprint };
+  if (exposure && Object.keys(exposure).length) cookbook.exposure = exposure;
+  if (layout) cookbook.layout = layout;
+  if (theme) cookbook.theme = theme;
+  return { ok: true, cookbook };
 }
 
-/** Parse JSON text, then `parseBlueprint` it. */
-export function parseBlueprintText(
+/** Parse JSON text, then `parseCookbook` it. */
+export function parseCookbookText(
   text: string,
   options: { dropUnknownRecipes?: boolean } = {},
-): BlueprintResult {
+): CookbookResult {
   let value: unknown;
   try {
     value = JSON.parse(text);
   } catch {
     return fail('This file is not valid JSON.');
   }
-  return parseBlueprint(value, options);
+  return parseCookbook(value, options);
 }

@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { BlueprintStore } from '../src/lib/blueprint/store.svelte.ts';
-import type { Blueprint } from '../src/lib/blueprint/types.ts';
 import { getModelByQualifiedName } from '../src/lib/catalog/index.ts';
-import { applyCookbook } from '../src/lib/cookbooks/apply.ts';
-import { cookbooks, getCookbook } from '../src/lib/cookbooks/index.ts';
+import { CookbookStore } from '../src/lib/cookbook/store.svelte.ts';
+import type { Cookbook } from '../src/lib/cookbook/types.ts';
+import { applyLibraryCookbook } from '../src/lib/library/apply.ts';
+import {
+  getLibraryCookbook,
+  libraryCookbooks,
+} from '../src/lib/library/index.ts';
 import { recipeState } from '../src/lib/recipes/state.svelte.ts';
 import {
   DEFAULT_SETTINGS,
@@ -17,7 +20,7 @@ const C = '@happyvertical/smrt-commerce:';
 afterEach(() => recipeState.clear());
 
 const bakery = () => {
-  const cookbook = getCookbook('bakery');
+  const cookbook = getLibraryCookbook('bakery');
   if (!cookbook) throw new Error('bakery cookbook missing');
   return cookbook;
 };
@@ -44,8 +47,8 @@ describe('app settings', () => {
       'paymentTerms',
       'taxRate',
     ]);
-    for (const cookbook of cookbooks) {
-      for (const row of cookbook.blueprint.policies) {
+    for (const cookbook of libraryCookbooks) {
+      for (const row of cookbook.document.policies) {
         if (row.defaultValue === undefined) continue;
         if (!settingFields.has(row.fieldName)) continue;
         expect(
@@ -57,15 +60,15 @@ describe('app settings', () => {
   });
 
   it('reads each cookbook back as the settings it declares', () => {
-    for (const cookbook of cookbooks) {
-      expect(readSettings(cookbook.blueprint), cookbook.id).toEqual(
+    for (const cookbook of libraryCookbooks) {
+      expect(readSettings(cookbook.document), cookbook.id).toEqual(
         settingsOfCookbook(cookbook.settings),
       );
     }
   });
 
   it('defaults to USD, no tax and no terms, with no rows', () => {
-    const empty = new BlueprintStore().snapshot();
+    const empty = new CookbookStore().snapshot();
     expect(readSettings(empty)).toEqual(DEFAULT_SETTINGS);
     // Only Invoice's own CAD default needs an explicit USD row.
     expect(
@@ -76,19 +79,19 @@ describe('app settings', () => {
   });
 
   it('round-trips written settings and rewrites cleanly', () => {
-    const base = bakery().blueprint;
+    const base = bakery().document;
     const settings = { currency: 'EUR', taxRate: 0.2, paymentTerms: 'Net 30' };
     const written = writeSettings(base, settings);
     expect(readSettings(written)).toEqual(settings);
     expect(writeSettings(written, settings)).toEqual(written);
     // Unrelated rows survive.
-    const hidden = (b: Blueprint) =>
+    const hidden = (b: Cookbook) =>
       b.policies.filter((r) => r.visibility === 'hidden');
     expect(hidden(written)).toEqual(hidden(base));
   });
 
   it('removes rows when a value is cleared or back to the default', () => {
-    const base = bakery().blueprint;
+    const base = bakery().document;
     const cleared = writeSettings(base, {
       currency: 'USD',
       taxRate: 0,
@@ -105,8 +108,8 @@ describe('app settings', () => {
   it('leaves the cookbook data untouched when applied with overrides', () => {
     const cookbook = bakery();
     const before = JSON.stringify(cookbook);
-    const store = new BlueprintStore();
-    const result = applyCookbook(cookbook, store, {
+    const store = new CookbookStore();
+    const result = applyLibraryCookbook(cookbook, store, {
       currency: 'GBP',
       taxRate: 0.2,
       paymentTerms: 'Net 30',
@@ -122,13 +125,13 @@ describe('app settings', () => {
     expect(defaultOf('Order', 'terms')).toBe('Net 30');
     expect(defaultOf('InvoiceLineItem', 'taxRate')).toBe(0.2);
     // Re-applying without edits resets to the cookbook's own values.
-    applyCookbook(cookbook, store);
+    applyLibraryCookbook(cookbook, store);
     expect(store.settings()).toEqual(settingsOfCookbook(cookbook.settings));
   });
 
   it('the store writes rows new records default to, and removing them reverts', () => {
-    const store = new BlueprintStore();
-    applyCookbook(bakery(), store);
+    const store = new CookbookStore();
+    applyLibraryCookbook(bakery(), store);
     store.setSettings({
       currency: 'CAD',
       taxRate: 0.05,
@@ -155,7 +158,7 @@ describe('app settings', () => {
 
 describe('settings follow recipe changes', () => {
   it('a recipe added later starts with the app currency; removing all keeps it', () => {
-    const store = new BlueprintStore();
+    const store = new CookbookStore();
     recipeState.add('commerce.sales');
     store.setSettings({
       currency: 'CAD',
@@ -181,9 +184,9 @@ describe('settings follow recipe changes', () => {
   });
 
   it('survives an export and import', () => {
-    const store = new BlueprintStore();
+    const store = new CookbookStore();
     store.setSettings({ currency: 'EUR', taxRate: 0, paymentTerms: '' });
-    const again = new BlueprintStore();
+    const again = new CookbookStore();
     expect(again.importText(JSON.stringify(store.snapshot())).ok).toBe(true);
     expect(again.settings().currency).toBe('EUR');
   });

@@ -1,6 +1,6 @@
 import { createSpeechModel } from '../assistant/voice-host.ts';
-import { browserStorage } from '../blueprint/storage.ts';
-import { blueprintStore } from '../blueprint/store.svelte.ts';
+import { browserStorage } from '../cookbook/storage.ts';
+import { cookbookStore } from '../cookbook/store.svelte.ts';
 import { recipes } from '../recipes/index.ts';
 import { recipeState } from '../recipes/state.svelte.ts';
 import { AiState } from './state.svelte.ts';
@@ -12,12 +12,12 @@ export const aiState = new AiState({
     store: recipeState,
     recipes,
     settings: {
-      read: () => blueprintStore.settings(),
-      write: (settings) => blueprintStore.setSettings(settings),
+      read: () => cookbookStore.settings(),
+      write: (settings) => cookbookStore.setSettings(settings),
     },
     theme: {
-      read: () => blueprintStore.snapshot().theme,
-      write: (theme) => blueprintStore.setTheme(theme),
+      read: () => cookbookStore.snapshot().theme,
+      write: (theme) => cookbookStore.setTheme(theme),
     },
   },
   voice: { createModel: createSpeechModel },

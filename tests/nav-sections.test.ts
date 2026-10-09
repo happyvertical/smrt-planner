@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { migrateLegacySections } from '../src/lib/blueprint/migrate.ts';
-import { parseBlueprint } from '../src/lib/blueprint/validate.ts';
+import { migrateLegacySections } from '../src/lib/cookbook/migrate.ts';
+import { parseCookbook } from '../src/lib/cookbook/validate.ts';
 import {
   buildNavSections,
   legacyNavSectionKeys,
@@ -116,14 +116,14 @@ describe('migrateLegacySections', () => {
     expect(migrateLegacySections(layout, keys)).toEqual(layout);
   });
 
-  it('runs when a blueprint is loaded', () => {
-    const result = parseBlueprint({
+  it('runs when a cookbook is loaded', () => {
+    const result = parseCookbook({
       version: 1,
       recipes: [],
       policies: [],
       layout: { version: 1, sectionOrder: ['section:commerce.vendors'] },
     });
-    expect(result.ok && result.blueprint.layout?.sectionOrder).toEqual([
+    expect(result.ok && result.cookbook.layout?.sectionOrder).toEqual([
       'section:purchasing',
     ]);
   });

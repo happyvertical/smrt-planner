@@ -1,5 +1,5 @@
 /**
- * Cookbook icons as Tabler-style stroke paths (24x24 viewBox, `currentColor`,
+ * LibraryCookbook icons as Tabler-style stroke paths (24x24 viewBox, `currentColor`,
  * stroke width 2, round caps). The planner has no icon library; these few are
  * inline so the cookbook data names an icon instead of carrying markup.
  */

@@ -7,7 +7,7 @@ import type { Recipe, RecipeNavSection } from './types.ts';
 
 /**
  * Features: exposed catalog models no recipe covers, which a visitor can add
- * one at a time (the Planner's Features tab). They sit in the blueprint's
+ * one at a time (the Planner's Features tab). They sit in the cookbook's
  * `features` and in one suggested nav section, after the recipes' sections.
  */
 export const FEATURE_SECTION: RecipeNavSection = {
@@ -21,7 +21,7 @@ export const FEATURE_SECTION: RecipeNavSection = {
 export const FEATURE_ENTRY_ICON = 'fileText';
 
 export interface FeatureEntry {
-  /** `@scope/pkg:Class` qualified name, as stored in the blueprint. */
+  /** `@scope/pkg:Class` qualified name, as stored in the cookbook. */
   id: string;
   name: string;
   /** Humanized model name, e.g. `Purchase Order`. */

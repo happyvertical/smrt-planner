@@ -1,5 +1,5 @@
 import { isWebGPUAvailable, WebLLMProvider } from '@happyvertical/ai/local';
-import { cookbooks, getCookbook } from '../cookbooks/index.ts';
+import { getLibraryCookbook, libraryCookbooks } from '../library/index.ts';
 import type { Recipe } from '../recipes/types.ts';
 import type { RecipeStore, SettingsStore, ThemeStore } from './change.ts';
 import {
@@ -66,7 +66,7 @@ export class AssistantSession {
 
   readonly transport: BrowserAssistantTransport;
   /** Cookbooks the assistant proposed, applied only by the person's click. */
-  readonly offers = new CookbookOffers(getCookbook);
+  readonly offers = new CookbookOffers(getLibraryCookbook);
   /** Theme changes the assistant made, each undoable from the chat. */
   readonly themeUndos: ThemeUndos | null;
   private loaded: LoadedModel | null = null;
@@ -85,7 +85,7 @@ export class AssistantSession {
       model: () => this.chat,
       store: options.store,
       recipes: options.recipes,
-      cookbooks,
+      cookbooks: libraryCookbooks,
       offers: this.offers,
       settings: options.settings,
       theme: options.theme,

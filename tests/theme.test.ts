@@ -12,11 +12,14 @@ import {
   type ChatModel,
   createBrowserAssistantTransport,
 } from '../src/lib/assistant/transport.ts';
-import { loadBlueprint, saveBlueprint } from '../src/lib/blueprint/storage.ts';
-import { BlueprintStore } from '../src/lib/blueprint/store.svelte.ts';
-import { parseBlueprint } from '../src/lib/blueprint/validate.ts';
-import { applyCookbook } from '../src/lib/cookbooks/apply.ts';
-import { cookbooks, getCookbook } from '../src/lib/cookbooks/index.ts';
+import { loadCookbook, saveCookbook } from '../src/lib/cookbook/storage.ts';
+import { CookbookStore } from '../src/lib/cookbook/store.svelte.ts';
+import { parseCookbook } from '../src/lib/cookbook/validate.ts';
+import { applyLibraryCookbook } from '../src/lib/library/apply.ts';
+import {
+  getLibraryCookbook,
+  libraryCookbooks,
+} from '../src/lib/library/index.ts';
 import { recipes } from '../src/lib/recipes/index.ts';
 import { recipeState } from '../src/lib/recipes/state.svelte.ts';
 import { DEFAULT_SETTINGS } from '../src/lib/settings/app-settings.ts';
@@ -108,38 +111,38 @@ describe('theme validation', () => {
 describe('theme in the document', () => {
   it('is validated on import and round-trips', () => {
     const theme = { preset: 'studio', colorScheme: 'light' };
-    const ok = parseBlueprint({ ...base, theme });
-    expect(ok).toMatchObject({ ok: true, blueprint: { theme } });
-    const bad = parseBlueprint({ ...base, theme: { preset: 'neon' } });
+    const ok = parseCookbook({ ...base, theme });
+    expect(ok).toMatchObject({ ok: true, cookbook: { theme } });
+    const bad = parseCookbook({ ...base, theme: { preset: 'neon' } });
     expect(bad.ok).toBe(false);
     // A saved value may name a preset a newer build lacks: keep the rest.
-    const lenient = parseBlueprint(
+    const lenient = parseCookbook(
       { ...base, theme: { preset: 'neon' } },
       { dropUnknownRecipes: true },
     );
-    expect(lenient.ok && lenient.blueprint.theme).toBeUndefined();
+    expect(lenient.ok && lenient.cookbook.theme).toBeUndefined();
   });
 
   it('is absent in older files and stays absent', () => {
-    const result = parseBlueprint(base);
-    expect(result.ok && 'theme' in result.blueprint).toBe(false);
+    const result = parseCookbook(base);
+    expect(result.ok && 'theme' in result.cookbook).toBe(false);
   });
 
   it('persists with the document and migrates an old one as default', () => {
     const storage = memoryStorage();
-    const store = new BlueprintStore();
+    const store = new CookbookStore();
     store.hydrate('', storage);
     expect(store.snapshot().theme).toBeUndefined();
     store.setTheme({ custom: { primary: '#0f766e' }, colorScheme: 'dark' });
     expect(store.save()).toBe(true);
-    const loaded = loadBlueprint(storage);
+    const loaded = loadCookbook(storage);
     expect(loaded).toMatchObject({
       status: 'loaded',
-      blueprint: {
+      cookbook: {
         theme: { custom: { primary: '#0f766e' }, colorScheme: 'dark' },
       },
     });
-    const again = new BlueprintStore();
+    const again = new CookbookStore();
     again.hydrate('', storage);
     expect(again.theme).toEqual({
       custom: { primary: '#0f766e' },
@@ -149,31 +152,31 @@ describe('theme in the document', () => {
     expect(again.snapshot().theme).toBeUndefined();
     store.reset();
     expect(store.theme).toBeUndefined();
-    expect(saveBlueprint(storage, store.snapshot())).toBe(true);
+    expect(saveCookbook(storage, store.snapshot())).toBe(true);
   });
 });
 
 describe('cookbook themes', () => {
   it('built-in cookbooks carry valid themes', () => {
-    for (const cookbook of cookbooks) {
-      const result = parseBlueprint(cookbook.blueprint);
+    for (const cookbook of libraryCookbooks) {
+      const result = parseCookbook(cookbook.document);
       expect(result.ok, cookbook.id).toBe(true);
-      expect(cookbook.blueprint.theme, cookbook.id).toBeDefined();
+      expect(cookbook.document.theme, cookbook.id).toBeDefined();
     }
   });
 
   it('applying one sets its theme; one without leaves the visitor theme', () => {
-    const store = new BlueprintStore();
-    const bakery = getCookbook('bakery');
+    const store = new CookbookStore();
+    const bakery = getLibraryCookbook('bakery');
     if (!bakery) throw new Error('bakery missing');
-    expect(applyCookbook(bakery, store, DEFAULT_SETTINGS).ok).toBe(true);
-    expect(store.theme).toEqual(bakery.blueprint.theme);
+    expect(applyLibraryCookbook(bakery, store, DEFAULT_SETTINGS).ok).toBe(true);
+    expect(store.theme).toEqual(bakery.document.theme);
     const plain = {
       ...bakery,
-      blueprint: { ...bakery.blueprint, theme: undefined },
+      document: { ...bakery.document, theme: undefined },
     };
     store.setTheme({ preset: 'glass' });
-    expect(applyCookbook(plain, store, DEFAULT_SETTINGS).ok).toBe(true);
+    expect(applyLibraryCookbook(plain, store, DEFAULT_SETTINGS).ok).toBe(true);
     expect(store.theme).toEqual({ preset: 'glass' });
   });
 
@@ -287,7 +290,7 @@ describe('assistant theme', () => {
     const on = buildSystemPrompt(
       recipes,
       [],
-      cookbooks,
+      libraryCookbooks,
       DEFAULT_SETTINGS,
       undefined,
       {
@@ -298,13 +301,18 @@ describe('assistant theme', () => {
     expect(on).toContain('"make it warmer" -> ');
     expect(on).toContain('Theme: glass.');
     expect(on.length).toBeLessThan(4600);
-    const off = buildSystemPrompt(recipes, [], cookbooks, DEFAULT_SETTINGS);
+    const off = buildSystemPrompt(
+      recipes,
+      [],
+      libraryCookbooks,
+      DEFAULT_SETTINGS,
+    );
     expect(off).not.toContain('make it warmer');
     expect(off).not.toContain('Theme:');
   });
 
   it('keyword matching mentions theming in the hint', () => {
-    const index = buildMatchIndex(recipes, cookbooks, { theme: true });
+    const index = buildMatchIndex(recipes, libraryCookbooks, { theme: true });
     for (const text of [
       'change the theme',
       'use our brand colour',
@@ -320,14 +328,14 @@ describe('assistant theme', () => {
     const prompt = buildSystemPrompt(
       recipes,
       [],
-      cookbooks,
+      libraryCookbooks,
       DEFAULT_SETTINGS,
       matchText(index, 'I want dark mode'),
       { current: undefined },
     );
     expect(prompt).toMatch(/Looks relevant: theming/);
     // Without theme keywords in the index nothing changes.
-    const plain = buildMatchIndex(recipes, cookbooks);
+    const plain = buildMatchIndex(recipes, libraryCookbooks);
     expect(
       matchText(plain, 'change the theme').some((m) => m.kind === 'theme'),
     ).toBe(false);

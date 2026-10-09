@@ -14,7 +14,7 @@ import {
   needsFirstRunSetup,
 } from './status.ts';
 
-/** UI choices that are not part of the blueprint. */
+/** UI choices that are not part of the cookbook. */
 export interface AiPrefs {
   /** "I don't need AI": the first visit never shows the setup form again. */
   dismissed: boolean;
@@ -136,7 +136,7 @@ export class AiState {
 
   /**
    * Read the saved choices, probe the browser's speech, and decide whether
-   * this is a first visit. Call once, in the browser, after the blueprint.
+   * this is a first visit. Call once, in the browser, after the cookbook.
    */
   hydrate(built: boolean): void {
     if (this.hydrated) return;

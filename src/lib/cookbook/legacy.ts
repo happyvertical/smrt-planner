@@ -5,16 +5,12 @@ import type {
 } from '../recipes/policy.ts';
 import { knownRecipes, withRequirements } from '../recipes/resolve.ts';
 import type { ExposureSurface } from '../recipes/types.ts';
-import {
-  BLUEPRINT_SCHEMA,
-  BLUEPRINT_VERSION,
-  type Blueprint,
-} from './types.ts';
+import { COOKBOOK_SCHEMA, COOKBOOK_VERSION, type Cookbook } from './types.ts';
 
 /**
- * The URL encoding the planner used before the blueprint (`?r=` recipes and
+ * The URL encoding the planner used before the cookbook (`?r=` recipes and
  * `?o=` options). Read-only now: it exists so old shared links migrate once
- * into the blueprint, then the layout cleans the URL.
+ * into the cookbook, then the layout cleans the URL.
  */
 
 /** Compact wire form: short keys, rows grouped under their object. */
@@ -101,11 +97,11 @@ function decodeOptions(value: string): {
 }
 
 /**
- * Turn a legacy query into a blueprint. Lenient like the old reader: unknown
+ * Turn a legacy query into a cookbook. Lenient like the old reader: unknown
  * recipe ids and malformed options are dropped, since a stale link should
  * still open what it can.
  */
-export function blueprintFromLegacySearch(search: string): Blueprint {
+export function cookbookFromLegacySearch(search: string): Cookbook {
   const params = new URLSearchParams(search);
   const ids = (params.get('r') ?? '').split(',').filter(Boolean);
   const recipes = withRequirements(knownRecipes(ids, recipesById), recipesById);
@@ -113,9 +109,9 @@ export function blueprintFromLegacySearch(search: string): Blueprint {
     recipes.flatMap((id) => recipesById.get(id)?.models ?? []),
   );
   const { rows, narrowed } = decodeOptions(params.get('o') ?? '');
-  const blueprint: Blueprint = {
-    $schema: BLUEPRINT_SCHEMA,
-    version: BLUEPRINT_VERSION,
+  const cookbook: Cookbook = {
+    $schema: COOKBOOK_SCHEMA,
+    version: COOKBOOK_VERSION,
     recipes,
     features: [],
     policies: rows.filter((row) => covered.has(row.objectRef)),
@@ -123,6 +119,6 @@ export function blueprintFromLegacySearch(search: string): Blueprint {
   const exposure = Object.fromEntries(
     Object.entries(narrowed).filter(([ref]) => covered.has(ref)),
   );
-  if (Object.keys(exposure).length) blueprint.exposure = exposure;
-  return blueprint;
+  if (Object.keys(exposure).length) cookbook.exposure = exposure;
+  return cookbook;
 }

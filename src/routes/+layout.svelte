@@ -9,23 +9,23 @@ import { afterNavigate, replaceState } from '$app/navigation';
 import { page } from '$app/state';
 import { aiState } from '$lib/ai/instance.ts';
 import smrtMark from '$lib/assets/smrt-mark.svg';
-import { browserStorage } from '$lib/blueprint/storage.ts';
-import {
-  blueprintStore,
-  SHELL_STORAGE_KEY,
-} from '$lib/blueprint/store.svelte.ts';
 import { catalog, exposedModels, getPackage } from '$lib/catalog/index.ts';
 import AiStatusIcons from '$lib/components/AiStatusIcons.svelte';
 import BrowserAssistant from '$lib/components/BrowserAssistant.svelte';
 import PlannerEditBridge from '$lib/components/PlannerEditBridge.svelte';
 import SectionActions from '$lib/components/SectionActions.svelte';
 import ThemeBridge from '$lib/components/ThemeBridge.svelte';
-import { cookbookState } from '$lib/cookbooks/state.svelte.ts';
+import { browserStorage } from '$lib/cookbook/storage.ts';
+import {
+  cookbookStore,
+  SHELL_STORAGE_KEY,
+} from '$lib/cookbook/store.svelte.ts';
 import { provideDataSource } from '$lib/data/context.ts';
 import { humanize } from '$lib/data/format.ts';
 import { createMemoryDataSource } from '$lib/data/source.ts';
 import { catalogModels } from '$lib/forms/shared.ts';
 import { PROFILE_TYPE, stockSamples, VARIANT } from '$lib/forms/stock.ts';
+import { libraryState } from '$lib/library/state.svelte.ts';
 import { appHref, appQuery } from '$lib/planner/app.svelte.ts';
 import { hasAppState, withTab } from '$lib/planner/query.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
@@ -47,7 +47,7 @@ import type { LayoutProps } from './$types';
 let { children }: LayoutProps = $props();
 
 // Sample data follows the cookbook last applied (nothing in the SSR render).
-cookbookState.load();
+libraryState.load();
 
 // The seam for live objects: swap this for a collection-backed DataSource.
 provideDataSource(
@@ -207,7 +207,7 @@ const navGroups: ShellNavGroup[] = $derived([
 ]);
 
 // The URL carries the package selection so a mock-up can be shared; recipes,
-// options and layout are the blueprint, saved in localStorage. Pages are
+// options and layout are the cookbook, saved in localStorage. Pages are
 // prerendered, so both are only read in the browser, after navigation.
 let ready = false;
 let hydrated = false;
@@ -216,7 +216,7 @@ const onPlanner = () => page.route.id === '/';
 
 function syncUrl() {
   // A legacy link that could not be saved keeps its URL: it is the only copy.
-  if (blueprintStore.keepLegacyUrl) return;
+  if (cookbookStore.keepLegacyUrl) return;
   // The tab belongs to the Planner page only; other pages drop it.
   const wanted = onPlanner()
     ? withTab(appQuery(), plannerTab.active)
@@ -227,11 +227,11 @@ function syncUrl() {
 }
 
 afterNavigate((navigation) => {
-  // Read the saved blueprint once, and fold a legacy ?r= / ?o= link into it.
+  // Read the saved cookbook once, and fold a legacy ?r= / ?o= link into it.
   // syncUrl below then drops those parameters, as appQuery no longer has them.
   if (!hydrated) {
     hydrated = true;
-    blueprintStore.hydrate(location.search);
+    cookbookStore.hydrate(location.search);
     // The AI state reads its saved choices and decides whether this is a first
     // visit (nothing set up, nothing built, "no AI" not chosen).
     aiState.hydrate(!!(recipeState.ids.length || recipeState.features.length));
@@ -260,26 +260,26 @@ afterNavigate((navigation) => {
 $effect(() => {
   // appQuery reads every part of the shareable state, so this tracks them all.
   void appQuery();
-  void blueprintStore.keepLegacyUrl;
+  void cookbookStore.keepLegacyUrl;
   void plannerTab.active;
   void page.route.id;
   if (ready) syncUrl();
 });
 
-// Save the blueprint soon after any change; the store ignores this until the
+// Save the cookbook soon after any change; the store ignores this until the
 // saved one has been read, so loading never overwrites it with an empty one.
 $effect(() => {
   // Reading it all (layout is deep) subscribes the effect to every part.
-  void JSON.stringify(blueprintStore.snapshot());
-  blueprintStore.scheduleSave();
+  void JSON.stringify(cookbookStore.snapshot());
+  cookbookStore.scheduleSave();
 });
 
 function flushOnHide() {
-  if (document.visibilityState === 'hidden') blueprintStore.flush();
+  if (document.visibilityState === 'hidden') cookbookStore.flush();
 }
 </script>
 
-<svelte:window onpagehide={() => blueprintStore.flush()} />
+<svelte:window onpagehide={() => cookbookStore.flush()} />
 <svelte:document onvisibilitychange={flushOnHide} />
 
 {#snippet aiStatus()}
@@ -295,8 +295,8 @@ function flushOnHide() {
   {navGroups}
   currentHref={page.url.pathname + appQuery()}
   environment="static demo"
-  layout={blueprintStore.layout ?? null}
-  onlayoutchange={(next) => blueprintStore.setLayout(next)}
+  layout={cookbookStore.layout ?? null}
+  onlayoutchange={(next) => cookbookStore.setLayout(next)}
   slotItems={[
     {
       id: 'ai-status',
@@ -321,13 +321,13 @@ function flushOnHide() {
       {/snippet}
     </ShellDockTool>
   {/snippet}
-  {#if blueprintStore.persist === 'memory'}
+  {#if cookbookStore.persist === 'memory'}
     <p class="storage-notice" role="status">
-      This browser is not saving your blueprint, so it is kept in memory only. Export it from the Planner's Export tab to keep a copy.
+      This browser is not saving your cookbook, so it is kept in memory only. Export it from the Planner's Export tab to keep a copy.
     </p>
   {/if}
-  {#if blueprintStore.loadNotice}
-    <p class="storage-notice" role="status">{blueprintStore.loadNotice}</p>
+  {#if cookbookStore.loadNotice}
+    <p class="storage-notice" role="status">{cookbookStore.loadNotice}</p>
   {/if}
   <PlannerEditBridge />
   <ThemeBridge />

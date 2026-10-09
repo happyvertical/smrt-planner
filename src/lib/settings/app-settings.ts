@@ -1,11 +1,11 @@
-import type { Blueprint } from '../blueprint/types.ts';
 import { getModelByQualifiedName } from '../catalog/index.ts';
+import type { Cookbook } from '../cookbook/types.ts';
 import { recipesById } from '../recipes/index.ts';
 import { type FieldPolicyRow, resolveFields } from '../recipes/policy.ts';
 
 /**
  * App settings: the few defaults that belong to the visitor's app, not to a
- * cookbook. They have no field of their own in the blueprint; they are the
+ * cookbook. They have no field of their own in the cookbook; they are the
  * same app-scope `defaultValue` policy rows a cookbook writes, kept in one
  * place so the Settings tab, the cookbook preview and the cookbooks agree on
  * which fields each setting covers.
@@ -88,12 +88,12 @@ function findRow(
 
 /** The app's settings: the first stored row of each, else the defaults. */
 export function readSettings(
-  blueprint: Pick<Blueprint, 'policies'>,
+  cookbook: Pick<Cookbook, 'policies'>,
 ): AppSettings {
   const out: AppSettings = { ...DEFAULT_SETTINGS };
   const first = (key: keyof AppSettings, type: 'number' | 'string') => {
     for (const { model, field } of SETTING_TARGETS[key]) {
-      const value = rowValue(findRow(blueprint.policies, model, field));
+      const value = rowValue(findRow(cookbook.policies, model, field));
       if (typeof value === type) return value;
     }
     return undefined;
@@ -107,23 +107,23 @@ export function readSettings(
   return out;
 }
 
-/** Does the blueprint state a tax rate (a row), rather than leave the default? */
-export function hasTaxRateRow(blueprint: Pick<Blueprint, 'policies'>): boolean {
+/** Does the cookbook state a tax rate (a row), rather than leave the default? */
+export function hasTaxRateRow(cookbook: Pick<Cookbook, 'policies'>): boolean {
   return SETTING_TARGETS.taxRate.some(
     ({ model, field }) =>
-      typeof rowValue(findRow(blueprint.policies, model, field)) === 'number',
+      typeof rowValue(findRow(cookbook.policies, model, field)) === 'number',
   );
 }
 
 /** What a model's field starts as before any app-scope row (catalog + recipe hints). */
 function seedDefault(
-  blueprint: Pick<Blueprint, 'recipes'>,
+  cookbook: Pick<Cookbook, 'recipes'>,
   modelId: string,
   field: string,
 ): unknown {
   const model = getModelByQualifiedName(modelId)?.model;
   if (!model) return undefined;
-  const hints = blueprint.recipes
+  const hints = cookbook.recipes
     .map((id) => recipesById.get(id)?.options?.[modelId])
     .find(Boolean);
   const entry = resolveFields(model, hints, []).find(
@@ -135,7 +135,7 @@ function seedDefault(
 const isUnset = (v: unknown) => v === undefined || v === null || v === '';
 
 /**
- * A copy of the blueprint with the settings written as policy rows. A row is
+ * A copy of the cookbook with the settings written as policy rows. A row is
  * written for every model a setting covers (covered or not, so a recipe
  * added later picks it up) and only where the value
  * differs from what the model starts as; otherwise any row for it is removed,
@@ -143,10 +143,10 @@ const isUnset = (v: unknown) => v === undefined || v === null || v === '';
  * (visibility, label, ...) are kept.
  */
 export function writeSettings(
-  blueprint: Blueprint,
+  cookbook: Cookbook,
   settings: AppSettings,
-): Blueprint {
-  let policies = blueprint.policies.map((row) => ({ ...row }));
+): Cookbook {
+  let policies = cookbook.policies.map((row) => ({ ...row }));
 
   for (const key of KEYS) {
     const raw = settings[key];
@@ -157,7 +157,7 @@ export function writeSettings(
           ? String(raw).trim().toUpperCase()
           : raw;
     for (const { model, field } of SETTING_TARGETS[key]) {
-      const seed = seedDefault(blueprint, model, field);
+      const seed = seedDefault(cookbook, model, field);
       const wanted =
         !isUnset(value) &&
         !(isUnset(seed) ? false : seed === value) &&
@@ -181,7 +181,7 @@ export function writeSettings(
       }
     }
   }
-  return { ...blueprint, policies };
+  return { ...cookbook, policies };
 }
 
 /** Starting values for a cookbook's editor: what it sets, else the defaults. */

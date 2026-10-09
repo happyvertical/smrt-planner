@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getModelByQualifiedName } from '../src/lib/catalog/index.ts';
-import { getCookbook } from '../src/lib/cookbooks/index.ts';
 import { navNoun } from '../src/lib/data/format.ts';
+import { getLibraryCookbook } from '../src/lib/library/index.ts';
 import { recipeNav, recipes } from '../src/lib/recipes/index.ts';
 import {
   isDiscriminatorField,
@@ -44,10 +44,10 @@ describe('STI discriminators', () => {
 
 describe('Bakery batches', () => {
   it('hide customer, vendor, expiry and channel', () => {
-    const bakery = getCookbook('bakery');
+    const bakery = getLibraryCookbook('bakery');
     const po = model(`${C}ProductionOrder`);
     const names = viewFields(
-      resolveFields(po, undefined, bakery?.blueprint.policies),
+      resolveFields(po, undefined, bakery?.document.policies),
     ).map((f) => f.name);
     for (const hidden of [
       'contractType',

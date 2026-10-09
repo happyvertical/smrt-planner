@@ -60,7 +60,7 @@ const select = (id: string) => {
     <div hidden={plannerTab.active !== 'layout'} class="pane">
       <p class="meta">
         Reorder, move or hide navigation entries and choose which panels show.
-        The layout is saved with the blueprint.
+        The layout is saved with the cookbook.
       </p>
       <ShellLayoutEditor />
     </div>

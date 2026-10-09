@@ -1,12 +1,12 @@
-import type { Cookbook } from '../cookbooks/types.ts';
+import type { LibraryCookbook } from '../library/types.ts';
 import type { Recipe } from '../recipes/types.ts';
 import type { AppSettings } from '../settings/app-settings.ts';
 import { describeTheme, type ThemeSetting } from '../theme/theme.ts';
 import type { Match } from './match.ts';
 
 /** The slice of a cookbook the model needs to pick one. */
-export type CookbookBrief = Pick<Cookbook, 'id' | 'name' | 'summary'> &
-  Partial<Pick<Cookbook, 'keywords'>>;
+export type CookbookBrief = Pick<LibraryCookbook, 'id' | 'name' | 'summary'> &
+  Partial<Pick<LibraryCookbook, 'keywords'>>;
 
 /** Most matched items given full lines; the rest stay in the compact list. */
 const MAX_FOCUSED_RECIPES = 5;

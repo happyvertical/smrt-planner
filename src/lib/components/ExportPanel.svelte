@@ -1,24 +1,29 @@
 <script lang="ts">
 import { Button } from '@happyvertical/smrt-ui';
 import { Alert, ConfirmDialog } from '@happyvertical/smrt-ui/feedback';
-import { downloadBlueprint } from '$lib/blueprint/file.ts';
-import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
-import type { Blueprint } from '$lib/blueprint/types.ts';
-import { parseBlueprintText } from '$lib/blueprint/validate.ts';
+import { downloadCookbook } from '$lib/cookbook/file.ts';
+import { cookbookStore } from '$lib/cookbook/store.svelte.ts';
+import type { Cookbook } from '$lib/cookbook/types.ts';
+import { parseCookbookText } from '$lib/cookbook/validate.ts';
 import { useDataSource } from '$lib/data/context.ts';
 import { humanize } from '$lib/data/format.ts';
+import { getLibraryCookbook } from '$lib/library/index.ts';
+import { libraryState } from '$lib/library/state.svelte.ts';
 import { recipesById } from '$lib/recipes/index.ts';
 
 let fileInput: HTMLInputElement | undefined = $state();
 /** A validated import waiting for the visitor's confirmation. */
-let pending = $state<Blueprint | null>(null);
+let pending = $state<Cookbook | null>(null);
 let error = $state('');
 let notice = $state('');
 let confirmingReset = $state(false);
 
-const current = $derived(blueprintStore.snapshot());
+// A file is named for the library cookbook last applied, else a generic name.
+const exportName = () => getLibraryCookbook(libraryState.active ?? '')?.name;
 
-const describe = (b: Blueprint) =>
+const current = $derived(cookbookStore.snapshot());
+
+const describe = (b: Cookbook) =>
   `${b.recipes.length} ${b.recipes.length === 1 ? 'recipe' : 'recipes'}, ${b.features.length} ${b.features.length === 1 ? 'feature' : 'features'}, ${b.policies.length} saved ${b.policies.length === 1 ? 'option' : 'options'}`;
 
 async function choose(event: Event & { currentTarget: HTMLInputElement }) {
@@ -28,8 +33,8 @@ async function choose(event: Event & { currentTarget: HTMLInputElement }) {
   notice = '';
   if (!file) return;
   try {
-    const result = parseBlueprintText(await file.text());
-    if (result.ok) pending = result.blueprint;
+    const result = parseCookbookText(await file.text());
+    if (result.ok) pending = result.cookbook;
     else error = result.error;
   } catch {
     error = 'The file could not be read.';
@@ -40,7 +45,7 @@ async function choose(event: Event & { currentTarget: HTMLInputElement }) {
 
 function confirmImport() {
   if (pending) {
-    blueprintStore.replace(pending);
+    cookbookStore.replace(pending);
     notice = `Imported ${describe(pending)}.`;
   }
   pending = null;
@@ -49,13 +54,13 @@ function confirmImport() {
 const dataSource = useDataSource();
 
 function confirmReset() {
-  blueprintStore.reset();
-  // Rows the visitor added, edited or deleted go with the blueprint.
+  cookbookStore.reset();
+  // Rows the visitor added, edited or deleted go with the cookbook.
   dataSource.reset?.();
   confirmingReset = false;
   // The shell holds its settings in memory too; reload so it starts from its
-  // defaults (the blueprint is already saved empty).
-  blueprintStore.flush();
+  // defaults (the cookbook is already saved empty).
+  cookbookStore.flush();
   location.reload();
 }
 </script>
@@ -67,7 +72,7 @@ function confirmReset() {
     records are not part of it.
   </p>
   <section aria-labelledby="current-heading">
-    <h2 id="current-heading">Current blueprint</h2>
+    <h2 id="current-heading">Current cookbook</h2>
     <p>{describe(current)}.</p>
     {#if current.recipes.length}
       <ul>
@@ -86,15 +91,15 @@ function confirmReset() {
   </section>
 
   <div class="actions">
-    <Button onclick={() => downloadBlueprint(blueprintStore.snapshot())}>Export</Button>
-    <Button variant="secondary" onclick={() => fileInput?.click()}>Import…</Button>
+    <Button onclick={() => downloadCookbook(cookbookStore.snapshot(), exportName())}>Export cookbook</Button>
+    <Button variant="secondary" onclick={() => fileInput?.click()}>Import cookbook…</Button>
     <Button variant="secondary" onclick={() => (confirmingReset = true)}>Reset</Button>
     <input
       bind:this={fileInput}
       type="file"
       accept="application/json,.json"
       hidden
-      aria-label="Blueprint file"
+      aria-label="Cookbook file"
       onchange={choose}
     />
   </div>
@@ -107,7 +112,7 @@ function confirmReset() {
 
 <ConfirmDialog
   open={pending !== null}
-  title="Replace the current blueprint?"
+  title="Replace the current cookbook?"
   message={pending
     ? `Importing replaces your ${describe(current)} with ${describe(pending)}.`
     : ''}
@@ -119,7 +124,7 @@ function confirmReset() {
 
 <ConfirmDialog
   open={confirmingReset}
-  title="Reset the blueprint?"
+  title="Reset the cookbook?"
   message="This removes every recipe and saved option. Export first to keep a copy."
   confirmLabel="Reset"
   destructive

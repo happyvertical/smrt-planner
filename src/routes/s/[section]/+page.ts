@@ -1,4 +1,4 @@
-import { cookbooks } from '$lib/cookbooks/index.ts';
+import { libraryCookbooks } from '$lib/library/index.ts';
 import { FEATURE_SECTION } from '$lib/recipes/features.ts';
 import { buildNavSections, recipes } from '$lib/recipes/index.ts';
 import { sectionIdFromSlug, sectionSlug } from '$lib/sections/path.ts';
@@ -12,8 +12,8 @@ export const entries: EntryGenerator = () => {
   const ids = [
     ...buildNavSections(recipes).map((s) => `section:${s.id}`),
     `section:${FEATURE_SECTION.id}`,
-    ...cookbooks.flatMap((c) =>
-      (c.blueprint.layout?.customSections ?? []).map((s) => s.id),
+    ...libraryCookbooks.flatMap((c) =>
+      (c.document.layout?.customSections ?? []).map((s) => s.id),
     ),
   ];
   return [...new Set(ids)].map((id) => ({ section: sectionSlug(id) }));

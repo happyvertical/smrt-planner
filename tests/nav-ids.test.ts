@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { migrateNavItemIds } from '../src/lib/blueprint/migrate.ts';
-import { parseBlueprint } from '../src/lib/blueprint/validate.ts';
 import { catalog } from '../src/lib/catalog/index.ts';
-import { cookbooks } from '../src/lib/cookbooks/index.ts';
-import { blueprintNavGroups } from '../src/lib/cookbooks/menu.ts';
+import { migrateNavItemIds } from '../src/lib/cookbook/migrate.ts';
+import { parseCookbook } from '../src/lib/cookbook/validate.ts';
+import { libraryCookbooks } from '../src/lib/library/index.ts';
+import { cookbookNavGroups } from '../src/lib/library/menu.ts';
 import {
   featureEntries,
   featureNavItems,
@@ -48,9 +48,9 @@ describe('navigation item ids', () => {
   });
 
   it.each(
-    cookbooks.map((c) => [c.id, c] as const),
+    libraryCookbooks.map((c) => [c.id, c] as const),
   )('%s menu has no duplicate ids', (_id, cookbook) => {
-    const ids = blueprintNavGroups(cookbook.blueprint).flatMap((g) =>
+    const ids = cookbookNavGroups(cookbook.document).flatMap((g) =>
       g.items.map((i) => i.id),
     );
     expect(new Set(ids).size).toBe(ids.length);
@@ -105,14 +105,14 @@ describe('migrateNavItemIds', () => {
     expect(migrateNavItemIds(odd)).toEqual(odd);
   });
 
-  it('runs when a blueprint is loaded', () => {
-    const result = parseBlueprint({
+  it('runs when a cookbook is loaded', () => {
+    const result = parseCookbook({
       version: 1,
       recipes: [],
       policies: [],
       layout: old,
     });
-    expect(result.ok && result.blueprint.layout?.hidden).toEqual([
+    expect(result.ok && result.cookbook.layout?.hidden).toEqual([
       'item:commerce:Invoice',
       'section:more',
     ]);

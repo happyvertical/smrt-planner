@@ -12,7 +12,10 @@ import {
   createBrowserAssistantTransport,
   GREETING,
 } from '../src/lib/assistant/transport.ts';
-import { cookbooks, getCookbook } from '../src/lib/cookbooks/index.ts';
+import {
+  getLibraryCookbook,
+  libraryCookbooks,
+} from '../src/lib/library/index.ts';
 import { recipes } from '../src/lib/recipes/index.ts';
 import { recipeState } from '../src/lib/recipes/state.svelte.ts';
 import {
@@ -29,12 +32,17 @@ const PROMPT_BUDGET = 4300;
 
 describe('prompt', () => {
   it('lists cookbooks and current settings and stays small', () => {
-    const prompt = buildSystemPrompt(recipes, ['commerce.sales'], cookbooks, {
-      currency: 'CAD',
-      taxRate: 0.13,
-      paymentTerms: 'Net 30',
-    });
-    for (const c of cookbooks) {
+    const prompt = buildSystemPrompt(
+      recipes,
+      ['commerce.sales'],
+      libraryCookbooks,
+      {
+        currency: 'CAD',
+        taxRate: 0.13,
+        paymentTerms: 'Net 30',
+      },
+    );
+    for (const c of libraryCookbooks) {
       expect(prompt).toContain(`- ${c.id}: ${c.name}.`);
     }
     expect(prompt).toContain('Settings: currency CAD, tax 13%, terms Net 30.');
@@ -43,7 +51,12 @@ describe('prompt', () => {
   });
 
   it('includes worked examples only for ids that exist', () => {
-    const prompt = buildSystemPrompt(recipes, [], cookbooks, DEFAULT_SETTINGS);
+    const prompt = buildSystemPrompt(
+      recipes,
+      [],
+      libraryCookbooks,
+      DEFAULT_SETTINGS,
+    );
     expect(prompt).toContain('Examples:');
     expect(prompt).toContain('"I run a bakery" -> ');
     expect(prompt).toContain('"commerce.invoicing"');
@@ -65,12 +78,12 @@ describe('prompt', () => {
 
 describe('schema and parseChange', () => {
   it('adds optional cookbook and settings', () => {
-    const schema = buildResponseSchema(recipes, cookbooks, true) as {
+    const schema = buildResponseSchema(recipes, libraryCookbooks, true) as {
       properties: Record<string, { enum?: unknown[] }>;
       required: string[];
     };
     expect(schema.properties.cookbook.enum).toEqual([
-      ...cookbooks.map((c) => c.id),
+      ...libraryCookbooks.map((c) => c.id),
       null,
     ]);
     expect(schema.properties.settings).toBeDefined();
@@ -79,8 +92,11 @@ describe('schema and parseChange', () => {
 
   it('keeps a known cookbook and ignores an invalid id', () => {
     const parse = (cookbook: unknown) =>
-      parseChange(JSON.stringify({ reply: 'x', cookbook }), recipes, cookbooks)
-        .cookbook;
+      parseChange(
+        JSON.stringify({ reply: 'x', cookbook }),
+        recipes,
+        libraryCookbooks,
+      ).cookbook;
     expect(parse('bakery')).toBe('bakery');
     expect(parse('nope')).toBeNull();
     expect(parse(3)).toBeNull();
@@ -139,7 +155,7 @@ describe('applySettings', () => {
 
 describe('cookbook offers', () => {
   it('applies only on accept, and the latest offer wins', () => {
-    const offers = new CookbookOffers(getCookbook);
+    const offers = new CookbookOffers(getLibraryCookbook);
     const applier = vi.fn(() => null);
     offers.applier = applier;
     const first = offers.offer('bakery');
@@ -150,7 +166,7 @@ describe('cookbook offers', () => {
     expect(applier).not.toHaveBeenCalled();
     offers.accept(second?.offerId ?? '');
     expect(applier).toHaveBeenCalledTimes(1);
-    expect(applier).toHaveBeenCalledWith(getCookbook('mechanic'));
+    expect(applier).toHaveBeenCalledWith(getLibraryCookbook('mechanic'));
     expect(offers.offers[second?.offerId ?? ''].status).toBe('applied');
     // A second click does nothing.
     offers.accept(second?.offerId ?? '');
@@ -158,7 +174,7 @@ describe('cookbook offers', () => {
   });
 
   it('does not duplicate a pending offer; decline applies nothing', () => {
-    const offers = new CookbookOffers(getCookbook);
+    const offers = new CookbookOffers(getLibraryCookbook);
     const applier = vi.fn(() => null);
     offers.applier = applier;
     const ref = offers.offer('bakery');
@@ -170,13 +186,13 @@ describe('cookbook offers', () => {
   });
 
   it('records a failure', () => {
-    const offers = new CookbookOffers(getCookbook);
-    offers.applier = () => 'bad blueprint';
+    const offers = new CookbookOffers(getLibraryCookbook);
+    offers.applier = () => 'bad cookbook';
     const ref = offers.offer('bakery');
     offers.accept(ref?.offerId ?? '');
     expect(offers.offers[ref?.offerId ?? '']).toMatchObject({
       status: 'failed',
-      error: 'bad blueprint',
+      error: 'bad cookbook',
     });
   });
 });
@@ -186,7 +202,7 @@ describe('transport', () => {
     const message = vi.fn<ChatModel['message']>(async () =>
       JSON.stringify(reply),
     );
-    const offers = new CookbookOffers(getCookbook);
+    const offers = new CookbookOffers(getLibraryCookbook);
     const applier = vi.fn(() => null);
     offers.applier = applier;
     const memory = memorySettings();
@@ -194,7 +210,7 @@ describe('transport', () => {
       model: () => ({ message }),
       store: recipeState,
       recipes,
-      cookbooks,
+      cookbooks: libraryCookbooks,
       offers,
       settings: memory.store,
     });

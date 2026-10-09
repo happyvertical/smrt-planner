@@ -53,13 +53,13 @@ export interface AssistantChange {
   theme: ThemePatch;
 }
 
-/** The slice of the blueprint store that holds the app theme. */
+/** The slice of the cookbook store that holds the app theme. */
 export interface ThemeStore {
   read(): ThemeSetting | undefined;
   write(theme: ThemeSetting | undefined): void;
 }
 
-/** The slice of the blueprint store that holds the app settings. */
+/** The slice of the cookbook store that holds the app settings. */
 export interface SettingsStore {
   read(): AppSettings;
   write(settings: AppSettings): void;

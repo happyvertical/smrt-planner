@@ -2,21 +2,21 @@
 import { Button } from '@happyvertical/smrt-ui';
 import { Alert, ConfirmDialog } from '@happyvertical/smrt-ui/feedback';
 import { onMount } from 'svelte';
-import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
+import { cookbookStore } from '$lib/cookbook/store.svelte.ts';
+import { useDataSource } from '$lib/data/context.ts';
 import {
-  applyCookbook,
+  applyLibraryCookbook,
   holdsCookbook,
   needsConfirm,
-} from '$lib/cookbooks/apply.ts';
+} from '$lib/library/apply.ts';
 import {
   COOKBOOK_ICONS,
-  type Cookbook,
-  cookbookRecipeLabels,
-  cookbooks,
-} from '$lib/cookbooks/index.ts';
-import { previewMenu } from '$lib/cookbooks/menu.ts';
-import { cookbookState } from '$lib/cookbooks/state.svelte.ts';
-import { useDataSource } from '$lib/data/context.ts';
+  type LibraryCookbook,
+  libraryCookbooks,
+  libraryRecipeLabels,
+} from '$lib/library/index.ts';
+import { previewMenu } from '$lib/library/menu.ts';
+import { libraryState } from '$lib/library/state.svelte.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
 import {
   type AppSettings as Settings,
@@ -31,11 +31,11 @@ let error = $state('');
 let notice = $state('');
 
 onMount(() => {
-  cookbookState.load();
-  selectedId = cookbookState.active;
+  libraryState.load();
+  selectedId = libraryState.active;
 });
 
-const selected = $derived(cookbooks.find((c) => c.id === selectedId));
+const selected = $derived(libraryCookbooks.find((c) => c.id === selectedId));
 
 // The preview's editable copy of the cookbook's settings; choosing a cookbook
 // (again) resets it to the cookbook's own values. The cookbook is never changed.
@@ -43,8 +43,8 @@ let settings = $state<Settings>(settingsOfCookbook(undefined));
 $effect(() => {
   settings = settingsOfCookbook(selected?.settings);
 });
-const isActive = (cookbook: Cookbook) =>
-  cookbookState.active === cookbook.id &&
+const isActive = (cookbook: LibraryCookbook) =>
+  libraryState.active === cookbook.id &&
   holdsCookbook(cookbook, {
     recipes: recipeState.ids,
     features: recipeState.features,
@@ -52,22 +52,22 @@ const isActive = (cookbook: Cookbook) =>
 
 function use() {
   if (!selected) return;
-  if (needsConfirm(blueprintStore)) confirming = true;
+  if (needsConfirm(cookbookStore)) confirming = true;
   else commit();
 }
 
 function commit() {
   confirming = false;
   if (!selected) return;
-  const result = applyCookbook(
+  const result = applyLibraryCookbook(
     selected,
-    blueprintStore,
+    cookbookStore,
     $state.snapshot(settings),
   );
   if (result.ok) {
     // Sample records are regenerated from the cookbook's own sample data.
     dataSource.reset?.();
-    cookbookState.select(selected.id);
+    libraryState.select(selected.id);
     error = '';
     notice = `Now using the ${selected.name} cookbook.`;
   } else {
@@ -85,7 +85,7 @@ function commit() {
   </p>
 
   <ul class="grid" aria-label="Cookbooks">
-    {#each cookbooks as cookbook (cookbook.id)}
+    {#each libraryCookbooks as cookbook (cookbook.id)}
       {@const active = isActive(cookbook)}
       <li>
         <button
@@ -120,13 +120,13 @@ function commit() {
   </ul>
 
   {#if selected}
-    {@const menu = previewMenu(selected.blueprint)}
+    {@const menu = previewMenu(selected.document)}
     <section class="preview" aria-labelledby="preview-heading">
       <h2 id="preview-heading">{selected.name}</h2>
       <div class="block">
         <h3>Recipes</h3>
         <ul class="chips" aria-label="Recipes">
-          {#each cookbookRecipeLabels(selected) as label (label)}
+          {#each libraryRecipeLabels(selected) as label (label)}
             <li>{label}</li>
           {/each}
         </ul>

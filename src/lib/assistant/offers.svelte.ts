@@ -1,4 +1,4 @@
-import type { Cookbook } from '../cookbooks/types.ts';
+import type { LibraryCookbook } from '../library/types.ts';
 
 export type OfferStatus =
   | 'pending'
@@ -27,7 +27,7 @@ export const isOfferRef = (value: unknown): value is OfferRef =>
   typeof (value as OfferRef).offerId === 'string';
 
 /** Applies a cookbook (the Cookbooks tab's path); returns an error or null. */
-export type CookbookApplier = (cookbook: Cookbook) => string | null;
+export type CookbookApplier = (cookbook: LibraryCookbook) => string | null;
 
 /**
  * Cookbooks the assistant proposed. Applying one replaces the recipes, menu
@@ -40,7 +40,9 @@ export class CookbookOffers {
   applier: CookbookApplier | null = null;
   private counter = 0;
 
-  constructor(private readonly find: (id: string) => Cookbook | undefined) {}
+  constructor(
+    private readonly find: (id: string) => LibraryCookbook | undefined,
+  ) {}
 
   pending(): Offer | undefined {
     return Object.values(this.offers).find((o) => o.status === 'pending');

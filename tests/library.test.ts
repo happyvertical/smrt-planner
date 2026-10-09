@@ -1,21 +1,21 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { BlueprintStore } from '../src/lib/blueprint/store.svelte.ts';
-import { parseBlueprint } from '../src/lib/blueprint/validate.ts';
 import { getModelByQualifiedName } from '../src/lib/catalog/index.ts';
+import { CookbookStore } from '../src/lib/cookbook/store.svelte.ts';
+import { parseCookbook } from '../src/lib/cookbook/validate.ts';
+import { navNoun } from '../src/lib/data/format.ts';
 import {
-  applyCookbook,
+  applyLibraryCookbook,
   holdsCookbook,
-  isBlueprintEmpty,
+  isCookbookEmpty,
   needsConfirm,
-} from '../src/lib/cookbooks/apply.ts';
+} from '../src/lib/library/apply.ts';
 import {
   COOKBOOK_ICONS,
-  cookbookRecipeLabels,
-  cookbooks,
-} from '../src/lib/cookbooks/index.ts';
-import { blueprintNavGroups, previewMenu } from '../src/lib/cookbooks/menu.ts';
-import type { CookbookLayout } from '../src/lib/cookbooks/types.ts';
-import { navNoun } from '../src/lib/data/format.ts';
+  libraryCookbooks,
+  libraryRecipeLabels,
+} from '../src/lib/library/index.ts';
+import { cookbookNavGroups, previewMenu } from '../src/lib/library/menu.ts';
+import type { CookbookLayout } from '../src/lib/library/types.ts';
 import { recipesById } from '../src/lib/recipes/index.ts';
 import { recipeState } from '../src/lib/recipes/state.svelte.ts';
 
@@ -25,42 +25,44 @@ afterEach(() => recipeState.clear());
 
 describe('cookbook data', () => {
   it('ships the four cookbooks with unique ids and known icons', () => {
-    expect(cookbooks.map((c) => c.id)).toEqual([
+    expect(libraryCookbooks.map((c) => c.id)).toEqual([
       'bakery',
       'mechanic',
       'welder',
       'yoga-studio',
     ]);
-    expect(new Set(cookbooks.map((c) => c.id)).size).toBe(cookbooks.length);
-    for (const c of cookbooks) {
+    expect(new Set(libraryCookbooks.map((c) => c.id)).size).toBe(
+      libraryCookbooks.length,
+    );
+    for (const c of libraryCookbooks) {
       expect(COOKBOOK_ICONS[c.icon]?.length, c.id).toBeGreaterThan(0);
       expect(c.name && c.summary).toBeTruthy();
     }
   });
 
   it.each(
-    cookbooks.map((c) => [c.id, c] as const),
-  )('%s is a valid blueprint that round-trips unchanged', (_id, cookbook) => {
-    const parsed = parseBlueprint(cookbook.blueprint);
+    libraryCookbooks.map((c) => [c.id, c] as const),
+  )('%s is a valid cookbook that round-trips unchanged', (_id, cookbook) => {
+    const parsed = parseCookbook(cookbook.document);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     // Requirements are already included and nothing was dropped.
-    expect(parsed.blueprint.recipes).toEqual(cookbook.blueprint.recipes);
-    expect(parsed.blueprint.features).toEqual(cookbook.blueprint.features);
-    expect(parsed.blueprint.policies).toEqual(cookbook.blueprint.policies);
-    for (const id of cookbook.blueprint.recipes) {
+    expect(parsed.cookbook.recipes).toEqual(cookbook.document.recipes);
+    expect(parsed.cookbook.features).toEqual(cookbook.document.features);
+    expect(parsed.cookbook.policies).toEqual(cookbook.document.policies);
+    for (const id of cookbook.document.recipes) {
       expect(recipesById.has(id), id).toBe(true);
     }
-    for (const ref of cookbook.blueprint.features) {
+    for (const ref of cookbook.document.features) {
       expect(getModelByQualifiedName(ref)?.model.exposed, ref).toBe(true);
     }
   });
 
   it.each(
-    cookbooks.map((c) => [c.id, c] as const),
+    libraryCookbooks.map((c) => [c.id, c] as const),
   )('%s layout names only items the app generates, and places every one', (_id, cookbook) => {
-    const layout = cookbook.blueprint.layout as CookbookLayout;
-    const groups = blueprintNavGroups(cookbook.blueprint);
+    const layout = cookbook.document.layout as CookbookLayout;
+    const groups = cookbookNavGroups(cookbook.document);
     const itemIds = new Set(
       groups.flatMap((g) => g.items.map((i) => i.id ?? i.href)),
     );
@@ -97,9 +99,9 @@ describe('cookbook data', () => {
   });
 
   it.each(
-    cookbooks.map((c) => [c.id, c] as const),
+    libraryCookbooks.map((c) => [c.id, c] as const),
   )('%s settings are the defaults new records start with', (_id, cookbook) => {
-    recipeState.load(cookbook.blueprint);
+    recipeState.load(cookbook.document);
     const { currency, paymentTerms, taxRate } = cookbook.settings;
     const value = (model: string, field: string) => {
       const found = getModelByQualifiedName(`${C}${model}`);
@@ -111,7 +113,7 @@ describe('cookbook data', () => {
       return entry?.hasDefault ? entry.default : undefined;
     };
     const covered = new Set(
-      cookbook.blueprint.recipes.flatMap(
+      cookbook.document.recipes.flatMap(
         (id) => recipesById.get(id)?.models ?? [],
       ),
     );
@@ -147,7 +149,7 @@ describe('cookbook data', () => {
 
   it('writes only the defaults each cookbook was asked for', () => {
     const settings = Object.fromEntries(
-      cookbooks.map((c) => [c.id, c.settings]),
+      libraryCookbooks.map((c) => [c.id, c.settings]),
     );
     expect(settings.bakery).toEqual({
       currency: 'USD',
@@ -167,9 +169,9 @@ describe('cookbook data', () => {
 
 describe('cookbook preview', () => {
   const menu = (id: string) => {
-    const c = cookbooks.find((x) => x.id === id);
+    const c = libraryCookbooks.find((x) => x.id === id);
     if (!c) throw new Error(id);
-    return previewMenu(c.blueprint).map((s) => [
+    return previewMenu(c.document).map((s) => [
       s.label,
       s.entries.map((e) => e.label),
     ]);
@@ -219,48 +221,48 @@ describe('cookbook preview', () => {
   });
 
   it('gives the welder work orders as Jobs, not a project tracker', () => {
-    const welder = cookbooks.find((c) => c.id === 'welder');
+    const welder = libraryCookbooks.find((c) => c.id === 'welder');
     if (!welder) throw new Error('welder');
-    expect(welder.blueprint.recipes).toContain('commerce.sales');
-    expect(welder.blueprint.recipes).not.toContain('projects.tracker');
+    expect(welder.document.recipes).toContain('commerce.sales');
+    expect(welder.document.recipes).not.toContain('projects.tracker');
     const jobs = menu('welder')[0];
     expect(jobs?.[0]).toBe('Jobs');
     expect(jobs?.[1]).toEqual(['Jobs', 'Customers', 'Quotes', 'Agreements']);
     expect(navNoun('Jobs')).toBe('job');
-    expect(JSON.stringify(welder.blueprint.layout)).not.toContain('projects:');
+    expect(JSON.stringify(welder.document.layout)).not.toContain('projects:');
   });
 
   it('lists recipe chips by label', () => {
-    const bakery = cookbooks[0];
-    expect(cookbookRecipeLabels(bakery)).toContain('Wholesale orders');
-    expect(cookbookRecipeLabels(bakery)).toHaveLength(
-      bakery.blueprint.recipes.length,
+    const bakery = libraryCookbooks[0];
+    expect(libraryRecipeLabels(bakery)).toContain('Wholesale orders');
+    expect(libraryRecipeLabels(bakery)).toHaveLength(
+      bakery.document.recipes.length,
     );
   });
 });
 
 describe('applying a cookbook', () => {
-  const store = () => new BlueprintStore();
+  const store = () => new CookbookStore();
 
   it('replaces recipes, features, options and layout', () => {
     const s = store();
     recipeState.add('sales.pipeline');
     recipeState.addFeature(`${C}Cart`);
     s.setLayout({ version: 1, hidden: ['section:sales'] });
-    const bakery = cookbooks[0];
-    expect(applyCookbook(bakery, s).ok).toBe(true);
+    const bakery = libraryCookbooks[0];
+    expect(applyLibraryCookbook(bakery, s).ok).toBe(true);
     const snap = s.snapshot();
-    expect(snap.recipes).toEqual(bakery.blueprint.recipes);
-    expect(snap.features).toEqual(bakery.blueprint.features);
-    expect(snap.policies).toEqual(bakery.blueprint.policies);
-    expect(snap.layout).toEqual(bakery.blueprint.layout);
+    expect(snap.recipes).toEqual(bakery.document.recipes);
+    expect(snap.features).toEqual(bakery.document.features);
+    expect(snap.policies).toEqual(bakery.document.policies);
+    expect(snap.layout).toEqual(bakery.document.layout);
     expect(recipeState.has('sales.pipeline')).toBe(false);
     expect(holdsCookbook(bakery, snap)).toBe(true);
   });
 
   it('asks first only when something is built', () => {
     const s = store();
-    expect(isBlueprintEmpty(s.snapshot())).toBe(true);
+    expect(isCookbookEmpty(s.snapshot())).toBe(true);
     expect(needsConfirm(s)).toBe(false);
     recipeState.add('commerce.customers');
     expect(needsConfirm(s)).toBe(true);
@@ -271,10 +273,10 @@ describe('applying a cookbook', () => {
 
   it('applies one cookbook over another', () => {
     const s = store();
-    applyCookbook(cookbooks[0], s);
-    applyCookbook(cookbooks[3], s);
-    expect(s.snapshot().recipes).toEqual(cookbooks[3].blueprint.recipes);
+    applyLibraryCookbook(libraryCookbooks[0], s);
+    applyLibraryCookbook(libraryCookbooks[3], s);
+    expect(s.snapshot().recipes).toEqual(libraryCookbooks[3].document.recipes);
     expect(s.snapshot().features).toEqual([]);
-    expect(holdsCookbook(cookbooks[0], s.snapshot())).toBe(false);
+    expect(holdsCookbook(libraryCookbooks[0], s.snapshot())).toBe(false);
   });
 });

@@ -11,8 +11,8 @@
         "paymentTerms": "Net 15",
         "taxRate": 0
       },
-      "blueprint": {
-        "$schema": "https://s-m-r-t.dev/schemas/blueprint/v1.json",
+      "document": {
+        "$schema": "https://s-m-r-t.dev/schemas/cookbook/v1.json",
         "version": 1,
         "theme": { "custom": { "primary": "#b45309", "fontFamily": "Georgia" } },
         "recipes": [
@@ -211,8 +211,8 @@
         "paymentTerms": "Due on receipt",
         "taxRate": 0.0825
       },
-      "blueprint": {
-        "$schema": "https://s-m-r-t.dev/schemas/blueprint/v1.json",
+      "document": {
+        "$schema": "https://s-m-r-t.dev/schemas/cookbook/v1.json",
         "version": 1,
         "theme": { "preset": "smrt" },
         "recipes": [
@@ -417,8 +417,8 @@
         "currency": "USD",
         "paymentTerms": "50% deposit, balance on completion"
       },
-      "blueprint": {
-        "$schema": "https://s-m-r-t.dev/schemas/blueprint/v1.json",
+      "document": {
+        "$schema": "https://s-m-r-t.dev/schemas/cookbook/v1.json",
         "version": 1,
         "theme": { "preset": "studio" },
         "recipes": [
@@ -609,8 +609,8 @@
         "currency": "USD",
         "paymentTerms": "Due on receipt"
       },
-      "blueprint": {
-        "$schema": "https://s-m-r-t.dev/schemas/blueprint/v1.json",
+      "document": {
+        "$schema": "https://s-m-r-t.dev/schemas/cookbook/v1.json",
         "version": 1,
         "theme": { "custom": { "primary": "#0f766e", "fontFamily": "ui-rounded" } },
         "recipes": [

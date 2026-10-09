@@ -1,13 +1,13 @@
 <script lang="ts">
-import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
+import { cookbookStore } from '$lib/cookbook/store.svelte.ts';
 import type { AppSettings as Settings } from '$lib/settings/app-settings.ts';
 import AppSettings from './AppSettings.svelte';
 import ThemeSection from './ThemeSection.svelte';
 
 // The editor holds its own copy so typing is never fought by the store;
-// changes reach the blueprint after a short pause (and its save follows).
+// changes reach the cookbook after a short pause (and its save follows).
 const DELAY_MS = 300;
-let draft = $state<Settings>(blueprintStore.settings());
+let draft = $state<Settings>(cookbookStore.settings());
 let timer: ReturnType<typeof setTimeout> | undefined;
 
 function change(next: Settings) {
@@ -19,12 +19,12 @@ function change(next: Settings) {
 function commit() {
   clearTimeout(timer);
   timer = undefined;
-  blueprintStore.setSettings(draft);
+  cookbookStore.setSettings(draft);
 }
 
-// A cookbook, import or reset replaces the blueprint: show what it holds.
+// A cookbook, import or reset replaces the cookbook: show what it holds.
 $effect(() => {
-  const stored = blueprintStore.settings();
+  const stored = cookbookStore.settings();
   if (timer === undefined) draft = stored;
 });
 </script>

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { migrateLegacySections } from '../src/lib/blueprint/migrate.ts';
-import { BlueprintStore } from '../src/lib/blueprint/store.svelte.ts';
-import { BLUEPRINT_SCHEMA } from '../src/lib/blueprint/types.ts';
-import {
-  parseBlueprint,
-  parseBlueprintText,
-} from '../src/lib/blueprint/validate.ts';
 import { catalog, exposedModels } from '../src/lib/catalog/index.ts';
+import { migrateLegacySections } from '../src/lib/cookbook/migrate.ts';
+import { CookbookStore } from '../src/lib/cookbook/store.svelte.ts';
+import { COOKBOOK_SCHEMA } from '../src/lib/cookbook/types.ts';
+import {
+  parseCookbook,
+  parseCookbookText,
+} from '../src/lib/cookbook/validate.ts';
 import {
   FEATURE_SECTION,
   featureEntries,
@@ -76,25 +76,25 @@ describe('filterFeatures', () => {
   });
 });
 
-describe('blueprint features', () => {
+describe('cookbook features', () => {
   const base = {
-    $schema: BLUEPRINT_SCHEMA,
+    $schema: COOKBOOK_SCHEMA,
     version: 1,
     recipes: [],
     policies: [],
   };
 
   it('treats an absent field as none (migration)', () => {
-    const result = parseBlueprint(base);
-    expect(result.ok && result.blueprint.features).toEqual([]);
+    const result = parseCookbook(base);
+    expect(result.ok && result.cookbook.features).toEqual([]);
   });
 
   it('round-trips, sorted', () => {
     const ids = pick.map((e) => e.id);
-    const result = parseBlueprint({ ...base, features: [...ids].reverse() });
-    expect(result.ok && result.blueprint.features).toEqual([...ids].sort());
+    const result = parseCookbook({ ...base, features: [...ids].reverse() });
+    expect(result.ok && result.cookbook.features).toEqual([...ids].sort());
     if (!result.ok) throw new Error(result.error);
-    const again = parseBlueprintText(JSON.stringify(result.blueprint));
+    const again = parseCookbookText(JSON.stringify(result.cookbook));
     expect(again).toEqual(result);
   });
 
@@ -103,12 +103,12 @@ describe('blueprint features', () => {
     ['unknown name', ['@nope/pkg:Thing'], /not in the catalog: @nope/],
     ['duplicate', [pick[0].id, pick[0].id], /more than once/],
   ])('rejects %s', (_label, features, error) => {
-    const result = parseBlueprint({ ...base, features });
+    const result = parseCookbook({ ...base, features });
     expect(!result.ok && result.error).toMatch(error);
   });
 
   it('survives the store export and import', () => {
-    const store = new BlueprintStore();
+    const store = new CookbookStore();
     recipeState.clear();
     recipeState.addFeature(pick[1].id);
     recipeState.addFeature(pick[0].id);

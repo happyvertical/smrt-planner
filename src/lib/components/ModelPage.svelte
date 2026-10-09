@@ -1,11 +1,11 @@
 <script lang="ts">
 import { useShellLayout } from '@happyvertical/smrt-svelte/workspace';
 import { page } from '$app/state';
-import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
 import { catalog, getModel } from '$lib/catalog/index.ts';
 import FormWorkspace from '$lib/components/FormWorkspace.svelte';
 import ModelWorkspace from '$lib/components/ModelWorkspace.svelte';
 import SectionIcons from '$lib/components/SectionIcons.svelte';
+import { cookbookStore } from '$lib/cookbook/store.svelte.ts';
 import { humanize, navNoun } from '$lib/data/format.ts';
 import { activeForms } from '$lib/forms/active.ts';
 import { PRODUCT } from '$lib/forms/stock.ts';
@@ -92,7 +92,7 @@ const navCrumb = $derived.by((): Crumb | undefined => {
   if (!recipe) {
     if (!recipeState.hasFeature(catalogModel.id)) return undefined;
     const renamed =
-      blueprintStore.layout?.sections?.[`section:${FEATURE_SECTION.id}`]?.label;
+      cookbookStore.layout?.sections?.[`section:${FEATURE_SECTION.id}`]?.label;
     return {
       section: renamed || FEATURE_SECTION.label,
       label: humanize(catalogModel.name),
@@ -104,7 +104,7 @@ const navCrumb = $derived.by((): Crumb | undefined => {
     (e) => e.model.id === catalogModel.id && e.key === view,
   );
   const renamed =
-    blueprintStore.layout?.sections?.[`section:${section.id}`]?.label;
+    cookbookStore.layout?.sections?.[`section:${section.id}`]?.label;
   return {
     section: renamed || section.label,
     label: entry?.label ?? catalogModel.name,
@@ -219,7 +219,7 @@ const inApp = $derived(
       {:else}
         {model.name}
       {/if}
-      {#if blueprintStore.loaded && !inApp}
+      {#if cookbookStore.loaded && !inApp}
         <span class="meta">(not in your app yet)</span>
       {/if}
     </nav>

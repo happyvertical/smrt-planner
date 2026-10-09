@@ -1,7 +1,7 @@
-import { browserStorage } from '../blueprint/storage.ts';
+import { browserStorage } from '../cookbook/storage.ts';
 import { setSamplePack } from '../data/packs.ts';
 
-/** Which cookbook the visitor last applied; a UI note, not part of the blueprint. */
+/** Which cookbook the visitor last applied; a UI note, not part of the cookbook. */
 export const COOKBOOK_KEY = 'smrt-planner:cookbook';
 
 class CookbookState {
@@ -28,4 +28,4 @@ class CookbookState {
   }
 }
 
-export const cookbookState = new CookbookState();
+export const libraryState = new CookbookState();

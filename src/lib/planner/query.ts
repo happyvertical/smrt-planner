@@ -10,7 +10,7 @@ export interface QueryParts {
 /**
  * The one place the shareable URL state becomes a query string. Only the
  * package selection lives in the URL: recipes, options and the layout are the
- * blueprint, saved in localStorage (`blueprint/`). The Planner's tab is added
+ * cookbook, saved in localStorage (`cookbook/`). The Planner's tab is added
  * by `withTab`, only on the Planner page.
  */
 export function composeQuery(parts: QueryParts): string {

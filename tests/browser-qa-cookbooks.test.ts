@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { BlueprintStore } from '../src/lib/blueprint/store.svelte.ts';
 import { catalog, getModelByQualifiedName } from '../src/lib/catalog/index.ts';
-import { getCookbook } from '../src/lib/cookbooks/index.ts';
+import { CookbookStore } from '../src/lib/cookbook/store.svelte.ts';
 import { listColumns } from '../src/lib/data/columns.ts';
 import { fakeRecords } from '../src/lib/data/fakes.ts';
 import { createNoun, formatValue } from '../src/lib/data/format.ts';
@@ -10,6 +9,7 @@ import { COOKBOOK_PACKS, setSamplePack } from '../src/lib/data/packs.ts';
 import { createMemoryDataSource } from '../src/lib/data/source.ts';
 import { catalogModels } from '../src/lib/forms/shared.ts';
 import { stockSamples } from '../src/lib/forms/stock.ts';
+import { getLibraryCookbook } from '../src/lib/library/index.ts';
 import { recipes } from '../src/lib/recipes/index.ts';
 import { childLinks } from '../src/lib/recipes/plumbing.ts';
 import { resolveFields, viewFields } from '../src/lib/recipes/policy.ts';
@@ -60,7 +60,7 @@ describe('Member fields', () => {
       resolveFields(
         model(`${C}Customer`),
         undefined,
-        getCookbook(id)?.blueprint.policies,
+        getLibraryCookbook(id)?.document.policies,
       ),
     ).map((f) => f.name);
     for (const name of hidden) expect(names).not.toContain(name);
@@ -231,7 +231,7 @@ describe('Data resets', () => {
     expect(calls).toBe(1);
   });
 
-  it('a cookbook applied before the saved blueprint is read is not undone by it', () => {
+  it('a cookbook applied before the saved cookbook is read is not undone by it', () => {
     const storage = new Map<string, string>();
     const fake = {
       get length() {
@@ -243,11 +243,11 @@ describe('Data resets', () => {
       removeItem: (k: string) => void storage.delete(k),
       clear: () => storage.clear(),
     } as Storage;
-    const store = new BlueprintStore();
-    const cookbook = getCookbook('mechanic');
+    const store = new CookbookStore();
+    const cookbook = getLibraryCookbook('mechanic');
     if (!cookbook) throw new Error('mechanic');
     recipeState.clear();
-    store.replace(cookbook.blueprint);
+    store.replace(cookbook.document);
     store.hydrate('', fake);
     expect(recipeState.has('commerce.customers')).toBe(true);
     recipeState.clear();

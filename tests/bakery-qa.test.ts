@@ -1,14 +1,17 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { BlueprintStore } from '../src/lib/blueprint/store.svelte.ts';
 import { catalog, getModelByQualifiedName } from '../src/lib/catalog/index.ts';
-import { applyCookbook } from '../src/lib/cookbooks/apply.ts';
-import { cookbooks, getCookbook } from '../src/lib/cookbooks/index.ts';
+import { CookbookStore } from '../src/lib/cookbook/store.svelte.ts';
 import { listColumns } from '../src/lib/data/columns.ts';
 import { fakeRecords } from '../src/lib/data/fakes.ts';
 import { COOKBOOK_PACKS, setSamplePack } from '../src/lib/data/packs.ts';
 import { createMemoryDataSource } from '../src/lib/data/source.ts';
 import { catalogModels } from '../src/lib/forms/shared.ts';
 import { stockSamples } from '../src/lib/forms/stock.ts';
+import { applyLibraryCookbook } from '../src/lib/library/apply.ts';
+import {
+  getLibraryCookbook,
+  libraryCookbooks,
+} from '../src/lib/library/index.ts';
 import { recipeNav, recipes } from '../src/lib/recipes/index.ts';
 import { childLinks } from '../src/lib/recipes/plumbing.ts';
 import { inScope, pageScope } from '../src/lib/recipes/scope.ts';
@@ -32,9 +35,9 @@ const source = () =>
     },
   });
 const apply = (id: string) => {
-  const cookbook = getCookbook(id);
+  const cookbook = getLibraryCookbook(id);
   if (!cookbook) throw new Error(id);
-  expect(applyCookbook(cookbook, new BlueprintStore()).ok).toBe(true);
+  expect(applyLibraryCookbook(cookbook, new CookbookStore()).ok).toBe(true);
 };
 
 afterEach(() => {
@@ -84,7 +87,7 @@ describe('policies on feature models', () => {
 });
 
 describe('vendor on sales documents', () => {
-  it.each(cookbooks.map((c) => c.id))('is hidden under %s', (id) => {
+  it.each(libraryCookbooks.map((c) => c.id))('is hidden under %s', (id) => {
     apply(id);
     for (const name of ['Order', 'Estimate', 'WholesaleOrder']) {
       const m = model(`${C}${name}`);
@@ -102,8 +105,8 @@ describe('vendor on sales documents', () => {
 
 describe('sample packs per cookbook', () => {
   it('carry the cookbook default tax rate', () => {
-    for (const cookbook of cookbooks) {
-      const policy = cookbook.blueprint.policies.find(
+    for (const cookbook of libraryCookbooks) {
+      const policy = cookbook.document.policies.find(
         (p) => p.fieldName === 'taxRate' && p.defaultValue !== undefined,
       );
       const expected = policy

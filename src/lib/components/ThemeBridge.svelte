@@ -3,7 +3,7 @@ import {
   getThemeContext,
   type ThemePreset,
 } from '@happyvertical/smrt-ui/themes';
-import { blueprintStore } from '$lib/blueprint/store.svelte.ts';
+import { cookbookStore } from '$lib/cookbook/store.svelte.ts';
 import { resolveTheme } from '$lib/theme/runtime.ts';
 import type { ColorSchemeSetting } from '$lib/theme/theme.ts';
 
@@ -19,8 +19,8 @@ let applied: { preset: string; colorScheme: ColorSchemeSetting } | null = null;
 
 // Document -> provider.
 $effect(() => {
-  if (!blueprintStore.loaded) return;
-  const wanted = resolveTheme(blueprintStore.theme);
+  if (!cookbookStore.loaded) return;
+  const wanted = resolveTheme(cookbookStore.theme);
   if (
     applied?.preset === wanted.preset &&
     applied.colorScheme === wanted.colorScheme
@@ -38,19 +38,19 @@ $effect(() => {
 // Provider -> document.
 $effect(() => {
   const { preset, colorScheme } = context.state;
-  if (!applied || !blueprintStore.loaded) return;
+  if (!applied || !cookbookStore.loaded) return;
   const before = applied;
   if (preset !== before.preset) {
     applied = { ...before, preset };
-    blueprintStore.setTheme({
-      ...blueprintStore.theme,
+    cookbookStore.setTheme({
+      ...cookbookStore.theme,
       preset,
       custom: undefined,
     });
   }
   if (colorScheme !== before.colorScheme) {
     applied = { ...(applied ?? before), colorScheme };
-    blueprintStore.setTheme({ ...blueprintStore.theme, colorScheme });
+    cookbookStore.setTheme({ ...cookbookStore.theme, colorScheme });
   }
 });
 </script>

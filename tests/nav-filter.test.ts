@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { BlueprintStore } from '../src/lib/blueprint/store.svelte.ts';
-import { applyCookbook } from '../src/lib/cookbooks/apply.ts';
-import { getCookbook } from '../src/lib/cookbooks/index.ts';
-import { blueprintNavGroups } from '../src/lib/cookbooks/menu.ts';
+import { CookbookStore } from '../src/lib/cookbook/store.svelte.ts';
 import { setSamplePack } from '../src/lib/data/packs.ts';
 import { createMemoryDataSource } from '../src/lib/data/source.ts';
 import { activeForms, isFieldMap } from '../src/lib/forms/active.ts';
 import { blankFieldMap, planFieldMapSave } from '../src/lib/forms/fieldMap.ts';
 import { catalogModels } from '../src/lib/forms/shared.ts';
 import { PRODUCT, stockSamples } from '../src/lib/forms/stock.ts';
+import { applyLibraryCookbook } from '../src/lib/library/apply.ts';
+import { getLibraryCookbook } from '../src/lib/library/index.ts';
+import { cookbookNavGroups } from '../src/lib/library/menu.ts';
 import {
   navPath,
   recipeNav,
@@ -106,15 +106,15 @@ describe('filtered nav entries', () => {
 });
 
 describe('bakery ingredients', () => {
-  const bakery = getCookbook('bakery');
+  const bakery = getLibraryCookbook('bakery');
   if (!bakery) throw new Error('bakery');
 
   it('sits in the Kitchen next to Products and Stock', () => {
-    const kitchen = blueprintNavGroups(bakery.blueprint).find(
+    const kitchen = cookbookNavGroups(bakery.document).find(
       (g) => g.id === 'section:catalog',
     );
     // Nav ids are unique: the keyed entry is its own item.
-    const ids = blueprintNavGroups(bakery.blueprint).flatMap((g) =>
+    const ids = cookbookNavGroups(bakery.document).flatMap((g) =>
       g.items.map((i) => i.id),
     );
     expect(new Set(ids).size).toBe(ids.length);
@@ -124,7 +124,7 @@ describe('bakery ingredients', () => {
   });
 
   it('splits the bakery’s products from its ingredients', async () => {
-    applyCookbook(bakery, new BlueprintStore());
+    applyLibraryCookbook(bakery, new CookbookStore());
     const source = createMemoryDataSource({
       samples: stockSamples(catalogModels),
       empty: [
@@ -133,7 +133,7 @@ describe('bakery ingredients', () => {
       ],
     });
     const rows = await source.list(catalogModels(PRODUCT_ID));
-    const added = entriesOf(bakery.blueprint.recipes);
+    const added = entriesOf(bakery.document.recipes);
     const ingredients = rows.filter((r) =>
       inScope(pageScope(PRODUCT_ID, 'ingredients', added), r),
     );

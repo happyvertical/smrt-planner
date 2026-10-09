@@ -2,6 +2,7 @@
 import { AssistantDock } from '@happyvertical/smrt-chat/svelte';
 import { Button } from '@happyvertical/smrt-ui';
 import type { DataSurfaceRegistry } from '@happyvertical/smrt-ui/data-surface';
+import { cancelsSpeech } from '../ai/echo-gate.ts';
 import { aiState } from '../ai/instance.ts';
 import { getModel } from '../assistant/models.ts';
 import { isOfferRef } from '../assistant/offers.svelte.ts';
@@ -96,7 +97,17 @@ $effect(() => {
       </div>
       <VoiceTyping {voice} />
     </div>
-    <div class="dock">
+    <!-- Typing or pressing the microphone interrupts a spoken reply. -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      class="dock"
+      oninputcapture={(event) => {
+        if (cancelsSpeech(event)) aiState.cancelSpeech();
+      }}
+      onclickcapture={(event) => {
+        if (cancelsSpeech(event)) aiState.cancelSpeech();
+      }}
+    >
       <AssistantDock
         transport={session.transport}
         {registry}
@@ -108,6 +119,7 @@ $effect(() => {
         dictationMode={aiState.handsFreeActive ? 'hands-free' : 'push'}
         {handsFreeCapture}
         sendOnPause={aiState.sendOnPauseActive}
+        speaking={aiState.speaking}
       />
     </div>
   {:else}

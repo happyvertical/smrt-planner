@@ -96,6 +96,17 @@ export class AiState {
   hydrated = $state(false);
   /** The first-visit setup form is showing. */
   firstRun = $state(false);
+  /**
+   * A reply is being read aloud, from the moment it is queued until the last
+   * utterance ends, errors or is cancelled. Hands-free listening pauses
+   * while this is true, so the microphone does not transcribe the voice.
+   */
+  speaking = $state(false);
+
+  /** Utterances queued and not yet ended; `speaking` is `pending > 0`. */
+  private pending = 0;
+  /** Bumped on cancel so late events from cancelled utterances are ignored. */
+  private generation = 0;
 
   private readonly options: AiStateOptions;
   private readonly synth: Synth | null;
@@ -180,7 +191,7 @@ export class AiState {
 
   setReadAloud(on: boolean): void {
     if (on && !this.synth) return;
-    if (!on) this.synth?.cancel();
+    if (!on) this.cancelSpeech();
     this.setPrefs({ ...this.prefs, readAloud: on });
   }
 
@@ -207,11 +218,42 @@ export class AiState {
     return this.prefs.handsFree && this.voice.status === 'ready';
   }
 
-  /** Speak a reply when the visitor switched read-aloud on. */
+  /**
+   * Speak a reply when the visitor switched read-aloud on. Paragraphs are
+   * separate utterances; `speaking` stays true until the last one ends.
+   */
   speak(text: string): void {
     if (!this.prefs.readAloud || !this.synth || !text.trim()) return;
-    this.synth.cancel();
-    this.synth.speak(new SpeechSynthesisUtterance(text));
+    this.cancelSpeech();
+    const chunks = text
+      .split(/\n{2,}/)
+      .map((chunk) => chunk.trim())
+      .filter(Boolean);
+    const generation = this.generation;
+    this.pending = chunks.length;
+    this.speaking = true;
+    const settle = () => {
+      if (generation !== this.generation) return;
+      this.pending = Math.max(0, this.pending - 1);
+      if (this.pending === 0) this.speaking = false;
+    };
+    for (const chunk of chunks) {
+      const utterance = new SpeechSynthesisUtterance(chunk);
+      utterance.onend = settle;
+      utterance.onerror = settle;
+      this.synth.speak(utterance);
+    }
+  }
+
+  /**
+   * Stop talking now (typing, the microphone, read-aloud switched off).
+   * Clears `speaking` at once rather than waiting for the browser's events.
+   */
+  cancelSpeech(): void {
+    this.generation += 1;
+    this.pending = 0;
+    this.speaking = false;
+    this.synth?.cancel();
   }
 
   private setPrefs(prefs: AiPrefs): void {

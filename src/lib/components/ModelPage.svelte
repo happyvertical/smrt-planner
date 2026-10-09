@@ -22,6 +22,7 @@ import {
 import { pageScope, scopePreset } from '$lib/recipes/scope.ts';
 import { navSectionOf } from '$lib/recipes/sections.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
+import { sectionPath } from '$lib/sections/path.ts';
 
 interface ModelPageProps {
   packageId: string;
@@ -62,17 +63,29 @@ const iconLabel = $derived(
 const shellLayout = useShellLayout();
 // The menu as the visitor sees it (renamed sections and entries, from a
 // cookbook or edit mode): the entry linking to this page wins.
-const shellCrumb = $derived.by(() => {
+interface Crumb {
+  section: string;
+  label: string;
+  /** The layout id of the section, to link its page. */
+  sectionId?: string;
+}
+const shellCrumb = $derived.by((): Crumb | undefined => {
   const here = page.url.pathname;
   const path = (href: string) => new URL(href, page.url).pathname;
   for (const group of shellLayout.applied.groups) {
     const item = group.items.find((i) => path(i.href) === here);
-    if (item) return { section: group.heading, label: item.label };
+    if (item) {
+      return {
+        section: group.heading,
+        label: item.label,
+        sectionId: group.id ?? group.heading,
+      };
+    }
   }
   const item = shellLayout.applied.nav.find((i) => path(i.href) === here);
   return item ? { section: item.label, label: item.label } : undefined;
 });
-const navCrumb = $derived.by(() => {
+const navCrumb = $derived.by((): Crumb | undefined => {
   if (shellCrumb) return shellCrumb;
   if (!catalogModel) return undefined;
   const recipe = recipesWithModel.find((r) => recipeState.has(r.id));
@@ -83,6 +96,7 @@ const navCrumb = $derived.by(() => {
     return {
       section: renamed || FEATURE_SECTION.label,
       label: humanize(catalogModel.name),
+      sectionId: `section:${FEATURE_SECTION.id}`,
     };
   }
   const section = navSectionOf(recipe);
@@ -94,14 +108,13 @@ const navCrumb = $derived.by(() => {
   return {
     section: renamed || section.label,
     label: entry?.label ?? catalogModel.name,
+    sectionId: `section:${section.id}`,
   };
 });
 
-/** "Section / Entry", or just the name once when both are the same. */
-const breadcrumb = (crumb: { section: string; label: string }) =>
-  crumb.section.trim().toLowerCase() === crumb.label.trim().toLowerCase()
-    ? crumb.label
-    : `${crumb.section} / ${crumb.label}`;
+/** "Section / Entry" shows the section as a link; one name when both match. */
+const sameName = (crumb: Crumb) =>
+  crumb.section.trim().toLowerCase() === crumb.label.trim().toLowerCase();
 // The list heading: the menu entry's label unless it is only the model's name.
 const listTitle = $derived(
   navCrumb &&
@@ -197,7 +210,12 @@ const inApp = $derived(
     <div class="bar">
     <nav aria-label="Breadcrumb">
       {#if navCrumb}
-        {breadcrumb(navCrumb)}
+        {#if sameName(navCrumb) || !navCrumb.sectionId}
+          {navCrumb.label}
+        {:else}
+          <a href={appHref(sectionPath(navCrumb.sectionId))}>{navCrumb.section}</a>
+          / {navCrumb.label}
+        {/if}
       {:else}
         {model.name}
       {/if}

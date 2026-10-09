@@ -1,6 +1,7 @@
 <script lang="ts">
 import { FieldLabel } from '@happyvertical/smrt-ui/forms';
 import { tick } from 'svelte';
+import { page } from '$app/state';
 import type { CatalogModel } from '../catalog/types.ts';
 import {
   blankRecord,
@@ -30,6 +31,7 @@ import {
 import { relationLabels, shortId } from '../data/labels.ts';
 import { focusFirstInvalid } from '../fields/invalid.ts';
 import { type ActiveForm, isFieldMap } from '../forms/active.ts';
+import { takeCreate } from '../planner/create.ts';
 import type { ViewField } from '../recipes/policy.ts';
 import { inScope, type RowScope } from '../recipes/scope.ts';
 import type { FieldMapForm as FieldMapFormShape } from '../recipes/types.ts';
@@ -144,7 +146,10 @@ $effect(() => {
   scope;
   editing = null;
   loaded = false;
-  void load();
+  void load().then(() => {
+    // A section page's "New ..." arrives with the form already open.
+    if (takeCreate(page.url.pathname)) startCreate(mapForms[0]);
+  });
 });
 
 // A reset (a cookbook applied, the app reset) swaps the rows underneath an

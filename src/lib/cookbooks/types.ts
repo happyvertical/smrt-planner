@@ -29,6 +29,11 @@ export interface Cookbook {
   icon: string;
   summary: string;
   settings: CookbookSettings;
+  /**
+   * One line per custom section (`custom:<id>`), shown under its title on the
+   * section's page. The section's icon is in `blueprint.layout.sections`.
+   */
+  sectionDescriptions?: Record<string, string>;
   /** The same document the Export tab saves. */
   blueprint: Blueprint;
 }

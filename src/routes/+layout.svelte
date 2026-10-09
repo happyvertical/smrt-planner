@@ -38,6 +38,7 @@ import {
 } from '$lib/recipes/index.ts';
 import { childLinks } from '$lib/recipes/plumbing.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
+import { sectionPath } from '$lib/sections/path.ts';
 import type { LayoutProps } from './$types';
 
 let { children }: LayoutProps = $props();
@@ -70,7 +71,8 @@ provideDataSource(
 // No Planner entry: the shell's Edit layout toggle goes to the Planner page.
 const nav: ShellNavItem[] = [];
 
-// Navigation sections belong to the app: a recipe only suggests one
+// The sidebar lists only these sections (`navMode="sections"`); each opens its
+// own page (`/s/<section>/`) listing the entries. Navigation sections belong to the app: a recipe only suggests one
 // (`recipe.section`, else its group, else itself), and the user overrides it in
 // the Layout tab. Recipes suggesting the same section share it, entries
 // de-duplicated in recipe declaration order. Each recipe's main (first) item
@@ -111,7 +113,14 @@ const recipeGroups: ShellNavGroup[] = $derived.by(() => {
         main = false;
       }
     }
-    return { id: `section:${section.id}`, heading: section.label, items };
+    const id = `section:${section.id}`;
+    return {
+      id,
+      heading: section.label,
+      icon: section.icon,
+      href: appHref(sectionPath(id)),
+      items,
+    };
   });
 });
 
@@ -149,6 +158,8 @@ const featureGroups: ShellNavGroup[] = $derived.by(() => {
         {
           id: `section:${FEATURE_SECTION.id}`,
           heading: FEATURE_SECTION.label,
+          icon: FEATURE_SECTION.icon,
+          href: appHref(sectionPath(`section:${FEATURE_SECTION.id}`)),
           items,
         },
       ]
@@ -163,6 +174,8 @@ const packageGroups: ShellNavGroup[] = $derived(
       {
         id: `package:${pkg.id}`,
         heading: humanize(pkg.id),
+        icon: 'layers',
+        href: appHref(`/packages/${pkg.id}/`),
         items: [
           {
             id: `package:${pkg.id}:overview`,
@@ -273,6 +286,8 @@ function flushOnHide() {
   dockToggles={[{ tool: 'assistant', label: 'Assistant', slot: 'header.end' }]}
   config={{ right: { initial: 'collapsed', rail: false, presentation: 'overlay' } }}
   layoutEditing={{ slot: 'header.start' }}
+  navMode="sections"
+  sectionHref={(id) => appHref(sectionPath(id))}
 >
   {#snippet sectionActions({ sectionId: navSectionId, label })}
     <SectionActions {label} groups={sectionOptionGroups.get(navSectionId) ?? []} />

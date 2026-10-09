@@ -4,7 +4,9 @@
       "id": "commerce.customers",
       "section": {
         "id": "sales",
-        "label": "Sales"
+        "label": "Sales",
+        "icon": "shoppingBag",
+        "description": "Customers, orders and quotes: everything you sell."
       },
       "label": "Customers",
       "summary": "Keep a list of the people and companies you sell to.",
@@ -140,7 +142,9 @@
       "id": "commerce.purchases",
       "section": {
         "id": "purchasing",
-        "label": "Purchasing"
+        "label": "Purchasing",
+        "icon": "truck",
+        "description": "Vendors and purchase orders: everything you buy."
       },
       "label": "Purchases",
       "summary": "Order from your vendors and track what you have bought.",
@@ -217,7 +221,9 @@
       "id": "commerce.sales",
       "section": {
         "id": "sales",
-        "label": "Sales"
+        "label": "Sales",
+        "icon": "shoppingBag",
+        "description": "Customers, orders and quotes: everything you sell."
       },
       "label": "Sales",
       "summary": "Take customer orders and track them.",
@@ -295,7 +301,9 @@
       "id": "commerce.vendors",
       "section": {
         "id": "purchasing",
-        "label": "Purchasing"
+        "label": "Purchasing",
+        "icon": "truck",
+        "description": "Vendors and purchase orders: everything you buy."
       },
       "label": "Vendors",
       "summary": "Keep a list of the suppliers you buy from.",
@@ -430,7 +438,9 @@
       "id": "inventory.stock",
       "section": {
         "id": "catalog",
-        "label": "Catalog"
+        "label": "Catalog",
+        "icon": "package",
+        "description": "Products, ingredients and the stock you hold."
       },
       "label": "Inventory",
       "summary": "Keep count of how many of each product you have.",
@@ -597,7 +607,9 @@
       "id": "products.simple",
       "section": {
         "id": "catalog",
-        "label": "Catalog"
+        "label": "Catalog",
+        "icon": "package",
+        "description": "Products, ingredients and the stock you hold."
       },
       "label": "Simple products",
       "summary": "Items with a name, a price and a description.",
@@ -686,7 +698,9 @@
       "id": "products.clothing",
       "section": {
         "id": "catalog",
-        "label": "Catalog"
+        "label": "Catalog",
+        "icon": "package",
+        "description": "Products, ingredients and the stock you hold."
       },
       "label": "Clothing",
       "summary": "Products that come in sizes and colors, with a stock-keeping unit for each combination.",
@@ -823,7 +837,9 @@
       "id": "products.ingredients",
       "section": {
         "id": "catalog",
-        "label": "Catalog"
+        "label": "Catalog",
+        "icon": "package",
+        "description": "Products, ingredients and the stock you hold."
       },
       "label": "Ingredients",
       "summary": "Things you buy in to make what you sell, kept as products of the material kind with their own list.",
@@ -888,7 +904,9 @@
       "id": "commerce.estimates",
       "section": {
         "id": "sales",
-        "label": "Sales"
+        "label": "Sales",
+        "icon": "shoppingBag",
+        "description": "Customers, orders and quotes: everything you sell."
       },
       "label": "Estimates",
       "summary": "Send customers a price quote before they commit.",
@@ -964,7 +982,9 @@
       "id": "commerce.wholesale",
       "section": {
         "id": "sales",
-        "label": "Sales"
+        "label": "Sales",
+        "icon": "shoppingBag",
+        "description": "Customers, orders and quotes: everything you sell."
       },
       "label": "Wholesale orders",
       "summary": "Take bulk orders from trade customers.",
@@ -1046,7 +1066,9 @@
       },
       "section": {
         "id": "billing",
-        "label": "Billing"
+        "label": "Billing",
+        "icon": "receipt",
+        "description": "Invoices and the payments against them."
       },
       "label": "Invoicing",
       "summary": "Bill customers and record the payments that come in.",
@@ -1211,7 +1233,9 @@
       },
       "section": {
         "id": "operations",
-        "label": "Operations"
+        "label": "Operations",
+        "icon": "wrench",
+        "description": "Fulfillment and the day-to-day work behind an order."
       },
       "label": "Shipping",
       "summary": "Pack, ship and deliver orders, with tracking.",
@@ -1267,7 +1291,9 @@
       },
       "section": {
         "id": "agreements",
-        "label": "Agreements"
+        "label": "Agreements",
+        "icon": "fileText",
+        "description": "Contracts, leases and licenses with customers."
       },
       "label": "General agreements",
       "summary": "Keep signed agreements with customers, and see every contract in one list.",
@@ -1364,7 +1390,9 @@
       },
       "section": {
         "id": "agreements",
-        "label": "Agreements"
+        "label": "Agreements",
+        "icon": "fileText",
+        "description": "Contracts, leases and licenses with customers."
       },
       "label": "Leases",
       "summary": "Rent things out and track the term and the payments due.",
@@ -1449,7 +1477,9 @@
       },
       "section": {
         "id": "agreements",
-        "label": "Agreements"
+        "label": "Agreements",
+        "icon": "fileText",
+        "description": "Contracts, leases and licenses with customers."
       },
       "label": "Licence sales",
       "summary": "Sell licences to software, content or other rights.",
@@ -1529,7 +1559,9 @@
       "id": "ledgers.bookkeeping",
       "section": {
         "id": "accounting",
-        "label": "Accounting"
+        "label": "Accounting",
+        "icon": "bank",
+        "description": "Your books: accounts, journals and balances."
       },
       "label": "Bookkeeping",
       "summary": "Keep your books: a chart of accounts and double-entry journals.",
@@ -1602,7 +1634,9 @@
       "id": "projects.tracker",
       "section": {
         "id": "projects",
-        "label": "Projects"
+        "label": "Projects",
+        "icon": "briefcase",
+        "description": "Projects, tasks and the time spent on them."
       },
       "label": "Projects",
       "summary": "Track projects and the issues, labels and comments inside them.",
@@ -1714,7 +1748,9 @@
       "id": "events.calendar",
       "section": {
         "id": "calendar",
-        "label": "Calendar"
+        "label": "Calendar",
+        "icon": "calendar",
+        "description": "Events and what is scheduled when."
       },
       "label": "Events",
       "summary": "Schedule events, group them in series and track who takes part.",
@@ -1817,7 +1853,9 @@
       "id": "sales.pipeline",
       "section": {
         "id": "sales",
-        "label": "Sales"
+        "label": "Sales",
+        "icon": "shoppingBag",
+        "description": "Customers, orders and quotes: everything you sell."
       },
       "label": "Leads & pipeline",
       "summary": "Capture leads and move them through your sales stages.",

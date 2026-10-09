@@ -10,7 +10,12 @@ import type { Recipe, RecipeNavSection } from './types.ts';
  * one at a time (the Planner's Features tab). They sit in the blueprint's
  * `features` and in one suggested nav section, after the recipes' sections.
  */
-export const FEATURE_SECTION: RecipeNavSection = { id: 'more', label: 'More' };
+export const FEATURE_SECTION: RecipeNavSection = {
+  id: 'more',
+  label: 'More',
+  icon: 'layers',
+  description: 'Extra records you added one at a time.',
+};
 
 export interface FeatureEntry {
   /** `@scope/pkg:Class` qualified name, as stored in the blueprint. */

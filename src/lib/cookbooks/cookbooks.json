@@ -168,8 +168,28 @@
             "item:products:Product:ingredients": {
               "label": "Ingredients"
             }
+          },
+          "sections": {
+            "custom:shop": {
+              "icon": "shoppingBag"
+            },
+            "custom:wholesale": {
+              "icon": "briefcase"
+            },
+            "custom:kitchen": {
+              "icon": "package"
+            },
+            "custom:buying": {
+              "icon": "truck"
+            }
           }
         }
+      },
+      "sectionDescriptions": {
+        "custom:shop": "Sell to customers and keep their details.",
+        "custom:wholesale": "Orders, invoices and payments from trade customers.",
+        "custom:kitchen": "Products, ingredients, stock and what you are making.",
+        "custom:buying": "Suppliers and what you order from them."
       }
     },
     {
@@ -345,8 +365,28 @@
             "item:events:EventType": {
               "label": "Appointment types"
             }
+          },
+          "sections": {
+            "custom:jobs": {
+              "icon": "wrench"
+            },
+            "custom:parts": {
+              "icon": "package"
+            },
+            "custom:billing": {
+              "icon": "receipt"
+            },
+            "custom:schedule": {
+              "icon": "calendar"
+            }
           }
         }
+      },
+      "sectionDescriptions": {
+        "custom:jobs": "Work orders and the customers they belong to.",
+        "custom:parts": "Parts, materials and the stock on your shelves.",
+        "custom:billing": "Invoices and the payments against them.",
+        "custom:schedule": "Appointments and what is on the calendar."
       }
     },
     {
@@ -507,8 +547,28 @@
             "item:commerce:Order": {
               "label": "Jobs"
             }
+          },
+          "sections": {
+            "custom:jobs": {
+              "icon": "wrench"
+            },
+            "custom:material": {
+              "icon": "layers"
+            },
+            "custom:billing": {
+              "icon": "receipt"
+            },
+            "custom:schedule": {
+              "icon": "calendar"
+            }
           }
         }
+      },
+      "sectionDescriptions": {
+        "custom:jobs": "Work orders and the customers they belong to.",
+        "custom:material": "Material, stock and what you have ordered.",
+        "custom:billing": "Invoices and the payments against them.",
+        "custom:schedule": "Appointments and what is on the calendar."
       }
     },
     {
@@ -664,8 +724,28 @@
             "item:inventory:StockLevel": {
               "label": "Stock"
             }
+          },
+          "sections": {
+            "custom:classes": {
+              "icon": "school"
+            },
+            "custom:members": {
+              "icon": "users"
+            },
+            "custom:shop": {
+              "icon": "shoppingBag"
+            },
+            "custom:billing": {
+              "icon": "receipt"
+            }
           }
         }
+      },
+      "sectionDescriptions": {
+        "custom:classes": "Classes, sessions and bookings.",
+        "custom:members": "Members and their memberships.",
+        "custom:shop": "Sell to customers and keep their details.",
+        "custom:billing": "Invoices and the payments against them."
       }
     }
   ]

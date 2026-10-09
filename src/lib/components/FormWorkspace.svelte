@@ -1,4 +1,5 @@
 <script lang="ts">
+import { page } from '$app/state';
 import type { CatalogModel } from '../catalog/types.ts';
 import { useDataSource } from '../data/context.ts';
 import { createNoun, formatMoney, recordCount } from '../data/format.ts';
@@ -17,6 +18,7 @@ import {
   stockByProduct,
   VARIANT,
 } from '../forms/stock.ts';
+import { takeCreate } from '../planner/create.ts';
 import { inScope, type RowScope } from '../recipes/scope.ts';
 import FieldMapForm from './FieldMapForm.svelte';
 import VariantGridForm from './VariantGridForm.svelte';
@@ -76,7 +78,11 @@ $effect(() => {
   scope;
   editing = null;
   loaded = false;
-  void load();
+  void load().then(() => {
+    // A section page's "New ..." arrives with the form already open.
+    const first = offered[0];
+    if (takeCreate(page.url.pathname) && first) open(first);
+  });
 });
 
 // A reset (a cookbook applied, the app reset) swaps the rows underneath an

@@ -77,6 +77,18 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   (confirm when non-empty), `state.svelte.ts` remembers the last applied id in
   localStorage (not in the blueprint). Nothing about records changes. Add a
   cookbook by adding an entry; use only existing recipe ids.
+- `src/lib/sections/` and `src/routes/s/[section]/`: the sidebar is `navMode="sections"`, so it lists only
+  sections (icon + name); each opens its own page at `/s/<slug>/` (`path.ts`: `section:sales` ->
+  `section-sales`; `entries()` prerenders recipe sections, More and the cookbooks' custom sections, the
+  static fallback serves the rest, e.g. visitor-made ones). `components/SectionPage.svelte` shows the
+  icon, title (the layout's rename wins), description (`info.ts`: recipe `section.icon/description`,
+  `FEATURE_SECTION`, cookbook `sectionDescriptions`), Help/Options icons (`entries.ts` `optionGroups`),
+  and smrt-svelte's `ShellSectionMenu` with "N records" (`entryIndex` + the entry's own scope) and
+  "New <noun>". New asks the entry page to open its create form through `planner/create.ts` (a
+  one-shot, page-named, expiring request; the URL carries only the shareable state). In edit mode the
+  rows get the grip/rename/hide chrome, so `PlannerEditBridge` does not leave a section page. Every
+  recipe `section` and every cookbook custom section (`layout.sections[id].icon`) must have an icon from
+  smrt-svelte's shell icon set (tests/section-pages.test.ts); visitor sections get `folder`.
 - `src/lib/planner/`: the package selection (`?p=a,b`, the only URL state;
   `app.svelte.ts` `appHref` carries it; `selection.svelte.ts`
   is the one store the control panel, navigation and a future chat assistant

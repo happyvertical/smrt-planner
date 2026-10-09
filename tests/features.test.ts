@@ -127,7 +127,7 @@ describe('blueprint features', () => {
 
 describe('feature nav section', () => {
   it('builds stable items under the More section', () => {
-    expect(FEATURE_SECTION).toEqual({ id: 'more', label: 'More' });
+    expect(FEATURE_SECTION).toMatchObject({ id: 'more', label: 'More' });
     const items = featureNavItems(pick.map((e) => e.id));
     expect(items.map((i) => i.id)).toEqual(
       pick.map((e) => `item:${e.packageId}:${e.name}`),

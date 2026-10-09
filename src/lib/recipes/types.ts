@@ -86,6 +86,14 @@ export interface RecipeGroup {
 export interface RecipeNavSection {
   id: string;
   label: string;
+  /**
+   * LOCAL: the section's icon, a shell icon name (`shoppingBag`, `receipt`...).
+   * The sidebar shows only sections, so every suggested section has one; the
+   * user can change it in edit mode.
+   */
+  icon?: string;
+  /** LOCAL: one line for the section's page, under its title. */
+  description?: string;
 }
 
 /** A value in a form record: a literal, a `{ref}` to another record's id, or a template. */

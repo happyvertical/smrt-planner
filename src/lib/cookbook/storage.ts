@@ -65,7 +65,8 @@ export function loadCookbook(storage: Storage | null): LoadOutcome {
   const source = fromPrevious ? previous : raw;
   if (source === null) return { status: 'empty' };
   // A saved cookbook from an older build may name recipes this one no longer
-  // has: keep the rest rather than discarding the visitor's work.
+  // has: they are kept in the document (and noticed by the store), and a
+  // theme preset this build lacks is dropped rather than discarding the rest.
   const parsed = parseCookbookText(source, { dropUnknownRecipes: true });
   if (parsed.ok) {
     // Write the migrated document under the new key now; the old key stays as

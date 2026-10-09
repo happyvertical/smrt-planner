@@ -93,11 +93,6 @@ describe('parseCookbook', () => {
     ['newer version', { ...valid, version: 2 }, /newer than this planner/],
     ['old version', { ...valid, version: 0 }, /not supported/],
     ['recipes not a list', { ...valid, recipes: 'x' }, /"recipes"/],
-    [
-      'unknown recipe',
-      { ...valid, recipes: ['nope'] },
-      /unknown recipes: nope/,
-    ],
     ['policies not a list', { ...valid, policies: {} }, /"policies"/],
     ['row not object', { ...valid, policies: [1] }, /policies\[0\]/],
     [
@@ -317,7 +312,62 @@ describe('review fixes', () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  it('stored cookbooks drop unknown recipes; imports reject them', () => {
+  it('keeps unknown recipes and features through load, save and reload', () => {
+    const storage = fakeStorage();
+    storage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        ...valid,
+        recipes: ['commerce.sales', 'gone.recipe', 'newer.recipe'],
+        features: ['@x/gone:Thing'],
+      }),
+    );
+    const store = new CookbookStore();
+    store.hydrate('', storage);
+    expect(recipeState.ids).not.toContain('gone.recipe');
+    expect(store.unavailableNotice).toMatch(
+      /^3 recipes in this cookbook aren't available in this version: gone.recipe, newer.recipe, @x\/gone:Thing/,
+    );
+    store.save();
+    const saved = JSON.parse(storage.data.get(STORAGE_KEY) ?? '{}');
+    expect(saved.recipes).toEqual(
+      expect.arrayContaining(['gone.recipe', 'newer.recipe']),
+    );
+    expect(saved.features).toEqual(['@x/gone:Thing']);
+    // Export carries them too, and a fresh load shows the same notice.
+    const again = new CookbookStore();
+    expect(again.importText(JSON.stringify(store.snapshot())).ok).toBe(true);
+    expect(again.unavailableNotice).toBe(store.unavailableNotice);
+    expect(store.snapshot().recipes).toContain('gone.recipe');
+  });
+
+  it('removes unavailable ids only on explicit request', () => {
+    const storage = fakeStorage();
+    storage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ ...valid, recipes: ['commerce.sales', 'gone.recipe'] }),
+    );
+    const store = new CookbookStore();
+    store.hydrate('', storage);
+    expect(store.unavailableNotice).toMatch(/1 recipe in this cookbook isn't/);
+    store.removeUnavailable();
+    expect(store.unavailableNotice).toBe('');
+    expect(store.snapshot().recipes).not.toContain('gone.recipe');
+    vi.advanceTimersByTime(SAVE_DELAY_MS);
+    expect(
+      JSON.parse(storage.data.get(STORAGE_KEY) ?? '{}').recipes,
+    ).not.toContain('gone.recipe');
+  });
+
+  it('clears the notice when everything is reset', () => {
+    const store = new CookbookStore();
+    store.importText(JSON.stringify({ ...valid, recipes: ['gone.recipe'] }));
+    expect(store.unavailableNotice).not.toBe('');
+    store.reset();
+    expect(store.unavailableNotice).toBe('');
+  });
+
+  it('stored cookbooks keep unknown recipes unapplied; imports do too', () => {
     const storage = fakeStorage();
     storage.setItem(
       STORAGE_KEY,
@@ -327,11 +377,12 @@ describe('review fixes', () => {
     expect(outcome.status === 'loaded' && outcome.cookbook.recipes).toEqual([
       'commerce.customers',
       'commerce.sales',
+      'gone.recipe',
     ]);
     expect(
       parseCookbook({ ...valid, recipes: ['commerce.sales', 'gone.recipe'] })
         .ok,
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('drops options for uncovered models and keeps a __proto__ key as data', () => {

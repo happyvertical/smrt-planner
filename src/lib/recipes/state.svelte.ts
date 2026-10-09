@@ -1,3 +1,4 @@
+import { getModelByQualifiedName } from '../catalog/index.ts';
 import type { CatalogModel } from '../catalog/types.ts';
 import type { Cookbook } from '../cookbook/types.ts';
 import { isSettingRow } from '../settings/app-settings.ts';
@@ -40,6 +41,18 @@ class RecipeState {
   narrowed = $state<Record<string, ExposureSurface[]>>({});
   /** Added feature models (qualified names): models no recipe covers. */
   features = $state<string[]>([]);
+  /**
+   * Recipe and feature ids a loaded cookbook named that this version does not
+   * know. Kept so the next save and export carry them; never applied.
+   */
+  unavailableRecipes = $state<string[]>([]);
+  unavailableFeatures = $state<string[]>([]);
+
+  /** Forget the ids this version does not know (the visitor's explicit say). */
+  removeUnavailable(): void {
+    this.unavailableRecipes = [];
+    this.unavailableFeatures = [];
+  }
 
   hasFeature(id: string): boolean {
     return this.features.includes(id);
@@ -86,6 +99,8 @@ class RecipeState {
     this.rows = [];
     this.narrowed = {};
     this.features = [];
+    this.unavailableRecipes = [];
+    this.unavailableFeatures = [];
   }
 
   /** Drop options for models no added recipe covers any more. */
@@ -165,8 +180,8 @@ class RecipeState {
       Cookbook,
       'recipes' | 'features' | 'policies' | 'exposure'
     > = {
-      recipes: [...this.ids].sort(),
-      features: [...this.features].sort(),
+      recipes: [...this.ids, ...this.unavailableRecipes].sort(),
+      features: [...this.features, ...this.unavailableFeatures].sort(),
       policies: policies.map((row) => ({ ...row })),
     };
     if (Object.keys(exposure).length) out.exposure = exposure;
@@ -177,8 +192,15 @@ class RecipeState {
   load(
     cookbook: Pick<Cookbook, 'recipes' | 'features' | 'policies' | 'exposure'>,
   ): void {
+    this.unavailableRecipes = [
+      ...new Set(cookbook.recipes.filter((id) => !recipesById.has(id))),
+    ].sort();
     this.ids = withRequirements(cookbook.recipes, recipesById);
-    this.features = [...new Set(cookbook.features)].sort();
+    const features = [...new Set(cookbook.features)];
+    const known = (name: string) =>
+      Boolean(getModelByQualifiedName(name)?.model.exposed);
+    this.unavailableFeatures = features.filter((f) => !known(f)).sort();
+    this.features = features.filter(known).sort();
     this.rows = cookbook.policies.map((row) => ({ ...row }));
     this.narrowed = Object.fromEntries(
       Object.entries(cookbook.exposure ?? {}).map(([ref, s]) => [ref, [...s]]),

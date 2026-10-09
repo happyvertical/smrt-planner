@@ -100,11 +100,15 @@ describe('cookbook features', () => {
 
   it.each([
     ['not a list', 'x', /"features"/],
-    ['unknown name', ['@nope/pkg:Thing'], /not in the catalog: @nope/],
     ['duplicate', [pick[0].id, pick[0].id], /more than once/],
   ])('rejects %s', (_label, features, error) => {
     const result = parseCookbook({ ...base, features });
     expect(!result.ok && result.error).toMatch(error);
+  });
+
+  it('keeps a feature this catalog lacks instead of rejecting it', () => {
+    const result = parseCookbook({ ...base, features: ['@nope/pkg:Thing'] });
+    expect(result.ok && result.cookbook.features).toEqual(['@nope/pkg:Thing']);
   });
 
   it('survives the store export and import', () => {

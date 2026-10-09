@@ -102,6 +102,26 @@ export class CookbookStore {
     );
   }
 
+  /**
+   * A sentence naming recipes and features the loaded cookbook has that this
+   * version does not know (they are kept, not applied), or ''.
+   */
+  get unavailableNotice(): string {
+    const ids = [
+      ...recipeState.unavailableRecipes,
+      ...recipeState.unavailableFeatures,
+    ];
+    if (!ids.length) return '';
+    const n = ids.length;
+    return `${n} ${n === 1 ? 'recipe' : 'recipes'} in this cookbook ${n === 1 ? "isn't" : "aren't"} available in this version: ${ids.join(', ')}. They are kept when you save or export.`;
+  }
+
+  /** Remove the unavailable ids from the cookbook, on the visitor's say. */
+  removeUnavailable(): void {
+    recipeState.removeUnavailable();
+    this.scheduleSave();
+  }
+
   /** Change the theme; the default (or an empty one) clears it. */
   setTheme(next: ThemeSetting | undefined): void {
     this.theme = compactTheme(next);

@@ -329,6 +329,14 @@ function flushOnHide() {
   {#if cookbookStore.loadNotice}
     <p class="storage-notice" role="status">{cookbookStore.loadNotice}</p>
   {/if}
+  {#if cookbookStore.unavailableNotice}
+    <p class="storage-notice" role="status">
+      {cookbookStore.unavailableNotice}
+      <button type="button" onclick={() => cookbookStore.removeUnavailable()}>
+        Remove them
+      </button>
+    </p>
+  {/if}
   <PlannerEditBridge />
   <ThemeBridge />
   {@render children()}

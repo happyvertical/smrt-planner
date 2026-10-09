@@ -1,5 +1,4 @@
 import type { ShellLayout } from '@happyvertical/smrt-svelte/workspace/layout';
-import { getModelByQualifiedName } from '../catalog/index.ts';
 import { recipesById } from '../recipes/index.ts';
 import type { FieldPolicyRow } from '../recipes/policy.ts';
 import { withRequirements } from '../recipes/resolve.ts';
@@ -142,14 +141,19 @@ export function parseCookbook(
   if (!isStrings(input.recipes)) {
     return fail('The cookbook "recipes" must be a list of recipe ids.');
   }
+  // Ids this version does not know (renamed, removed, or from a newer
+  // catalog) are kept in the document, not applied: dropping them here would
+  // make the loss permanent on the next save. The store surfaces them.
   const unknown = input.recipes.filter((id) => !recipesById.has(id));
-  if (unknown.length && !options.dropUnknownRecipes) {
-    return fail(`The cookbook names unknown recipes: ${unknown.join(', ')}.`);
-  }
-  const recipes = withRequirements(
-    input.recipes.filter((id) => recipesById.has(id)),
-    recipesById,
-  );
+  const recipes = [
+    ...new Set([
+      ...withRequirements(
+        input.recipes.filter((id) => recipesById.has(id)),
+        recipesById,
+      ),
+      ...unknown,
+    ]),
+  ].sort();
   // Absent in files from before features: read as none.
   let features: string[] = [];
   if (input.features !== undefined) {
@@ -163,14 +167,7 @@ export function parseCookbook(
       }
       seen.add(name);
     }
-    const bad = input.features.filter(
-      (name) => !getModelByQualifiedName(name)?.model.exposed,
-    );
-    if (bad.length) {
-      return fail(
-        `The cookbook names features that are not in the catalog: ${bad.join(', ')}.`,
-      );
-    }
+    // Features this catalog lacks are kept like unknown recipes.
     features = [...input.features].sort();
   }
   // Options only mean something for models an added recipe or feature covers, as in the

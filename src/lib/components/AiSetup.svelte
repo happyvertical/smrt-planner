@@ -197,6 +197,15 @@ const handsFreeAvailable = $derived(voice.status === 'ready');
           Start when I talk, stop when I pause.
           {handsFreeAvailable ? '' : 'Needs the downloaded speech model.'}
         </p>
+        <Switch
+          checked={aiState.prefs.sendOnPause}
+          disabled={!aiState.handsFreeActive}
+          label="Send when I stop talking"
+          onchange={(event) => aiState.setSendOnPause(event.currentTarget.checked)}
+        />
+        <p class="meta">
+          Sends your message after a short pause. Needs Hands-free.
+        </p>
       {/if}
     </section>
   {/if}

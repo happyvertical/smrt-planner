@@ -223,11 +223,13 @@ describe('AiState', () => {
       dismissed: false,
       readAloud: false,
       handsFree: false,
+      sendOnPause: false,
     });
     expect(loadAiPrefs(storage({ [AI_PREFS_KEY]: '{nope' }))).toEqual({
       dismissed: false,
       readAloud: false,
       handsFree: false,
+      sendOnPause: false,
     });
     const throwing = {
       getItem: () => {
@@ -261,6 +263,32 @@ describe('AiState', () => {
     const later = makeState(storage({ [AI_PREFS_KEY]: '{"handsFree":true}' }));
     later.hydrate(false);
     expect(later.prefs.handsFree).toBe(true);
+  });
+
+  it('sends on pause only with hands-free active, and persists the choice', () => {
+    const store = storage();
+    const state = makeState(store);
+    state.hydrate(false);
+    expect(state.prefs.sendOnPause).toBe(false);
+    state.setSendOnPause(true);
+    expect(loadAiPrefs(store).sendOnPause).toBe(true);
+    // Saved, but hands-free is off: nothing is sent automatically.
+    expect(state.sendOnPauseActive).toBe(false);
+    state.setHandsFree(true);
+    state.voice.status = 'ready';
+    expect(state.sendOnPauseActive).toBe(true);
+    state.setHandsFree(false);
+    expect(state.sendOnPauseActive).toBe(false);
+    state.setHandsFree(true);
+    state.setSendOnPause(false);
+    expect(state.sendOnPauseActive).toBe(false);
+    expect(loadAiPrefs(store).sendOnPause).toBe(false);
+
+    const later = makeState(
+      storage({ [AI_PREFS_KEY]: '{"handsFree":true,"sendOnPause":true}' }),
+    );
+    later.hydrate(false);
+    expect(later.prefs.sendOnPause).toBe(true);
   });
 
   it('reads replies aloud only when switched on, and persists the choice', () => {

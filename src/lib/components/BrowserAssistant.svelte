@@ -52,6 +52,7 @@ const model = $derived(getModel(session.prefs.modelId));
         dictation={voice.dictation}
         dictationMode={aiState.handsFreeActive ? 'hands-free' : 'push'}
         {handsFreeCapture}
+        sendOnPause={aiState.sendOnPauseActive}
       />
     </div>
   {:else}

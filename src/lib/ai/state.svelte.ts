@@ -25,6 +25,11 @@ export interface AiPrefs {
    * pause, one tap to end. Needs the downloaded speech model.
    */
   handsFree: boolean;
+  /**
+   * With hands-free on: send the message once the visitor stops talking, so
+   * no tap is needed. Ignored while hands-free is off.
+   */
+  sendOnPause: boolean;
 }
 
 export const AI_PREFS_KEY = 'smrt-planner:ai:v1';
@@ -34,6 +39,7 @@ export function loadAiPrefs(storage: Storage | null): AiPrefs {
     dismissed: false,
     readAloud: false,
     handsFree: false,
+    sendOnPause: false,
   };
   try {
     const raw = storage?.getItem(AI_PREFS_KEY);
@@ -42,6 +48,7 @@ export function loadAiPrefs(storage: Storage | null): AiPrefs {
     prefs.dismissed = value.dismissed === true;
     prefs.readAloud = value.readAloud === true;
     prefs.handsFree = value.handsFree === true;
+    prefs.sendOnPause = value.sendOnPause === true;
   } catch {
     // Unreadable or unavailable: the defaults.
   }
@@ -83,6 +90,7 @@ export class AiState {
     dismissed: false,
     readAloud: false,
     handsFree: false,
+    sendOnPause: false,
   });
   /** True once the browser has read its saved state (nothing before). */
   hydrated = $state(false);
@@ -179,6 +187,16 @@ export class AiState {
   /** "Start when I talk, stop when I pause": remembered across visits. */
   setHandsFree(on: boolean): void {
     this.setPrefs({ ...this.prefs, handsFree: on });
+  }
+
+  /** "Send when I stop talking": remembered across visits. */
+  setSendOnPause(on: boolean): void {
+    this.setPrefs({ ...this.prefs, sendOnPause: on });
+  }
+
+  /** Hands-free is active and the visitor asked for a send on each pause. */
+  get sendOnPauseActive(): boolean {
+    return this.handsFreeActive && this.prefs.sendOnPause;
   }
 
   /**

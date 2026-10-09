@@ -151,22 +151,28 @@
           ],
           "items": {
             "item:commerce:Order": {
-              "label": "Orders"
+              "label": "Orders",
+              "description": "Orders from your shop and website customers."
             },
             "item:commerce:WholesaleOrder": {
-              "label": "Cafe orders"
+              "label": "Cafe orders",
+              "description": "Standing and one-off orders from cafes and shops."
             },
             "item:inventory:StockLevel": {
-              "label": "Stock"
+              "label": "Stock",
+              "description": "Baked goods and supplies on hand today."
             },
             "item:commerce:ProductionOrder": {
-              "label": "Batches"
+              "label": "Batches",
+              "description": "What you plan to bake, with the amounts and the day."
             },
             "item:commerce:Vendor": {
-              "label": "Suppliers"
+              "label": "Suppliers",
+              "description": "The mills, dairies and suppliers you buy from."
             },
             "item:products:Product:ingredients": {
-              "label": "Ingredients"
+              "label": "Ingredients",
+              "description": "Flour, butter, sugar and the rest, with costs and units."
             }
           },
           "sections": {
@@ -342,28 +348,36 @@
           ],
           "items": {
             "item:commerce:Estimate": {
-              "label": "Quotes"
+              "label": "Quotes",
+              "description": "Quotes for repairs, ready to become work orders once approved."
             },
             "item:commerce:Order": {
-              "label": "Work orders"
+              "label": "Work orders",
+              "description": "Every job in the shop, from drop-off to pick-up."
             },
             "item:products:Product": {
-              "label": "Parts"
+              "label": "Parts",
+              "description": "The parts you sell and fit, with prices."
             },
             "item:inventory:StockLevel": {
-              "label": "Parts on hand"
+              "label": "Parts on hand",
+              "description": "Parts on the shelf, so you know what to reorder."
             },
             "item:commerce:Vendor": {
-              "label": "Suppliers"
+              "label": "Suppliers",
+              "description": "The parts suppliers you buy from, with terms and contacts."
             },
             "item:commerce:PurchaseOrder": {
-              "label": "Parts orders"
+              "label": "Parts orders",
+              "description": "Parts you have ordered and when they arrive."
             },
             "item:events:Event": {
-              "label": "Appointments"
+              "label": "Appointments",
+              "description": "Bookings on the shop calendar, by day and bay."
             },
             "item:events:EventType": {
-              "label": "Appointment types"
+              "label": "Appointment types",
+              "description": "The kinds of service you book, like an oil change or inspection."
             }
           },
           "sections": {
@@ -524,28 +538,36 @@
           ],
           "items": {
             "item:commerce:Estimate": {
-              "label": "Quotes"
+              "label": "Quotes",
+              "description": "Quotes for jobs, ready to turn into orders when accepted."
             },
             "item:products:Product": {
-              "label": "Materials"
+              "label": "Materials",
+              "description": "Steel, rod, gas and other materials you stock and charge for."
             },
             "item:inventory:StockLevel": {
-              "label": "Material on hand"
+              "label": "Material on hand",
+              "description": "Material on hand, so you know what to buy before the next job."
             },
             "item:commerce:Vendor": {
-              "label": "Suppliers"
+              "label": "Suppliers",
+              "description": "The suppliers you buy metal and gas from."
             },
             "item:commerce:PurchaseOrder": {
-              "label": "Material orders"
+              "label": "Material orders",
+              "description": "Material you have ordered and when it lands."
             },
             "item:events:Event": {
-              "label": "Site visits"
+              "label": "Site visits",
+              "description": "Visits to measure, quote or install on site, by day."
             },
             "item:events:EventType": {
-              "label": "Visit types"
+              "label": "Visit types",
+              "description": "The kinds of visit you make, like a quote visit or install."
             },
             "item:commerce:Order": {
-              "label": "Jobs"
+              "label": "Jobs",
+              "description": "Every job you have won, from start to final invoice."
             }
           },
           "sections": {
@@ -707,22 +729,28 @@
           ],
           "items": {
             "item:events:Event": {
-              "label": "Classes"
+              "label": "Classes",
+              "description": "Every class on your timetable, with who's teaching and where."
             },
             "item:events:EventSeries": {
-              "label": "Class series"
+              "label": "Class series",
+              "description": "Weekly classes that repeat, so you set them up once."
             },
             "item:events:EventType": {
-              "label": "Class types"
+              "label": "Class types",
+              "description": "Your styles, like Vinyasa or Yin, with length and price."
             },
             "item:commerce:Customer": {
-              "label": "Members"
+              "label": "Members",
+              "description": "Your students, with how to reach them and what they have booked."
             },
             "item:commerce:Agreement": {
-              "label": "Memberships"
+              "label": "Memberships",
+              "description": "Memberships and class packs, with who holds them and when they renew."
             },
             "item:inventory:StockLevel": {
-              "label": "Stock"
+              "label": "Stock",
+              "description": "Mats, props and retail items on hand."
             }
           },
           "sections": {

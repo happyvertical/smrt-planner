@@ -40,6 +40,10 @@ export interface RecipeModelHints {
 
 export interface RecipeNavEntry {
   label: string;
+  /** LOCAL. A shell icon name (`users`, `calendar`...) drawn on the entry's row. */
+  icon: string;
+  /** LOCAL. One friendly line for a business owner, shown on the section card. */
+  description: string;
   /** Qualified model name, `@scope/pkg:Class`. */
   model: string;
   /**

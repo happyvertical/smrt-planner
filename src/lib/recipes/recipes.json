@@ -21,6 +21,8 @@
       "nav": [
         {
           "label": "Customers",
+          "icon": "users",
+          "description": "The people and companies you sell to, with how to reach them.",
           "model": "@happyvertical/smrt-commerce:Customer"
         }
       ],
@@ -160,6 +162,8 @@
       "nav": [
         {
           "label": "Purchase orders",
+          "icon": "truck",
+          "description": "What you have ordered from your suppliers and when it arrives.",
           "model": "@happyvertical/smrt-commerce:PurchaseOrder"
         }
       ],
@@ -239,6 +243,8 @@
       "nav": [
         {
           "label": "Sales orders",
+          "icon": "shoppingBag",
+          "description": "Orders from your customers, from placed to delivered.",
           "model": "@happyvertical/smrt-commerce:Order"
         }
       ],
@@ -317,6 +323,8 @@
       "nav": [
         {
           "label": "Vendors",
+          "icon": "briefcase",
+          "description": "The suppliers you buy from, with terms and contacts.",
           "model": "@happyvertical/smrt-commerce:Vendor"
         }
       ],
@@ -457,15 +465,21 @@
       "nav": [
         {
           "label": "Stock levels",
+          "icon": "archive",
+          "description": "How much of each item you have on hand right now.",
           "noun": "stock entry",
           "model": "@happyvertical/smrt-inventory:StockLevel"
         },
         {
           "label": "Locations",
+          "icon": "home",
+          "description": "The places you keep stock, like shelves, rooms or vans.",
           "model": "@happyvertical/smrt-inventory:InventoryLocation"
         },
         {
           "label": "Stock movements",
+          "icon": "truck",
+          "description": "Every time stock came in, went out or moved.",
           "model": "@happyvertical/smrt-inventory:StockMovement"
         }
       ],
@@ -629,6 +643,8 @@
       "nav": [
         {
           "label": "Products",
+          "icon": "package",
+          "description": "What you sell, with prices and details.",
           "model": "@happyvertical/smrt-products:Product"
         }
       ],
@@ -723,6 +739,8 @@
       "nav": [
         {
           "label": "Products",
+          "icon": "package",
+          "description": "What you sell, with prices and details.",
           "model": "@happyvertical/smrt-products:Product"
         }
       ],
@@ -860,6 +878,8 @@
       "nav": [
         {
           "label": "Ingredients",
+          "icon": "package",
+          "description": "What you buy to make what you sell, with costs and units.",
           "noun": "ingredient",
           "key": "ingredients",
           "model": "@happyvertical/smrt-products:Product",
@@ -923,6 +943,8 @@
       "nav": [
         {
           "label": "Estimates",
+          "icon": "fileText",
+          "description": "Quotes you have sent, ready to turn into orders when accepted.",
           "model": "@happyvertical/smrt-commerce:Estimate"
         }
       ],
@@ -1000,6 +1022,8 @@
       "nav": [
         {
           "label": "Wholesale orders",
+          "icon": "shoppingBag",
+          "description": "Bulk orders from cafes, shops and other businesses.",
           "model": "@happyvertical/smrt-commerce:WholesaleOrder"
         }
       ],
@@ -1087,10 +1111,14 @@
       "nav": [
         {
           "label": "Invoices",
+          "icon": "receipt",
+          "description": "Bills you have sent and which ones are still waiting to be paid.",
           "model": "@happyvertical/smrt-commerce:Invoice"
         },
         {
           "label": "Payments",
+          "icon": "creditCard",
+          "description": "Money received, matched to the invoices it paid.",
           "model": "@happyvertical/smrt-commerce:Payment"
         }
       ],
@@ -1252,6 +1280,8 @@
       "nav": [
         {
           "label": "Shipments",
+          "icon": "truck",
+          "description": "What has gone out the door and where it is now.",
           "model": "@happyvertical/smrt-commerce:Fulfillment"
         }
       ],
@@ -1310,10 +1340,14 @@
       "nav": [
         {
           "label": "Agreements",
+          "icon": "fileText",
+          "description": "Signed deals and terms with your customers, in one place.",
           "model": "@happyvertical/smrt-commerce:Agreement"
         },
         {
           "label": "All contracts",
+          "icon": "fileText",
+          "description": "Every contract you hold, whoever it is with.",
           "model": "@happyvertical/smrt-commerce:Contract"
         }
       ],
@@ -1408,6 +1442,8 @@
       "nav": [
         {
           "label": "Leases",
+          "icon": "home",
+          "description": "Rentals you give or take, with terms and dates.",
           "model": "@happyvertical/smrt-commerce:Lease"
         }
       ],
@@ -1495,6 +1531,8 @@
       "nav": [
         {
           "label": "Licence sales",
+          "icon": "shoppingBag",
+          "description": "Licences you have sold and who holds them.",
           "model": "@happyvertical/smrt-commerce:LicenseSale"
         }
       ],
@@ -1580,10 +1618,14 @@
       "nav": [
         {
           "label": "Accounts",
+          "icon": "bank",
+          "description": "The accounts your books are kept in, like sales, rent and bank.",
           "model": "@happyvertical/smrt-ledgers:Account"
         },
         {
           "label": "Journals",
+          "icon": "book",
+          "description": "The entries behind your accounts, so every dollar has a trail.",
           "model": "@happyvertical/smrt-ledgers:Journal"
         }
       ],
@@ -1656,14 +1698,20 @@
       "nav": [
         {
           "label": "Projects",
+          "icon": "folder",
+          "description": "Bigger jobs broken into steps you can follow.",
           "model": "@happyvertical/smrt-projects:Project"
         },
         {
           "label": "Issues",
+          "icon": "wrench",
+          "description": "Problems and to-dos to track until they are done.",
           "model": "@happyvertical/smrt-projects:Issue"
         },
         {
           "label": "Labels",
+          "icon": "tag",
+          "description": "Tags to sort your projects and issues your way.",
           "model": "@happyvertical/smrt-projects:Label"
         }
       ],
@@ -1770,14 +1818,20 @@
       "nav": [
         {
           "label": "Events",
+          "icon": "calendar",
+          "description": "Everything on your calendar, with who and when.",
           "model": "@happyvertical/smrt-events:Event"
         },
         {
           "label": "Event types",
+          "icon": "tag",
+          "description": "The kinds of events you run, with their usual length and price.",
           "model": "@happyvertical/smrt-events:EventType"
         },
         {
           "label": "Event series",
+          "icon": "repeat",
+          "description": "Repeating schedules, like a class every Tuesday evening.",
           "model": "@happyvertical/smrt-events:EventSeries"
         }
       ],
@@ -1876,14 +1930,20 @@
       "nav": [
         {
           "label": "Leads",
+          "icon": "users",
+          "description": "People who might become customers, and where each one stands.",
           "model": "@happyvertical/smrt-sales:Lead"
         },
         {
           "label": "Opportunities",
+          "icon": "briefcase",
+          "description": "Deals in progress, with their value and next step.",
           "model": "@happyvertical/smrt-sales:Opportunity"
         },
         {
           "label": "Pipelines",
+          "icon": "layers",
+          "description": "The stages a deal moves through on its way to a sale.",
           "model": "@happyvertical/smrt-sales:PipelineDefinition"
         }
       ],

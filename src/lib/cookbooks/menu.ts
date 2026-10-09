@@ -30,6 +30,8 @@ export function blueprintNavGroups(
           id,
           href: '#',
           label: entry.label,
+          icon: entry.icon,
+          description: entry.description,
         });
       }
     }
@@ -39,6 +41,8 @@ export function blueprintNavGroups(
     id: item.id,
     href: '#',
     label: item.label,
+    icon: item.icon,
+    description: item.description,
   }));
   if (features.length) {
     groups.push({

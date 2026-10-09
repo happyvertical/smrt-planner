@@ -100,6 +100,8 @@ const recipeGroups: ShellNavGroup[] = $derived.by(() => {
           id,
           href: appHref(navPath(entry)),
           label: entry.label,
+          icon: entry.icon,
+          description: entry.description,
           ...(main
             ? {
                 action: {
@@ -152,6 +154,8 @@ const featureGroups: ShellNavGroup[] = $derived.by(() => {
     id: item.id,
     href: appHref(`/m/${item.packageId}/${item.modelName}/`),
     label: item.label,
+    icon: item.icon,
+    description: item.description,
   }));
   return items.length
     ? [

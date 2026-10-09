@@ -21,7 +21,11 @@ import { recipesById } from '$lib/recipes/index.ts';
 import { inScope } from '$lib/recipes/scope.ts';
 import { recipeState } from '$lib/recipes/state.svelte.ts';
 import { entryIndex, optionGroups } from '$lib/sections/entries.ts';
-import { DEFAULT_SECTION_ICON, sectionInfo } from '$lib/sections/info.ts';
+import {
+  DEFAULT_SECTION_ICON,
+  sectionInfo,
+  sectionTitle,
+} from '$lib/sections/info.ts';
 
 interface SectionPageProps {
   /** The layout id: `section:<id>`, `custom:<id>` or `package:<id>`. */
@@ -34,7 +38,7 @@ const shell = useShellLayout();
 const source = useDataSource();
 
 const section = $derived(shell.sections.find((s) => s.id === sectionId));
-const title = $derived(section?.heading ?? sectionId);
+const title = $derived(sectionTitle(section?.heading));
 const icon = $derived(section?.icon ?? DEFAULT_SECTION_ICON);
 const description = $derived(sectionInfo(sectionId).description);
 const itemIds = $derived(section?.items.map((entry) => entry.id) ?? []);
@@ -114,7 +118,7 @@ function startNew(entry: ShellSectionMenuEntry) {
           <SectionActions label={title} {groups} />
         {/if}
       </header>
-      <ShellSectionMenu {sectionId} {meta} {actions} />
+      <ShellSectionMenu {sectionId} layout="cards" {meta} {actions} />
     {:else}
       <h1>Section not found</h1>
       <p>This section is not in your app. <a href={appHref('/')}>Back to the Planner</a></p>

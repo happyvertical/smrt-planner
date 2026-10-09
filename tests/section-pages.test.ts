@@ -16,8 +16,9 @@ import {
   recipesById,
 } from '../src/lib/recipes/index.ts';
 import { inScope } from '../src/lib/recipes/scope.ts';
+import { entryDescription } from '../src/lib/recipes/sections.ts';
 import { entryIndex, optionGroups } from '../src/lib/sections/entries.ts';
-import { sectionInfo } from '../src/lib/sections/info.ts';
+import { sectionInfo, sectionTitle } from '../src/lib/sections/info.ts';
 import {
   sectionIdFromSlug,
   sectionPath,
@@ -193,5 +194,101 @@ describe('New from a section page', () => {
     expect(takeCreate('/m/commerce/Order/', 1300)).toBe(false);
     requestCreate('/m/commerce/Order/', 1000);
     expect(takeCreate('/m/commerce/Order/', 9000)).toBe(false);
+  });
+});
+
+describe('entry icons', () => {
+  it('every recipe nav entry resolves to a shell icon', () => {
+    for (const recipe of recipes) {
+      for (const entry of recipe.nav) {
+        expect(isIcon(entry.icon), `${recipe.id} ${entry.label}`).toBe(true);
+      }
+    }
+  });
+
+  it('the nav groups carry each entry icon', () => {
+    const groups = blueprintNavGroups({
+      recipes: recipes.map((r) => r.id),
+      features: [],
+    });
+    const items = groups.flatMap((g) => g.items);
+    expect(items.length).toBeGreaterThan(10);
+    for (const item of items) expect(isIcon(item.icon), item.label).toBe(true);
+  });
+});
+
+describe('entry icons are in the picker set; descriptions are friendly', () => {
+  const picker = new Set<string>(SHELL_SECTION_ICONS);
+  it('every entry and section icon is in SHELL_SECTION_ICONS', () => {
+    for (const recipe of recipes) {
+      for (const entry of recipe.nav) {
+        expect(picker.has(entry.icon), `${recipe.id} ${entry.label}`).toBe(
+          true,
+        );
+      }
+      if (recipe.section?.icon) {
+        expect(picker.has(recipe.section.icon), recipe.id).toBe(true);
+      }
+    }
+    expect(picker.has(FEATURE_SECTION.icon ?? '')).toBe(true);
+    for (const cookbook of cookbooks) {
+      for (const section of Object.values(
+        cookbook.blueprint.layout?.sections ?? {},
+      )) {
+        if (section.icon)
+          expect(picker.has(section.icon), cookbook.id).toBe(true);
+      }
+    }
+  });
+
+  it('every nav entry has a short description of its own', () => {
+    for (const recipe of recipes) {
+      for (const entry of recipe.nav) {
+        const text = entry.description ?? '';
+        expect(text.length, `${recipe.id} ${entry.label}`).toBeGreaterThan(20);
+        expect(text.length, `${recipe.id} ${entry.label}`).toBeLessThanOrEqual(
+          110,
+        );
+      }
+    }
+  });
+
+  it('falls back from the recipe text to the model description to a plain line', () => {
+    expect(
+      entryDescription('Mine.', { name: 'X', description: 'Model.' }),
+    ).toBe('Mine.');
+    expect(
+      entryDescription(undefined, { name: 'X', description: 'Model.' }),
+    ).toBe('Model.');
+    expect(entryDescription('  ', { name: 'StockLevel' })).toBe(
+      'Your stock level records, all in one place.',
+    );
+  });
+
+  it('cookbook description overrides point at real entries', () => {
+    const groups = blueprintNavGroups({
+      recipes: recipes.map((r) => r.id),
+      features: cookbooks.flatMap((c) => c.blueprint.features ?? []),
+    });
+    const ids = new Set(groups.flatMap((g) => g.items.map((i) => i.id)));
+    for (const trade of ['yoga-studio', 'mechanic', 'bakery', 'welder']) {
+      const cookbook = cookbooks.find((c) => c.id === trade);
+      const items = cookbook?.blueprint.layout?.items ?? {};
+      for (const [id, override] of Object.entries(items)) {
+        expect(ids.has(id), `${trade} ${id}`).toBe(true);
+        expect(
+          override.description?.length ?? 0,
+          `${trade} ${id}`,
+        ).toBeGreaterThan(20);
+      }
+    }
+  });
+});
+
+describe('section page title', () => {
+  it('never shows a raw id before the layout resolves', () => {
+    expect(sectionTitle(undefined)).toBe('Planner');
+    expect(sectionTitle('  ')).toBe('Planner');
+    expect(sectionTitle('Sales')).toBe('Sales');
   });
 });

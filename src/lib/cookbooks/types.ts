@@ -8,7 +8,7 @@ import type { Blueprint } from '../blueprint/types.ts';
  * same labels either way. Delete this type when `ShellLayout` carries `items`.
  */
 export type CookbookLayout = ShellLayout & {
-  items?: Record<string, { label?: string }>;
+  items?: Record<string, { label?: string; description?: string }>;
 };
 
 /** The app-wide defaults a cookbook sets (the policy rows realise them). */

@@ -48,3 +48,8 @@ export function sectionInfo(id: string): SectionInfo {
   const description = CUSTOM_DESCRIPTIONS.get(id);
   return description ? { description } : {};
 }
+
+/** The title of a section page: its label once the layout has resolved, never the raw id. */
+export function sectionTitle(heading: string | null | undefined): string {
+  return heading?.trim() || 'Planner';
+}

@@ -97,3 +97,22 @@ export function navItemId(
 ): string {
   return `item:${packageId}:${modelName}${key ? `:${key}` : ''}`;
 }
+
+/**
+ * The line under an entry on its section card: the recipe's own text first,
+ * then the catalog model's description, then a plain fallback.
+ */
+export function entryDescription(
+  own: string | undefined,
+  model: { description?: string; name: string },
+): string {
+  return (
+    own?.trim() ||
+    model.description?.trim() ||
+    `Your ${humanizeName(model.name)} records, all in one place.`
+  );
+}
+
+function humanizeName(name: string): string {
+  return name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase();
+}

@@ -2,7 +2,7 @@ import { exposedModels, getModelByQualifiedName } from '../catalog/index.ts';
 import type { Catalog, CatalogPackage } from '../catalog/types.ts';
 import { humanize } from '../data/format.ts';
 import { childModels, isPlumbing } from './plumbing.ts';
-import { navItemId } from './sections.ts';
+import { entryDescription, navItemId } from './sections.ts';
 import type { Recipe, RecipeNavSection } from './types.ts';
 
 /**
@@ -16,6 +16,9 @@ export const FEATURE_SECTION: RecipeNavSection = {
   icon: 'layers',
   description: 'Extra records you added one at a time.',
 };
+
+/** Icon of a feature entry: they are loose records, so one generic glyph. */
+export const FEATURE_ENTRY_ICON = 'fileText';
 
 export interface FeatureEntry {
   /** `@scope/pkg:Class` qualified name, as stored in the blueprint. */
@@ -119,6 +122,9 @@ export interface FeatureNavItem {
   packageId: string;
   modelName: string;
   label: string;
+  /** Shell icon name. */
+  icon: string;
+  description: string;
 }
 
 /** Nav items for the added feature models; unknown or internal ones are dropped. */
@@ -132,6 +138,8 @@ export function featureNavItems(features: readonly string[]): FeatureNavItem[] {
         packageId: found.pkg.id,
         modelName: found.model.name,
         label: humanize(found.model.name),
+        icon: FEATURE_ENTRY_ICON,
+        description: entryDescription(undefined, found.model),
       },
     ];
   });

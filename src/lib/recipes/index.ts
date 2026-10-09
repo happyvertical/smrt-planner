@@ -4,7 +4,11 @@ import descriptionsFile from './help/descriptions.json';
 import { createRecipeHelp, type HelpModel } from './help.ts';
 import { type FieldPolicyRow, resolveFields } from './policy.ts';
 import raw from './recipes.json';
-import { buildSections, type RecipeSection } from './sections.ts';
+import {
+  buildSections,
+  entryDescription,
+  type RecipeSection,
+} from './sections.ts';
 import type { Recipe, RecipeFile } from './types.ts';
 
 export type { RecipeSection } from './sections.ts';
@@ -64,6 +68,10 @@ export function recipePackage(recipe: Recipe): CatalogPackage | undefined {
 
 export interface RecipeNavTarget {
   label: string;
+  /** Shell icon name; see `RecipeNavEntry.icon`. */
+  icon: string;
+  /** The recipe's own line; see `RecipeNavEntry.description`. */
+  description: string;
   /** The entry's fixed id key, if the model appears twice in the nav. */
   key?: string;
   /** Explicit noun for the New button; see `RecipeNavEntry.noun`. */
@@ -83,6 +91,8 @@ export function recipeNav(recipe: Recipe): RecipeNavTarget[] {
       ? [
           {
             label: entry.label,
+            icon: entry.icon,
+            description: entryDescription(entry.description, found.model),
             ...(entry.key ? { key: entry.key } : {}),
             ...(entry.noun ? { noun: entry.noun } : {}),
             ...(entry.filter ? { filter: entry.filter } : {}),

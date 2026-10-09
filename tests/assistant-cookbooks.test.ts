@@ -22,8 +22,10 @@ import {
 
 beforeEach(() => recipeState.clear());
 
-// Before this change the same prompt (all recipes, one on) was 3077 characters.
-const PROMPT_BUDGET = 3600;
+// Before cookbooks the same prompt (all recipes, one on) was 3077 characters;
+// cookbooks + settings took it to ~3550, and five worked examples (which help
+// a 1-2B model more than extra rules) add ~600.
+const PROMPT_BUDGET = 4300;
 
 describe('prompt', () => {
   it('lists cookbooks and current settings and stays small', () => {
@@ -38,6 +40,20 @@ describe('prompt', () => {
     expect(prompt).toContain('Settings: currency CAD, tax 13%, terms Net 30.');
     expect(prompt).toMatch(/12 words or fewer/);
     expect(prompt.length).toBeLessThan(PROMPT_BUDGET);
+  });
+
+  it('includes worked examples only for ids that exist', () => {
+    const prompt = buildSystemPrompt(recipes, [], cookbooks, DEFAULT_SETTINGS);
+    expect(prompt).toContain('Examples:');
+    expect(prompt).toContain('"I run a bakery" -> ');
+    expect(prompt).toContain('"commerce.invoicing"');
+    const bare = buildSystemPrompt(
+      recipes.filter((r) => r.id !== 'commerce.invoicing'),
+      [],
+    );
+    expect(bare).not.toContain('I need to send invoices');
+    expect(bare).not.toContain('I run a bakery');
+    expect(bare).not.toContain('13% tax');
   });
 
   it('omits the cookbook and settings sections when there are none', () => {

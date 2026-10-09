@@ -5,6 +5,79 @@ import type { AppSettings } from '../settings/app-settings.ts';
 /** The slice of a cookbook the model needs to pick one. */
 export type CookbookBrief = Pick<Cookbook, 'id' | 'name' | 'summary'>;
 
+/**
+ * Worked examples: small models copy the shape of a good answer far better
+ * than they follow rules. Each one is used only when the ids it names are in
+ * this prompt, so an example never points the model at something missing.
+ * The replies are deliberately different from each other so none becomes a
+ * stock phrase.
+ */
+interface PromptExample {
+  says: string;
+  answer: Record<string, unknown>;
+  recipes?: string[];
+  cookbook?: string;
+  settings?: boolean;
+}
+
+const EXAMPLES: readonly PromptExample[] = [
+  {
+    says: 'I run a bakery',
+    cookbook: 'bakery',
+    answer: {
+      reply: 'The Bakery cookbook covers that.',
+      add: [],
+      remove: [],
+      cookbook: 'bakery',
+    },
+  },
+  {
+    says: 'I need to send invoices',
+    recipes: ['commerce.invoicing'],
+    answer: {
+      reply: 'Added invoicing for billing customers.',
+      add: ['commerce.invoicing'],
+      remove: [],
+    },
+  },
+  {
+    says: "we don't need the pipeline",
+    recipes: ['sales.pipeline'],
+    answer: {
+      reply: 'Removed leads and pipeline.',
+      add: [],
+      remove: ['sales.pipeline'],
+    },
+  },
+  {
+    says: "we're in Canada, 13% tax",
+    settings: true,
+    answer: {
+      reply: 'Set to Canadian dollars and 13% tax.',
+      add: [],
+      remove: [],
+      settings: { currency: 'CAD', taxRate: 13 },
+    },
+  },
+  {
+    says: 'hello',
+    answer: { reply: 'Hi. What kind of business is it?', add: [], remove: [] },
+  },
+];
+
+function examples(
+  recipeIds: ReadonlySet<string>,
+  cookbookIds: ReadonlySet<string>,
+  withSettings: boolean,
+): string[] {
+  return EXAMPLES.filter(
+    (e) =>
+      (e.recipes ?? []).every((id) => recipeIds.has(id)) &&
+      (!e.cookbook || cookbookIds.has(e.cookbook)) &&
+      (!e.settings || withSettings),
+  ).map((e) => `"${e.says}" -> ${JSON.stringify(e.answer)}`);
+}
+
 /** Tax is shown as a percent, the unit the person says it in. */
 export function formatTaxPercent(fraction: number): string {
   return `${Number((fraction * 100).toFixed(4))}%`;
@@ -41,6 +114,12 @@ export function buildSystemPrompt(
       '"settings": only what they state: currency (ISO), taxRate (percent), paymentTerms; else omit, and do not mention them otherwise.',
     );
   }
+  const shown = examples(
+    new Set(recipes.map((r) => r.id)),
+    new Set(cookbooks.map((c) => c.id)),
+    Boolean(settings),
+  );
+  if (shown.length) out.push('', 'Examples:', ...shown);
   out.push('', 'Recipes:', ...lines);
   if (cookbooks.length) {
     out.push(

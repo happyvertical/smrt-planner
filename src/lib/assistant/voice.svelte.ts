@@ -199,6 +199,13 @@ export class VoiceSession {
   private handle: LocalSpeechModel | null = null;
   private abort: AbortController | null = null;
   private readonly options: VoiceOptions;
+  /**
+   * Bumped by every init, enable and restart. Async work captures the value
+   * it started under and drops its result when a newer one has begun, so a
+   * superseded probe or download cannot overwrite the current status or
+   * dictation source.
+   */
+  private generation = 0;
 
   constructor(options: VoiceOptions) {
     this.options = options;
@@ -206,16 +213,19 @@ export class VoiceSession {
 
   /** Probe the browser and decide what to offer. Call once. */
   async init(): Promise<void> {
+    const generation = ++this.generation;
     try {
-      await this.probeAndOffer();
+      await this.probeAndOffer(generation);
     } catch (cause) {
+      if (generation !== this.generation) return;
       this.status = 'error';
       this.error = cause instanceof Error ? cause.message : String(cause);
     }
   }
 
-  private async probeAndOffer(): Promise<void> {
+  private async probeAndOffer(generation: number): Promise<void> {
     const probed = await (this.options.probe ?? probeBrowserSpeech)();
+    if (generation !== this.generation) return;
     this.browserWorks = probed === 'works';
     this.preferLocal = loadPreferLocal(this.options.storage);
     this.model = loadSpeechModel(this.options.storage);
@@ -231,9 +241,14 @@ export class VoiceSession {
       return;
     }
     const model = this.options.createModel(this.model);
+    this.handle?.dispose();
     this.handle = model;
     this.size = model.estimateSize();
-    this.cached = await model.isCached().catch(() => false);
+    const cached = await model.isCached().catch(() => false);
+    // Superseded while checking the cache: the restart that superseded this
+    // already disposed the model; the newer session owns the state.
+    if (generation !== this.generation) return;
+    this.cached = cached;
     const plan = planVoice(
       support,
       loadVoiceConsent(this.options.storage),
@@ -247,6 +262,7 @@ export class VoiceSession {
   async enable(): Promise<void> {
     const model = this.handle;
     if (!model || this.status === 'downloading') return;
+    const generation = ++this.generation;
     this.status = 'downloading';
     this.error = '';
     this.progress = 0;
@@ -256,12 +272,18 @@ export class VoiceSession {
     try {
       await model.load({
         onProgress: (p) => {
+          if (generation !== this.generation) return;
           this.progress = p.bytesTotal > 0 ? p.bytesLoaded / p.bytesTotal : 0;
           // The bytes are in; compiling the model for this device takes a moment.
           this.preparing = p.state === 'extracting';
         },
         signal: abort.signal,
       });
+      if (generation !== this.generation) {
+        // Superseded (restart, dispose or a newer enable): drop this result.
+        // Whoever superseded it owns the model's disposal.
+        return;
+      }
       // Consent is kept only once the download completed.
       saveVoiceConsent(this.options.storage, true);
       this.cached = true;
@@ -277,6 +299,7 @@ export class VoiceSession {
       )(model, choice);
       this.status = 'ready';
     } catch (error) {
+      if (generation !== this.generation) return;
       if (abort.signal.aborted) {
         this.status = 'offer';
       } else {
@@ -284,8 +307,10 @@ export class VoiceSession {
         this.status = 'error';
       }
     } finally {
-      this.abort = null;
-      this.preparing = false;
+      if (generation === this.generation) {
+        this.abort = null;
+        this.preparing = false;
+      }
     }
   }
 
@@ -303,7 +328,10 @@ export class VoiceSession {
 
   /** Save a changed choice, let go of the current model, and decide again. */
   private async restart(change: Partial<VoicePrefs>): Promise<void> {
+    this.generation++;
     this.abort?.abort();
+    this.abort = null;
+    this.preparing = false;
     this.handle?.dispose();
     this.handle = null;
     this.dictation = null;
@@ -326,6 +354,7 @@ export class VoiceSession {
   }
 
   dispose(): void {
+    this.generation++;
     this.abort?.abort();
     this.handle?.dispose();
     this.handle = null;

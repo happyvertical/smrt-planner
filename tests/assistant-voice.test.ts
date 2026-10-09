@@ -342,3 +342,153 @@ describe('VoiceSession', () => {
     expect(voice.status).toBe('dismissed');
   });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+describe('VoiceSession superseded work', () => {
+  it('ignores a slow probe from before a restart', async () => {
+    const probes = [
+      deferred<'works' | 'missing'>(),
+      deferred<'works' | 'missing'>(),
+    ];
+    let call = 0;
+    const models: ReturnType<typeof fakeModel>[] = [];
+    const voice = new VoiceSession({
+      storage: storage(),
+      createModel: () => {
+        const m = fakeModel();
+        models.push(m);
+        return m;
+      },
+      probe: () => (probes[call++] as (typeof probes)[number]).promise,
+      browserSource: () => () => Promise.reject(new Error('unused')),
+    });
+    const first = voice.init();
+    // The browser works, so a preference change restarts the session.
+    voice.browserWorks = true;
+    const second = voice.setPreferLocal(true);
+    probes[1]?.resolve('missing');
+    await second;
+    expect(voice.status).toBe('offer');
+    expect(voice.dictation).toBeNull();
+    // The first probe finally answers "works": it must not win.
+    probes[0]?.resolve('works');
+    await first;
+    expect(voice.status).toBe('offer');
+    expect(voice.dictation).toBeNull();
+    expect(models).toHaveLength(1);
+  });
+
+  it('disposes a model whose cache check was superseded', async () => {
+    const cacheChecks = [deferred<boolean>(), deferred<boolean>()];
+    const models: ReturnType<typeof fakeModel>[] = [];
+    const voice = new VoiceSession({
+      storage: storage('{"local":true}'),
+      createModel: () => {
+        const m = fakeModel();
+        const n = models.length;
+        m.isCached = vi.fn(
+          () => (cacheChecks[n] as (typeof cacheChecks)[number]).promise,
+        );
+        models.push(m);
+        return m;
+      },
+      probe: async () => 'missing',
+      localSource: () => () => Promise.reject(new Error('unused')),
+    });
+    const first = voice.init();
+    await Promise.resolve();
+    await Promise.resolve();
+    const second = voice.setModel('moonshine-tiny');
+    await Promise.resolve();
+    await Promise.resolve();
+    cacheChecks[1]?.resolve(false);
+    await second;
+    expect(voice.status).toBe('offer');
+    cacheChecks[0]?.resolve(true);
+    await first;
+    // The old init must not enable its (cached) model over the newer session.
+    expect(voice.status).toBe('offer');
+    expect(voice.model).toBe('moonshine-tiny');
+    expect(models[0]?.load).not.toHaveBeenCalled();
+  });
+
+  it('drops a superseded download and disposes nothing the new session owns', async () => {
+    const loads: ReturnType<typeof deferred<void>>[] = [];
+    const sources: string[] = [];
+    const makeModel = () => {
+      const m = fakeModel();
+      const d = deferred<void>();
+      loads.push(d);
+      m.load = vi.fn(() => d.promise) as never;
+      return m;
+    };
+    const models: ReturnType<typeof makeModel>[] = [];
+    const voice = new VoiceSession({
+      storage: storage(),
+      createModel: () => {
+        const m = makeModel();
+        models.push(m);
+        return m;
+      },
+      probe: async () => 'missing',
+      localSource: (_m, choice) => {
+        sources.push(choice.id);
+        return () => Promise.reject(new Error('unused'));
+      },
+    });
+    await voice.init();
+    const enabling = voice.enable();
+    expect(voice.status).toBe('downloading');
+    // Switch model mid-download: the old download is superseded.
+    const switching = voice.setModel('moonshine-tiny');
+    await switching;
+    expect(voice.status).toBe('offer');
+    // The old download completes late; it must not turn voice on.
+    loads[0]?.resolve();
+    await enabling;
+    expect(voice.status).toBe('offer');
+    expect(voice.dictation).toBeNull();
+    expect(sources).toEqual([]);
+    expect(models[0]?.dispose).toHaveBeenCalledTimes(1);
+    expect(models[1]?.dispose).not.toHaveBeenCalled();
+  });
+
+  it('cancel then enable again: the cancelled run cannot reset the new one', async () => {
+    const loads: ReturnType<typeof deferred<void>>[] = [];
+    const model = fakeModel();
+    model.load = vi.fn(() => {
+      const d = deferred<void>();
+      loads.push(d);
+      return d.promise;
+    }) as never;
+    const voice = new VoiceSession({
+      storage: storage(),
+      createModel: () => model,
+      probe: async () => 'missing',
+      localSource: () => () => Promise.reject(new Error('unused')),
+    });
+    await voice.init();
+    const first = voice.enable();
+    voice.cancel();
+    // The cancelled download rejects only after the visitor retried.
+    voice.status = 'offer';
+    const second = voice.enable();
+    expect(voice.status).toBe('downloading');
+    loads[0]?.reject(new Error('cancelled'));
+    await first;
+    expect(voice.status).toBe('downloading');
+    loads[1]?.resolve();
+    await second;
+    expect(voice.status).toBe('ready');
+    expect(model.dispose).not.toHaveBeenCalled();
+  });
+});

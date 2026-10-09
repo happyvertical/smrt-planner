@@ -8,7 +8,7 @@ import { appHref } from '$lib/planner/app.svelte.ts';
 </svelte:head>
 
 <main>
-  <p><a href={appHref('/')}>Back to the Planner</a></p>
+  <p class="meta"><a href={appHref('/')}>Planner</a> / AI models</p>
   <h1>Set up your assistant</h1>
   <p class="privacy">
     Everything runs on this device. Nothing you type or say leaves the page.
@@ -30,6 +30,7 @@ import { appHref } from '$lib/planner/app.svelte.ts';
     margin: 0;
   }
 
+  .meta,
   .privacy {
     color: var(--smrt-color-on-surface-variant);
   }

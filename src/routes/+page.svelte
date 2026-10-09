@@ -1,6 +1,6 @@
 <script lang="ts">
 import { ShellLayoutEditor } from '@happyvertical/smrt-svelte/workspace';
-import { Tabs } from '@happyvertical/smrt-ui';
+import { Button, Tabs } from '@happyvertical/smrt-ui';
 import { aiState } from '$lib/ai/instance.ts';
 import AiSetup from '$lib/components/AiSetup.svelte';
 import CookbooksPanel from '$lib/components/CookbooksPanel.svelte';
@@ -44,12 +44,12 @@ const select = (id: string) => {
       </p>
       <AiSetup />
       <div class="actions">
-        <button type="button" onclick={() => aiState.continueFirstRun()}>
+        <Button onclick={() => aiState.continueFirstRun()}>
           Continue
-        </button>
-        <button type="button" onclick={() => aiState.dismissFirstRun()}>
+        </Button>
+        <Button variant="secondary" onclick={() => aiState.dismissFirstRun()}>
           I don't need AI, let's just build
-        </button>
+        </Button>
       </div>
     </section>
   {:else}

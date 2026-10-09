@@ -1,5 +1,6 @@
 <script lang="ts">
-import { Icon } from '@happyvertical/smrt-ui';
+import { Button, Icon } from '@happyvertical/smrt-ui';
+import { Select, Switch } from '@happyvertical/smrt-ui/forms';
 import { HEAR_ICON, SPEAK_ICON, THINK_ICON } from '../ai/icons.ts';
 import { aiState } from '../ai/instance.ts';
 import type { CapabilityId } from '../ai/status.ts';
@@ -47,7 +48,7 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
       {:else}
         <label>
           Model
-          <select
+          <Select
             value={session.prefs.modelId}
             disabled={session.status === 'loading'}
             onchange={(event) => session.select(event.currentTarget.value)}
@@ -55,7 +56,7 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
             {#each ASSISTANT_MODELS as option (option.id)}
               <option value={option.id}>{option.label}</option>
             {/each}
-          </select>
+          </Select>
         </label>
         {#if model}
           <p class="meta">
@@ -69,7 +70,7 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
             {model ? shortLabel(model) : 'The model'} is ready.
           </p>
           <div class="actions">
-            <button type="button" onclick={() => session.unload()}>Unload</button>
+            <Button variant="secondary" onclick={() => session.unload()}>Unload</Button>
           </div>
         {:else if session.status === 'loading'}
           <div role="status" aria-live="polite">
@@ -79,7 +80,7 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
             <p class="meta">{thinkPercent}%. {session.progress.text}</p>
           </div>
           <div class="actions">
-            <button type="button" onclick={() => session.cancel()}>Cancel</button>
+            <Button variant="secondary" onclick={() => session.cancel()}>Cancel</Button>
           </div>
         {:else}
           <p class="status">
@@ -91,9 +92,9 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
             </p>
           {/if}
           <div class="actions">
-            <button type="button" onclick={() => void session.start()}>
+            <Button onclick={() => void session.start()}>
               {session.consented ? 'Load' : 'Download'}
-            </button>
+            </Button>
           </div>
         {/if}
       {/if}
@@ -123,7 +124,7 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
           </p>
         </div>
         <div class="actions">
-          <button type="button" onclick={() => voice.cancel()}>Cancel</button>
+          <Button variant="secondary" onclick={() => voice.cancel()}>Cancel</Button>
         </div>
       {:else if voice.status === 'ready'}
         <p class="status">Downloaded speech model, running on this device.</p>
@@ -141,20 +142,17 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
           </p>
         {/if}
         <div class="actions">
-          <button type="button" onclick={() => void voice.enable()}>
+          <Button onclick={() => void voice.enable()}>
             {voice.cached ? 'Turn on' : 'Download'}
-          </button>
+          </Button>
         </div>
       {/if}
       {#if voice.browserWorks && voice.status !== 'downloading'}
-        <label class="check">
-          <input
-            type="checkbox"
-            checked={voice.preferLocal}
-            onchange={(event) => void voice.setPreferLocal(event.currentTarget.checked)}
-          />
-          Use the downloadable model instead
-        </label>
+        <Switch
+          checked={voice.preferLocal}
+          label="Use the downloadable model instead"
+          onchange={(event) => void voice.setPreferLocal(event.currentTarget.checked)}
+        />
       {/if}
     </section>
   {/if}
@@ -170,15 +168,11 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
       </header>
       {#if aiState.speakSupported}
         <p class="status">Browser voices</p>
-        <label class="check">
-          <input
-            type="checkbox"
-            role="switch"
-            checked={aiState.prefs.readAloud}
-            onchange={(event) => aiState.setReadAloud(event.currentTarget.checked)}
-          />
-          Read replies aloud
-        </label>
+        <Switch
+          checked={aiState.prefs.readAloud}
+          label="Read replies aloud"
+          onchange={(event) => aiState.setReadAloud(event.currentTarget.checked)}
+        />
         <p class="meta">A better voice you can download is coming.</p>
       {:else}
         <p role="status">This browser has no speech synthesis.</p>
@@ -207,11 +201,6 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
     background: var(--smrt-color-surface-container-low, transparent);
   }
 
-  .card[data-state='off'] {
-    border-style: dashed;
-    color: var(--smrt-color-on-surface-variant);
-  }
-
   header {
     display: flex;
     align-items: center;
@@ -234,8 +223,24 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
     border-color: transparent;
   }
 
+  .card[data-state='available'] .badge {
+    border: 1px dashed var(--smrt-color-outline);
+    color: var(--smrt-color-on-surface-variant);
+  }
+
   .card[data-state='off'] .badge {
-    border-style: dashed;
+    position: relative;
+    border: 1px dashed var(--smrt-color-outline-variant);
+    opacity: 0.5;
+  }
+
+  .card[data-state='off'] .badge::after {
+    content: '';
+    position: absolute;
+    width: 70%;
+    height: 0;
+    border-top: 2px solid currentColor;
+    transform: rotate(-45deg);
   }
 
   h2,
@@ -256,18 +261,6 @@ const hearMegabytes = $derived(Math.round(voice.size / 1_000_000));
   label {
     display: grid;
     gap: var(--smrt-spacing-1);
-  }
-
-  .check {
-    display: flex;
-    align-items: center;
-    gap: var(--smrt-spacing-2);
-  }
-
-  select,
-  button {
-    box-sizing: border-box;
-    max-width: 100%;
   }
 
   .actions {

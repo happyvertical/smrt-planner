@@ -61,8 +61,26 @@ const icons: Record<CapabilityId, string> = {
     color: var(--smrt-color-on-success-container);
   }
 
-  .cap[data-state='off'] {
+  /* Set up elsewhere but not on: dashed and muted. */
+  .cap[data-state='available'] {
     border: 1px dashed var(--smrt-color-outline);
     color: var(--smrt-color-on-surface-variant);
+  }
+
+  /* Not possible here: dashed, faded and struck through. */
+  .cap[data-state='off'] {
+    position: relative;
+    border: 1px dashed var(--smrt-color-outline-variant);
+    color: var(--smrt-color-on-surface-variant);
+    opacity: 0.5;
+  }
+
+  .cap[data-state='off']::after {
+    content: '';
+    position: absolute;
+    width: 70%;
+    height: 0;
+    border-top: 2px solid currentColor;
+    transform: rotate(-45deg);
   }
 </style>

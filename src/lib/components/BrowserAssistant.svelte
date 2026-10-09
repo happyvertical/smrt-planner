@@ -1,5 +1,6 @@
 <script lang="ts">
 import { AssistantDock } from '@happyvertical/smrt-chat/svelte';
+import { Button } from '@happyvertical/smrt-ui';
 import type { DataSurfaceRegistry } from '@happyvertical/smrt-ui/data-surface';
 import { aiState } from '../ai/instance.ts';
 import { getModel } from '../assistant/models.ts';
@@ -36,7 +37,7 @@ const model = $derived(getModel(session.prefs.modelId));
     <div class="top">
       <div class="bar">
         <span>{model?.label}</span>
-        <button type="button" onclick={() => session.unload()}>Change model</button>
+        <Button variant="secondary" onclick={() => session.unload()}>Change model</Button>
       </div>
       <VoiceTyping {voice} />
     </div>

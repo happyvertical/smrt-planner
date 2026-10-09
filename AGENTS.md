@@ -27,6 +27,17 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `packages/*/dist/manifest.json` (+ `smrt-knowledge.json`) from that checkout
   instead of the registry, to preview unreleased manifests (e.g. model
   `description`s); unset, the registry is used. Commit only registry output.
+- `src/lib/features/`: the Features tab's catalogue of every recipe as a feature. `catalogue.ts` is
+  pure: `buildFeatureCards` (one card per recipe, in a browse group = its `group`, else its
+  package), what a feature gets (menu entries then `surfaces`), providers with secret NAMES only,
+  `filterFeatureCards`, `alsoAdds` (what switching it on pulls in via `requires`). `demo.ts` is the
+  Live / Mock / Sample / Server label: it shows the manifest's `demo` (smrt#3709) as emitted, never
+  derives one; what a feature requires is already folded in by the catalog generator
+  (`generate/recipe-demo.ts` runs smrt-core's `effectiveRecipeDemo` and writes `effectiveDemo`).
+  Never import smrt-core into app code (it is not browser-safe). Data-driven: a recipe a smrt
+  release adds appears with no change here. Switching on is `recipeState.add`, as on the Recipes
+  tab. `FeaturesPanel` / `FeatureCard` render it; `RecordFeatures` is the older "Single records"
+  list below it (models no recipe covers, `recipes/features.ts`).
 - `src/lib/recipes/plumbing.ts`: the feature-vs-plumbing rules the Features tab
   uses to hide link tables, child records and tiny lookups by default.
 - `src/lib/recipes/`: recipes are the unit people add. `types.ts` is the
@@ -153,7 +164,7 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `data/labels.ts` (with `data/display.ts`) labels related records (Customer/Vendor via their Profile).
 - `src/lib/components/`: generated list/form (`ModelWorkspace`), the collapsed "Connect other tools"
   list (`ConnectTools`), the Help view (`HelpView`), `BrowserAssistant` (the dock slot: consent, progress, then smrt-chat's `AssistantDock`).
-- `src/routes/`: `/` Planner with `?tab=cookbooks|recipes|features|layout|export` tabs (`planner/tab.svelte.ts`; a visitor with nothing built lands on Cookbooks; smrt-ui `Tabs`: Cookbooks cards + preview, Recipes cards with switches only, Layout `ShellLayoutEditor`, Export / Import / Reset in `ExportPanel`), `/ai/` the AI models page (Set up your assistant), `/cookbook/` a client-side redirect to `/?tab=export`, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
+- `src/routes/`: `/` Planner with `?tab=cookbooks|recipes|features|layout|export` tabs (`planner/tab.svelte.ts`; a visitor with nothing built lands on Cookbooks; smrt-ui `Tabs`: Cookbooks cards + preview, Recipes cards with switches only, Features the browsable catalogue of every recipe with its demo label, providers and what it adds, Layout `ShellLayoutEditor`, Export / Import / Reset in `ExportPanel`), `/ai/` the AI models page (Set up your assistant), `/cookbook/` a client-side redirect to `/?tab=export`, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
   `/packages/` and `/packages/[id]/` the package browser, `/m/[package]/[model]/`.
   All prerendered; `entries()` come from the catalog.
 

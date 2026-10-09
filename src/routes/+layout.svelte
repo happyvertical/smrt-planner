@@ -7,6 +7,7 @@ import {
 } from '@happyvertical/smrt-svelte/workspace';
 import { afterNavigate, replaceState } from '$app/navigation';
 import { page } from '$app/state';
+import smrtMark from '$lib/assets/smrt-mark.svg';
 import { browserStorage } from '$lib/blueprint/storage.ts';
 import {
   blueprintStore,
@@ -260,15 +261,17 @@ function flushOnHide() {
 
 <AppShell
   storageKey={SHELL_STORAGE_KEY}
-  title="smrt planner"
-  subtitle="Add recipes, watch the app assemble"
+  title="Planner"
+  logoSrc={smrtMark}
+  homeHref={appHref('/')}
   {nav}
   {navGroups}
   currentHref={page.url.pathname + appQuery()}
   environment="static demo"
   layout={blueprintStore.layout ?? null}
   onlayoutchange={(next) => blueprintStore.setLayout(next)}
-  dockToggles={[{ tool: 'assistant', label: 'Assistant', slot: 'leftSidebar.footer' }]}
+  dockToggles={[{ tool: 'assistant', label: 'Assistant', slot: 'header.end' }]}
+  config={{ right: { initial: 'collapsed', collapsedSize: '0rem', presentation: 'overlay' } }}
   layoutEditing={{ floating: true }}
 >
   {#snippet sectionActions({ sectionId: navSectionId, label })}

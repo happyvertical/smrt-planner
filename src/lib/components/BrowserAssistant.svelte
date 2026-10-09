@@ -4,9 +4,12 @@ import type { DataSurfaceRegistry } from '@happyvertical/smrt-ui/data-surface';
 import { onDestroy } from 'svelte';
 import { ASSISTANT_MODELS, formatSize, getModel } from '../assistant/models.ts';
 import { AssistantSession } from '../assistant/session.svelte.ts';
+import { VoiceSession } from '../assistant/voice.svelte.ts';
+import { createLocalSpeechModel } from '../assistant/voice-host.ts';
 import { browserStorage } from '../blueprint/storage.ts';
 import { recipes } from '../recipes/index.ts';
 import { recipeState } from '../recipes/state.svelte.ts';
+import VoiceTyping from './VoiceTyping.svelte';
 
 interface BrowserAssistantProps {
   /** The registry the shell gives its `dock` snippet. */
@@ -21,7 +24,25 @@ const session = new AssistantSession({
   storage: browserStorage(),
 });
 
-onDestroy(() => session.unload());
+// Voice typing is decided once the chat model is ready: the browser's own
+// recogniser where it works, else an optional download.
+const voice = new VoiceSession({
+  storage: browserStorage(),
+  createModel: createLocalSpeechModel,
+});
+let voiceStarted = false;
+
+$effect(() => {
+  if (session.status === 'ready' && !voiceStarted) {
+    voiceStarted = true;
+    void voice.init();
+  }
+});
+
+onDestroy(() => {
+  session.unload();
+  voice.dispose();
+});
 
 const model = $derived(getModel(session.prefs.modelId));
 const percent = $derived(Math.round(session.progress.progress * 100));
@@ -39,9 +60,12 @@ const percent = $derived(Math.round(session.progress.progress * 100));
       </p>
     </div>
   {:else if session.status === 'ready'}
-    <div class="bar">
-      <span>{model?.label}</span>
-      <button type="button" onclick={() => session.unload()}>Change model</button>
+    <div class="top">
+      <div class="bar">
+        <span>{model?.label}</span>
+        <button type="button" onclick={() => session.unload()}>Change model</button>
+      </div>
+      <VoiceTyping {voice} />
     </div>
     <div class="dock">
       <AssistantDock
@@ -50,6 +74,7 @@ const percent = $derived(Math.round(session.progress.progress * 100));
         contextMode="server"
         conversations="single"
         composerPlaceholder="Describe your business, e.g. I sell clothes online"
+        dictation={voice.dictation}
       />
     </div>
   {:else if session.status === 'loading'}
@@ -117,6 +142,10 @@ const percent = $derived(Math.round(session.progress.progress * 100));
     height: 100%;
     min-width: 0;
     min-height: 0;
+  }
+
+  .top {
+    min-width: 0;
   }
 
   .dock {

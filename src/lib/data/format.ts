@@ -81,6 +81,7 @@ export function pluralize(label: string): string {
  * "Currencies" -> "Currency". A label that is not plural is left as it is.
  */
 export function singularize(label: string): string {
+  if (/(series|species)$/i.test(label)) return label;
   if (/[^aeiou]ies$/i.test(label)) return `${label.slice(0, -3)}y`;
   if (/(ss|x|z|ch|sh)es$/i.test(label)) return label.slice(0, -2);
   if (/[^s]s$/i.test(label)) return label.slice(0, -1);

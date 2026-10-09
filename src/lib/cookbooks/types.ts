@@ -28,6 +28,12 @@ export interface Cookbook {
   /** A key of `COOKBOOK_ICONS`. */
   icon: string;
   summary: string;
+  /**
+   * Words and phrases that point at this cookbook ("brakes", "oil change").
+   * The assistant matches them against what the person types; the name is
+   * matched too. Ambiguous words (like "car" or "classes") only hint.
+   */
+  keywords: string[];
   settings: CookbookSettings;
   /**
    * One line per custom section (`custom:<id>`), shown under its title on the

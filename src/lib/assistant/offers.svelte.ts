@@ -46,6 +46,13 @@ export class CookbookOffers {
     return Object.values(this.offers).find((o) => o.status === 'pending');
   }
 
+  /** Whether a cookbook is already applied or waiting for the person's click. */
+  engaged(): boolean {
+    return Object.values(this.offers).some(
+      (o) => o.status === 'pending' || o.status === 'applied',
+    );
+  }
+
   /** Propose a cookbook. Returns null when the same one is already pending. */
   offer(cookbookId: string): OfferRef | null {
     const open = this.pending();

@@ -1,9 +1,15 @@
 import type { Cookbook } from '../cookbooks/types.ts';
 import type { Recipe } from '../recipes/types.ts';
 import type { AppSettings } from '../settings/app-settings.ts';
+import type { Match } from './match.ts';
 
 /** The slice of a cookbook the model needs to pick one. */
-export type CookbookBrief = Pick<Cookbook, 'id' | 'name' | 'summary'>;
+export type CookbookBrief = Pick<Cookbook, 'id' | 'name' | 'summary'> &
+  Partial<Pick<Cookbook, 'keywords'>>;
+
+/** Most matched items given full lines; the rest stay in the compact list. */
+const MAX_FOCUSED_RECIPES = 5;
+const MAX_FOCUSED_COOKBOOKS = 2;
 
 /**
  * Worked examples: small models copy the shape of a good answer far better
@@ -85,22 +91,39 @@ export function formatTaxPercent(fraction: number): string {
 
 /**
  * The system prompt: what the assistant is, how little to say, the recipes it
- * may use (id, label, summary, synonyms), the cookbooks it may offer, the
- * current settings and which recipes are on now. Short on purpose, for a 1-2B
- * model.
+ * may use, the cookbooks it may offer, the current settings and which recipes
+ * are on now. Short on purpose, for a 1-2B model.
+ *
+ * With `matches` (keyword matches for the person's message, possibly none) the
+ * prompt is focused: full lines (id, label, summary, synonyms) only for the
+ * matched and currently-on recipes and cookbooks, a compact list of the rest,
+ * and a hint line naming what looks relevant. Without it every item gets a
+ * full line. The response schema lists every id either way.
  */
 export function buildSystemPrompt(
   recipes: readonly Recipe[],
   current: readonly string[],
   cookbooks: readonly CookbookBrief[] = [],
   settings?: AppSettings,
+  matches?: readonly Match[],
 ): string {
-  const lines = recipes.map((recipe) => {
+  const focused = matches !== undefined;
+  const matchedRecipes = (matches ?? [])
+    .filter((m) => m.kind === 'recipe')
+    .slice(0, MAX_FOCUSED_RECIPES)
+    .map((m) => m.id);
+  const matchedCookbooks = (matches ?? [])
+    .filter((m) => m.kind === 'cookbook')
+    .slice(0, MAX_FOCUSED_COOKBOOKS)
+    .map((m) => m.id);
+  const fullRecipe = new Set([...matchedRecipes, ...current]);
+  const fullCookbook = new Set(matchedCookbooks);
+  const recipeLine = (recipe: Recipe) => {
     const also = recipe.synonyms.length
       ? ` Also called: ${recipe.synonyms.join(', ')}.`
       : '';
     return `- ${recipe.id}: ${recipe.label}. ${recipe.summary}${also}`;
-  });
+  };
   const out = [
     'You help assemble a small business app. Reply as JSON.',
     '"reply": answer what they just said in one sentence of 12 words or fewer. No greeting; never repeat a reply.',
@@ -120,13 +143,45 @@ export function buildSystemPrompt(
     Boolean(settings),
   );
   if (shown.length) out.push('', 'Examples:', ...shown);
-  out.push('', 'Recipes:', ...lines);
-  if (cookbooks.length) {
+  if (matchedRecipes.length || matchedCookbooks.length) {
+    const parts: string[] = [];
+    if (matchedCookbooks.length) {
+      parts.push(`cookbook ${matchedCookbooks.join(', ')}`);
+    }
+    if (matchedRecipes.length) {
+      parts.push(`recipes ${matchedRecipes.join(', ')}`);
+    }
+    out.push('', `Looks relevant: ${parts.join('; ')}.`);
+  }
+  const cookbookLine = (c: CookbookBrief) =>
+    `- ${c.id}: ${c.name}. ${c.summary}`;
+  const compact = (items: string[]) => items.join(', ');
+  const fullRecipes = recipes.filter((r) => !focused || fullRecipe.has(r.id));
+  const otherRecipes = focused
+    ? recipes.filter((r) => !fullRecipe.has(r.id))
+    : [];
+  out.push('');
+  if (fullRecipes.length) out.push('Recipes:', ...fullRecipes.map(recipeLine));
+  if (otherRecipes.length) {
     out.push(
-      '',
-      'Cookbooks:',
-      ...cookbooks.map((c) => `- ${c.id}: ${c.name}. ${c.summary}`),
+      `Other recipes: ${compact(otherRecipes.map((r) => `${r.id} (${r.label})`))}.`,
     );
+  }
+  if (cookbooks.length) {
+    const fullBooks = cookbooks.filter(
+      (c) => !focused || fullCookbook.has(c.id),
+    );
+    const otherBooks = focused
+      ? cookbooks.filter((c) => !fullCookbook.has(c.id))
+      : [];
+    out.push('');
+    if (fullBooks.length)
+      out.push('Cookbooks:', ...fullBooks.map(cookbookLine));
+    if (otherBooks.length) {
+      out.push(
+        `Other cookbooks: ${compact(otherBooks.map((c) => `${c.id} (${c.name})`))}.`,
+      );
+    }
   }
   out.push(
     '',

@@ -15,6 +15,7 @@ import {
   type RecipeStore,
   type SettingsStore,
 } from './change.ts';
+import { buildMatchIndex, matchText } from './match.ts';
 import type { OfferRef } from './offers.svelte.ts';
 import { buildSystemPrompt, type CookbookBrief } from './prompt.ts';
 
@@ -40,7 +41,11 @@ export interface BrowserTransportOptions {
   /** Cookbooks the assistant may offer (id, name, summary). */
   cookbooks?: readonly CookbookBrief[];
   /** Proposes a cookbook; the person's click applies it. Null: already pending. */
-  offers?: { offer(cookbookId: string): OfferRef | null };
+  offers?: {
+    offer(cookbookId: string): OfferRef | null;
+    /** True when a cookbook is applied or pending; omit to never back up. */
+    engaged?(): boolean;
+  };
   /** The app settings the assistant may read and change. */
   settings?: SettingsStore;
   now?: () => number;
@@ -104,6 +109,7 @@ export function createBrowserAssistantTransport(
     thread.lastMessageAt = message.createdAt;
     return message;
   };
+  const index = buildMatchIndex(options.recipes, options.cookbooks ?? []);
   const greeting = push('assistant', GREETING);
 
   async function turn(
@@ -127,6 +133,7 @@ export function createBrowserAssistantTransport(
           role: m.role as 'user' | 'assistant',
           content: m.content,
         }));
+      const matches = matchText(index, text);
       const raw = await model.message(text, {
         history: [
           {
@@ -136,6 +143,7 @@ export function createBrowserAssistantTransport(
               options.store.ids,
               cookbooks,
               options.settings?.read(),
+              matches,
             ),
           },
           ...prior,
@@ -159,11 +167,23 @@ export function createBrowserAssistantTransport(
       ]
         .filter(Boolean)
         .join(' ');
-      const offer = change.cookbook
-        ? (options.offers?.offer(change.cookbook) ?? undefined)
+      // Backstop: a small model sometimes misses a plain "I run a bakery".
+      // A strong cookbook match is offered anyway (never applied without the
+      // click) when the model offered none and none is applied or pending.
+      // Strong recipe matches are only hinted, never added.
+      const strongCookbook = matches.find(
+        (m) => m.kind === 'cookbook' && m.confidence === 'strong',
+      )?.id;
+      const cookbookId =
+        change.cookbook ??
+        (strongCookbook && options.offers?.engaged?.() === false
+          ? strongCookbook
+          : null);
+      const offer = cookbookId
+        ? (options.offers?.offer(cookbookId) ?? undefined)
         : undefined;
       const offered = offer
-        ? cookbooks.find((c) => c.id === change.cookbook)
+        ? cookbooks.find((c) => c.id === cookbookId)
         : undefined;
       const line = change.reply || (offered ? `Set up ${offered.name}?` : '');
       const reply = [line, summary].filter(Boolean).join(' ');

@@ -5,6 +5,7 @@
       "name": "Bakery",
       "icon": "bread",
       "summary": "Retail and cafe wholesale orders, ingredient stock, batches and suppliers.",
+      "keywords": ["bake", "baker", "bakery", "baking", "bread", "pastry", "cake", "cookies", "cafe wholesale", "coffee shop", "patisserie", "sourdough"],
       "settings": {
         "currency": "USD",
         "paymentTerms": "Net 15",
@@ -203,6 +204,7 @@
       "name": "Mechanic",
       "icon": "car",
       "summary": "Quotes, work orders, parts, appointments and billing for a repair shop.",
+      "keywords": ["mechanic", "garage", "auto repair", "car repair", "fix cars", "car", "vehicle", "brakes", "oil change", "tyres", "tires", "servicing", "repair shop"],
       "settings": {
         "currency": "USD",
         "paymentTerms": "Due on receipt",
@@ -408,6 +410,7 @@
       "name": "Welder",
       "icon": "flame",
       "summary": "Quotes, jobs, agreements, material and site visits for a welding business.",
+      "keywords": ["weld", "welder", "welding", "fabrication", "fabricate", "metal", "steel", "gates", "railings", "metalwork", "boilermaker"],
       "settings": {
         "currency": "USD",
         "paymentTerms": "50% deposit, balance on completion"
@@ -598,6 +601,7 @@
       "name": "Yoga studio",
       "icon": "yoga",
       "summary": "Classes, class series, members, memberships and a small retail shop.",
+      "keywords": ["yoga", "yoga studio", "pilates", "studio", "classes", "class series", "meditation", "members", "memberships", "instructor"],
       "settings": {
         "currency": "USD",
         "paymentTerms": "Due on receipt"

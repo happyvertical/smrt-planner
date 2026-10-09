@@ -219,7 +219,7 @@ describe('transport', () => {
     await send(transport, 'hi');
     const history = message.mock.calls[0][1]?.history ?? [];
     expect(history.map((m) => m.role)).toEqual(['system']);
-    expect(history[0].content).toContain('Cookbooks:');
+    expect(history[0].content).toContain('Other cookbooks:');
   });
 
   it('offers a cookbook without applying it', async () => {

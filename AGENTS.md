@@ -19,7 +19,9 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `index.ts` the lookup and search helpers.
 - `src/lib/catalog/generate/`: the generator (`registry.ts` discovery and
   tarball reads, `extract.ts` manifest -> catalog, `exclusions.ts` the
-  documented infrastructure exclusion list). `scripts/generate-catalog.ts` is
+  documented infrastructure exclusion list; `recipe-metadata.ts` validates the
+  recipes' surfaces, providers, runtime, demo seed and `demo` and the package's
+  `browser`, carried as authored). `scripts/generate-catalog.ts` is
   the entry point; Node runs the TypeScript directly.
   `CATALOG_SOURCE=<path to a built smrt checkout> pnpm catalog:generate` reads
   `packages/*/dist/manifest.json` (+ `smrt-knowledge.json`) from that checkout
@@ -164,7 +166,8 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   they are formatted as currency only for display.
 - Fakes are deterministic: seeded, fixed clock, no `Math.random()`/`Date.now()`.
 - The catalog generator is deterministic: sorted output, no timestamps. Packages
-  are excluded only through `exclusions.ts`.
+  are excluded only through `exclusions.ts`, and a listed package that declares
+  recipes stays in the catalog.
 - Depend on published `@happyvertical/smrt-*` packages, never workspace links.
 
 ## Validation

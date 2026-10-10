@@ -13,9 +13,7 @@ import Planner from '$lib/planner/Planner.svelte';
   {#if aiState.firstRun}
     <section class="first-run" aria-labelledby="first-run-title">
       <h1 id="first-run-title">Set up your assistant</h1>
-      <p class="meta">
-        Everything runs on this device. Nothing you type or say leaves the page.
-      </p>
+      <p class="meta">{aiState.privacyNote}</p>
       <AiSetup />
       <div class="actions">
         <Button onclick={() => aiState.continueFirstRun()}>

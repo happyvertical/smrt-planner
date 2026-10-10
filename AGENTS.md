@@ -181,6 +181,16 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `applyChange` through `recipeState`, `prompt.ts` the recipe vocabulary,
   `models.ts` the offered models, `prefs.ts` the localStorage preference
   (model choice and consent; not part of the cookbook). It never navigates.
+- `src/lib/inference/` (#23): where the model runs. `config.ts` is `planner.config.json`
+  (`inference: { mode: browser|host|byo, host?: { endpoint }, byo?: { presets? } }`; invalid falls back
+  to `browser` with a notice; a mounted `Planner`'s `inference` prop overrides it), `host.ts` the host
+  `ChatModel` (POSTs `{ version, message, snapshot, history? }`; the server owns the prompt),
+  `openai.ts` the browser fetch client for OpenAI-compatible endpoints plus Test connection,
+  `presets.ts` Ollama/OpenRouter/OpenAI/custom with CORS notes, `byo.svelte.ts` the AI page state (key in
+  `smrt-planner:inference-key:v1`, sent only as the Authorization header to the chosen origin). The wire
+  contract and config are specified in `docs/inference-host.md`; change them together with that file.
+  `AiState.configure` applies a config (the layout fetches it); Think's `where` reads In browser /
+  Server / Your model: <name>.
 - `src/lib/ai/`: THINK (the language model), HEAR (voice typing) and SPEAK
   (read replies aloud with `speechSynthesis`) as one store. `state.svelte.ts`
   (`AiState`, singleton in `instance.ts`) owns the `AssistantSession`, the

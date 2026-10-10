@@ -6,8 +6,24 @@
  * @module
  */
 export {
+  type ByoPresetDefinition,
+  type ConfigResult,
+  type InferenceConfig,
+  type InferenceMode,
+  loadInferenceConfig,
+  parseInferenceConfig,
+} from './inference/config.ts';
+export {
+  createHostChat,
+  type HostChatOptions,
+  type HostRequest,
+} from './inference/host.ts';
+export { createOpenAIChat, testConnection } from './inference/openai.ts';
+export {
   createPlannerAssistant,
   type PlannerAssistant,
+  type PlannerChatInference,
+  type PlannerConfigInference,
   type PlannerInference,
 } from './planner/assistant.ts';
 export * from './planner/commands/index.ts';

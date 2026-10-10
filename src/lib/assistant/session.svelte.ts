@@ -1,4 +1,5 @@
 import { isWebGPUAvailable, WebLLMProvider } from '@happyvertical/ai/local';
+import type { InferenceMode } from '../inference/config.ts';
 import { getLibraryCookbook, libraryCookbooks } from '../library/index.ts';
 import type { PlannerController } from '../planner/commands/index.ts';
 import type { Recipe } from '../recipes/types.ts';
@@ -66,6 +67,10 @@ export class AssistantSession {
   prefs = $state<AssistantPrefs>({ modelId: '', consented: [] });
   progress = $state<LoadProgress>({ progress: 0, text: '' });
   error = $state('');
+  /** Where the model runs. `browser` loads WebLLM here; the others are remote. */
+  mode = $state<InferenceMode>('browser');
+  /** Remote modes: what the visitor sees as the model, e.g. `gpt-4o-mini`. */
+  remoteLabel = $state('');
 
   readonly transport: BrowserAssistantTransport;
   /** Cookbooks the assistant proposed, applied only by the person's click. */
@@ -96,8 +101,37 @@ export class AssistantSession {
       theme: options.theme,
       controller: options.controller,
       themeUndos: this.themeUndos ?? undefined,
+      acceptCommands: () => this.mode === 'host',
+      unavailable: () =>
+        this.mode === 'byo'
+          ? 'Connect your model on the AI page first, then I can help. The cards on the Planner page work without one.'
+          : this.mode === 'host'
+            ? 'The assistant is not available right now. The cards on the Planner page work without it.'
+            : 'Download a model first, then I can help. The cards on the Planner page work without one.',
       onReply: (text) => options.onReply?.(text),
     });
+  }
+
+  /**
+   * Choose where the model runs. `host` and `byo` need no WebGPU and no
+   * download; the chat is set with `useRemote`.
+   */
+  setMode(mode: InferenceMode): void {
+    this.mode = mode;
+    if (mode !== 'browser') {
+      this.unload();
+      this.status = 'idle';
+    } else if (!(this.options.webgpu ?? isWebGPUAvailable)()) {
+      this.status = 'unsupported';
+    }
+  }
+
+  /** The remote chat model, or null when none is connected (byo, before setup). */
+  useRemote(chat: ChatModel | null, label: string): void {
+    if (this.mode === 'browser') return;
+    this.chat = chat;
+    this.remoteLabel = chat ? label : '';
+    this.status = chat ? 'ready' : 'idle';
   }
 
   /** Whether the visitor already accepted the selected model's download. */

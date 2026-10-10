@@ -25,6 +25,7 @@ import {
 import { provideDataSource } from '$lib/data/context.ts';
 import { humanize } from '$lib/data/format.ts';
 import { createPlannerDataSource } from '$lib/data/planner-source.ts';
+import { loadInferenceConfig } from '$lib/inference/config.ts';
 import { libraryState } from '$lib/library/state.svelte.ts';
 import { appHref, appQuery, setBasePath } from '$lib/planner/app.svelte.ts';
 import { plannerRuntime } from '$lib/planner/instance.ts';
@@ -229,7 +230,11 @@ afterNavigate((navigation) => {
     cookbookStore.hydrate(location.search);
     // The AI state reads its saved choices and decides whether this is a first
     // visit (nothing set up, nothing built, "no AI" not chosen).
+    // Where the model runs comes from `planner.config.json` next to the app;
+    // the first-visit decision waits for it.
+    aiState.awaitConfig();
     aiState.hydrate(!!(recipeState.ids.length || recipeState.features.length));
+    void loadInferenceConfig(base).then((result) => aiState.configure(result));
   }
   if (hasAppState(location.search)) selection.fromSearch(location.search);
   if (onPlanner()) {

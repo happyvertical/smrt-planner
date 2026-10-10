@@ -51,7 +51,15 @@ export interface AssistantChange {
   cookbook: string | null;
   settings: SettingsPatch;
   theme: ThemePatch;
+  /**
+   * Command calls a trusted host server asked for (`parseChange` with
+   * `commands: true`); the controller validates each one. Absent otherwise.
+   */
+  commands?: { name: string; input: unknown }[];
 }
+
+/** Most command calls one reply may carry. */
+export const MAX_COMMANDS = 8;
 
 /** The slice of the cookbook store that holds the app theme. */
 export interface ThemeStore {
@@ -219,6 +227,7 @@ export function parseChange(
   input: string,
   recipes: readonly Pick<Recipe, 'id'>[],
   cookbooks: readonly { id: string }[] = [],
+  options: { commands?: boolean } = {},
 ): AssistantChange {
   const known = new Set(recipes.map((recipe) => recipe.id));
   const raw = stripThinking(input);
@@ -256,6 +265,7 @@ export function parseChange(
   const add = pick(object.add);
   const remove = pick(object.remove);
   const both = new Set(add.filter((id) => remove.includes(id)));
+  const commands = options.commands ? pickCommands(object.commands) : [];
   return {
     reply: typeof object.reply === 'string' ? object.reply.trim() : '',
     add: add.filter((id) => !both.has(id)),
@@ -267,7 +277,22 @@ export function parseChange(
         : null,
     settings: parseSettings(object.settings),
     theme: parseThemePatch(object.theme),
+    ...(commands.length ? { commands } : {}),
   };
+}
+
+/** `{ name, input }` entries; the controller rejects unknown names and bad input. */
+function pickCommands(value: unknown): { name: string; input: unknown }[] {
+  if (!Array.isArray(value)) return [];
+  const out: { name: string; input: unknown }[] = [];
+  for (const entry of value) {
+    if (out.length >= MAX_COMMANDS) break;
+    if (!entry || typeof entry !== 'object') continue;
+    const { name, input } = entry as { name?: unknown; input?: unknown };
+    if (typeof name !== 'string') continue;
+    out.push({ name, input: input ?? {} });
+  }
+  return out;
 }
 
 /** Apply a change through the store and report what really changed. */

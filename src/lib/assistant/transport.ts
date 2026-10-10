@@ -69,6 +69,14 @@ export interface BrowserTransportOptions {
    * share one Undo history and one snapshot.
    */
   controller?: PlannerController;
+  /**
+   * Apply `commands` a reply carries, through the controller. Only for a
+   * server the host chose (host mode); a local or bring-your-own model's
+   * reply is held to the schema's recipes, settings and theme.
+   */
+  acceptCommands?: boolean | (() => boolean);
+  /** Said when `model()` is null; the default asks for a download. */
+  unavailable?: string | (() => string);
   now?: () => number;
   /** Called with each reply the model produced (not errors), e.g. to read it aloud. */
   onReply?: (text: string) => void;
@@ -106,6 +114,28 @@ const runSummary = (
   name: 'set_settings' | 'set_theme',
   input: object,
 ) => runCommand(controller, name, input).summary;
+
+/**
+ * Command calls from a host server, in order. A refused one is said once and
+ * stops the rest, so a half-applied sequence never looks complete.
+ */
+function runCommands(
+  controller: PlannerController,
+  calls: readonly { name: string; input: unknown }[],
+): string {
+  const lines: string[] = [];
+  for (const call of calls) {
+    const result = controller.run(call);
+    if (!result.ok) {
+      lines.push(
+        `The server's ${call.name} was refused: ${result.error.message}`,
+      );
+      break;
+    }
+    if (result.receipt.summary) lines.push(result.receipt.summary);
+  }
+  return lines.join(' ');
+}
 
 /**
  * The model's `add` and `remove` as commands, reported as one change: what
@@ -194,6 +224,9 @@ export function createBrowserAssistantTransport(
     if (!model) {
       return {
         content:
+          (typeof options.unavailable === 'function'
+            ? options.unavailable()
+            : options.unavailable) ??
           'Download a model first, then I can help. The cards on the Planner page work without one.',
       };
     }
@@ -234,7 +267,12 @@ export function createBrowserAssistantTransport(
         maxTokens: MAX_REPLY_TOKENS,
         signal: controller.signal,
       });
-      const change = parseChange(raw, options.recipes, cookbooks);
+      const change = parseChange(raw, options.recipes, cookbooks, {
+        commands:
+          typeof options.acceptCommands === 'function'
+            ? options.acceptCommands()
+            : options.acceptCommands,
+      });
       const applied = applyRecipes(planner, change);
       const settingsText =
         options.settings && hasKeys(change.settings)
@@ -249,10 +287,14 @@ export function createBrowserAssistantTransport(
         themed?.undoId && options.themeUndos
           ? options.themeUndos.record(previousTheme, themed.undoId)
           : undefined;
+      const commandText = (change.commands ?? []).length
+        ? runCommands(planner, change.commands ?? [])
+        : '';
       const summary = [
         describeChange(applied, options.recipes),
         settingsText,
         themed?.summary ?? '',
+        commandText,
       ]
         .filter(Boolean)
         .join(' ');

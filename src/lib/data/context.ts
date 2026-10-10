@@ -14,3 +14,8 @@ export function useDataSource(): DataSource {
   if (!source) throw new Error('No DataSource provided; see +layout.svelte');
   return source;
 }
+
+/** The data source below the caller, or null when none was provided. */
+export function tryUseDataSource(): DataSource | null {
+  return getContext<DataSource | undefined>(KEY) ?? null;
+}

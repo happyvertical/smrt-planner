@@ -5,7 +5,7 @@
     {
       "id": "ads",
       "packageName": "@happyvertical/smrt-ads",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Advertising delivery and tracking models for SMRT framework",
       "models": [
         {
@@ -1927,7 +1927,7 @@
     {
       "id": "analytics",
       "packageName": "@happyvertical/smrt-analytics",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Analytics integration models for SMRT framework",
       "models": [
         {
@@ -4228,7 +4228,7 @@
     {
       "id": "assets",
       "packageName": "@happyvertical/smrt-assets",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Asset management system with versioning, metadata, and AI-powered operations for SMRT framework",
       "models": [
         {
@@ -6023,7 +6023,7 @@
     {
       "id": "chat",
       "packageName": "@happyvertical/smrt-chat",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Chat rooms, DMs, threads, and agent conversations for the SMRT framework",
       "models": [
         {
@@ -8495,7 +8495,7 @@
     {
       "id": "commerce",
       "packageName": "@happyvertical/smrt-commerce",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Commerce models for the SMRT framework - contracts, fulfillments, payments",
       "models": [
         {
@@ -19388,7 +19388,7 @@
     {
       "id": "content",
       "packageName": "@happyvertical/smrt-content",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Content processing module for SMRT framework - handles documents, web content, and media",
       "models": [
         {
@@ -26540,7 +26540,7 @@
     {
       "id": "events",
       "packageName": "@happyvertical/smrt-events",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Hierarchical event management with participant tracking and SMRT framework support",
       "models": [
         {
@@ -28904,7 +28904,7 @@
     {
       "id": "expenses",
       "packageName": "@happyvertical/smrt-expenses",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Expense records for the SMRT framework - reviewed costs against a cost object, deduplicated receipts, and commitment drawdown",
       "models": [
         {
@@ -29340,7 +29340,7 @@
     {
       "id": "facts",
       "packageName": "@happyvertical/smrt-facts",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Distributed memory and knowledge management with provenance tracking for SMRT framework",
       "models": [
         {
@@ -31852,7 +31852,7 @@
     {
       "id": "fields",
       "packageName": "@happyvertical/smrt-fields",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Layered field policy store and resolver (defaults, visibility tiers, help text) for SMRT objects",
       "models": [
         {
@@ -32533,7 +32533,7 @@
     {
       "id": "human-resources",
       "packageName": "@happyvertical/smrt-human-resources",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "HR records for the SMRT framework: who works for an organization, as what, and with what standing — employment with dated terms, and qualifications with expiry",
       "models": [
         {
@@ -33053,7 +33053,7 @@
     {
       "id": "images",
       "packageName": "@happyvertical/smrt-images",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Image asset management with AI-powered categorization, search, editing, and metadata extraction for SMRT framework",
       "models": [
         {
@@ -33725,7 +33725,7 @@
     {
       "id": "ingestion",
       "packageName": "@happyvertical/smrt-ingestion",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Durable tenant-scoped intake and evidence foundations",
       "models": [
         {
@@ -34706,7 +34706,7 @@
     {
       "id": "inventory",
       "packageName": "@happyvertical/smrt-inventory",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Multi-location stock tracking for the SMRT framework — Sku, InventoryLocation, StockLevel, StockMovement, and a stock-mutation service",
       "models": [
         {
@@ -35462,7 +35462,7 @@
     {
       "id": "ledgers",
       "packageName": "@happyvertical/smrt-ledgers",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Double-entry accounting ledger for the SMRT framework",
       "models": [
         {
@@ -37039,7 +37039,7 @@
     {
       "id": "manufacturing",
       "packageName": "@happyvertical/smrt-manufacturing",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Bills of materials, cost rollup, and production-order operations for the SMRT framework — strictly industry-neutral",
       "models": [
         {
@@ -38091,7 +38091,7 @@
     {
       "id": "marketing",
       "packageName": "@happyvertical/smrt-marketing",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Cross-channel campaign coordination, immutable performance evidence, budget pacing, and reusable Svelte marketing surfaces for SMRT",
       "models": [
         {
@@ -38829,7 +38829,7 @@
     {
       "id": "messages",
       "packageName": "@happyvertical/smrt-messages",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Unified multi-channel messaging with STI-based hierarchies",
       "models": [
         {
@@ -45468,7 +45468,7 @@
     {
       "id": "places",
       "packageName": "@happyvertical/smrt-places",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Hierarchical place management with geo integration and SMRT framework support",
       "models": [
         {
@@ -46448,7 +46448,7 @@
     {
       "id": "products",
       "packageName": "@happyvertical/smrt-products",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "SMRT products module: triple-purpose microservice template for standalone apps, federated modules, and NPM libraries",
       "models": [
         {
@@ -48032,7 +48032,7 @@
     {
       "id": "profiles",
       "packageName": "@happyvertical/smrt-profiles",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Profile management system with relationships, metadata, and reciprocal associations for SMRT framework",
       "models": [
         {
@@ -53839,7 +53839,7 @@
     {
       "id": "projects",
       "packageName": "@happyvertical/smrt-projects",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Provider-agnostic project management models (Issues, PRs, Repositories, Projects) for SMRT framework",
       "models": [
         {
@@ -57425,7 +57425,7 @@
     {
       "id": "properties",
       "packageName": "@happyvertical/smrt-properties",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Digital property and zone management models for SMRT framework",
       "models": [
         {
@@ -58496,7 +58496,7 @@
     {
       "id": "reports",
       "packageName": "@happyvertical/smrt-reports",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Materialized aggregate report models for SMRT",
       "models": [
         {
@@ -59212,7 +59212,7 @@
     {
       "id": "sales",
       "packageName": "@happyvertical/smrt-sales",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Modular sales for the SMRT framework: agreement execution, CRM, referral intake, neutral commissions, and reusable Svelte surfaces",
       "models": [
         {
@@ -66304,7 +66304,7 @@
     {
       "id": "sites",
       "packageName": "@happyvertical/smrt-sites",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Site lifecycle management for multi-tenant SMRT networks",
       "models": [
         {
@@ -66852,7 +66852,7 @@
     {
       "id": "social",
       "packageName": "@happyvertical/smrt-social",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Social media account management for multi-platform publishing in the SMRT ecosystem",
       "models": [
         {
@@ -67939,7 +67939,7 @@
     {
       "id": "subscriptions",
       "packageName": "@happyvertical/smrt-subscriptions",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Tenant subscriptions, entitlement resolution, usage thresholds, and subscription UI for SMRT",
       "models": [
         {
@@ -69880,7 +69880,7 @@
     {
       "id": "support",
       "packageName": "@happyvertical/smrt-support",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "AI-first Support Cases: channel-neutral intake, lifecycle, routing, service targets, and service time for the SMRT framework",
       "models": [
         {
@@ -73395,7 +73395,7 @@
     {
       "id": "tags",
       "packageName": "@happyvertical/smrt-tags",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Reusable tagging system with hierarchies, contexts, and multi-language support for SMRT framework",
       "models": [
         {
@@ -74282,6 +74282,12 @@
             }
           ],
           "requires": [],
+          "section": {
+            "id": "taxonomy",
+            "label": "Taxonomy",
+            "icon": "tag",
+            "description": "The tags people use to sort and find things."
+          },
           "options": {
             "@happyvertical/smrt-tags:Tag": {
               "fields": {
@@ -74344,7 +74350,7 @@
     {
       "id": "timesheets",
       "packageName": "@happyvertical/smrt-timesheets",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Shared time entries for the SMRT framework: who worked how long on what, approval and correction, with immutable charge and compensation snapshots",
       "models": [
         {
@@ -75316,7 +75322,7 @@
     {
       "id": "users",
       "packageName": "@happyvertical/smrt-users",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Multi-tenant user management for the SMRT framework - users, tenants, roles, permissions, groups",
       "models": [
         {
@@ -80438,7 +80444,7 @@
     {
       "id": "video",
       "packageName": "@happyvertical/smrt-video",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Video content management for AI-powered video production in the SMRT ecosystem",
       "models": [
         {
@@ -87763,7 +87769,7 @@
     {
       "id": "voice",
       "packageName": "@happyvertical/smrt-voice",
-      "version": "0.55.8",
+      "version": "0.55.9",
       "description": "Voice profile management for AI-powered voice synthesis and cloning in the SMRT ecosystem",
       "models": [
         {

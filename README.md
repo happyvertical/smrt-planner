@@ -70,7 +70,7 @@ with a typed command set:
 
 ```svelte
 <script lang="ts">
-import { Planner, createPlannerController } from 'smrt-planner';
+import { Planner, createPlannerController } from '@happyvertical/smrt-planner';
 
 const controller = createPlannerController();
 </script>
@@ -79,7 +79,7 @@ const controller = createPlannerController();
 ```
 
 ```ts
-import { commandTools, createPlannerController } from 'smrt-planner/commands';
+import { commandTools, createPlannerController } from '@happyvertical/smrt-planner/commands';
 
 const controller = createPlannerController();
 const result = controller.run({
@@ -98,11 +98,11 @@ is a compact read-only plan (a few KB) fit for a model prompt. Commands:
 `set_settings`, `set_policy`, `set_theme`, `reset_theme`, `rename_section`,
 `rename_item`, `hide`, `show`, `focus`, `export_cookbook`, `undo`.
 
-`smrt-planner` and `smrt-planner/commands` are Svelte source (runes) and JSON,
+`@happyvertical/smrt-planner` and `@happyvertical/smrt-planner/commands` are Svelte source (runes) and JSON,
 so consume them through Vite or another Svelte-compiling bundler. A plain Node
-server uses `smrt-planner/core` instead (command schemas, the assistant prompt,
+server uses `@happyvertical/smrt-planner/core` instead (command schemas, the assistant prompt,
 reply validation, the library catalog) and can serve the prebuilt app from
-`smrt-planner/app`; see `docs/inference-host.md`.
+`@happyvertical/smrt-planner/app`; see `docs/inference-host.md`.
 
 ## How the catalog is generated
 

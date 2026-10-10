@@ -20,16 +20,16 @@
   },
   "dependencies": {
     "@happyvertical/ai": "^0.103.1",
-    "@happyvertical/smrt-chat": "^0.55.8",
-    "@happyvertical/smrt-svelte": "^0.55.8",
-    "@happyvertical/smrt-ui": "^0.55.8",
+    "@happyvertical/smrt-chat": "^0.55.9",
+    "@happyvertical/smrt-svelte": "^0.55.9",
+    "@happyvertical/smrt-ui": "^0.55.9",
     "@happyvertical/speech": "^0.103.1",
     "@huggingface/transformers": "^4.3.0",
     "@mlc-ai/web-llm": "^0.2.85"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.3",
-    "@happyvertical/smrt-core": "^0.55.8",
+    "@happyvertical/smrt-core": "^0.55.9",
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "2.70.3",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",

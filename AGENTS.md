@@ -201,6 +201,12 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   contract and config are specified in `docs/inference-host.md`; change them together with that file.
   `AiState.configure` applies a config (the layout fetches it); Think's `where` reads In browser /
   Server / Your model: <name>.
+- `src/lib/kitchen/`: Send to kitchen (smrt#3750). `client.ts` is the `kitchen` block of
+  `planner.config.json` (`{ endpoint, token }`, parsed by `inference/config.ts` into
+  `ConfigResult.kitchen`) and `sendToKitchen` (POST the cookbook, `x-kitchen-token` header, outcome
+  never throws); `state.svelte.ts` is `kitchenState`, which `ExportPanel` reads to show **Send to
+  kitchen** first and Download second. Contract: `docs/inference-host.md`.
+- Package name is `@happyvertical/smrt-planner` (still `private`; publishing is a release decision).
 - `src/lib/ai/`: THINK (the language model), HEAR (voice typing) and SPEAK
   (read replies aloud with `speechSynthesis`) as one store. `state.svelte.ts`
   (`AiState`, singleton in `instance.ts`) owns the `AssistantSession`, the

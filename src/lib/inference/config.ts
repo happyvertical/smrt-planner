@@ -1,3 +1,5 @@
+import { type KitchenConfig, parseKitchenConfig } from '../kitchen/client.ts';
+
 /**
  * Where the assistant's language model runs, chosen at runtime by
  * `planner.config.json` (served next to the app, like a host page's own
@@ -52,6 +54,8 @@ export const CONFIG_FILE = 'planner.config.json';
 
 export interface ConfigResult {
   config: InferenceConfig;
+  /** The `kitchen` block (`smrt kitchen`), when the file has a usable one. */
+  kitchen?: KitchenConfig;
   /** Shown to the visitor when the config was unusable and `browser` is used instead. */
   notice?: string;
 }
@@ -147,7 +151,12 @@ export function validateInferenceConfig(value: unknown): ConfigResult {
 /** Parse the file's text. */
 export function parseInferenceConfig(text: string): ConfigResult {
   try {
-    return validateInferenceConfig(JSON.parse(text));
+    const value: unknown = JSON.parse(text);
+    const result = validateInferenceConfig(value);
+    const kitchen = isObject(value)
+      ? parseKitchenConfig(value.kitchen)
+      : undefined;
+    return kitchen ? { ...result, kitchen } : result;
   } catch {
     return fallback('it is not valid JSON');
   }

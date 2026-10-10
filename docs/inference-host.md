@@ -26,6 +26,10 @@ defaults. A mounted `Planner` can pass the same object as its `inference` prop
 - `byo.presets` is optional. Entries are built-in ids (`ollama`, `openrouter`,
   `openai`, `custom`) or full definitions
   `{ id, label, baseUrl, model?, keyless?, cors? }`. Default: all four.
+- `kitchen` (a sibling of `inference`, optional) is set by `smrt kitchen`:
+  `{ "endpoint": "/api/kitchen/cookbook", "token": "<one-time>" }`. With it the
+  export panel shows **Send to kitchen** (Download stays as the secondary
+  option); see "Send to kitchen" below. Unusable values are ignored.
 - Anything invalid (bad JSON, unknown mode, `host` without a usable endpoint,
   malformed presets) falls back to `browser` and shows a visible notice on the
   AI page. A 404 or an HTML fallback page is "no file", with no notice.
@@ -137,7 +141,7 @@ address, the model and the key).
   has the WebLLM provider, so the client is a single `fetch`
   (`src/lib/inference/openai.ts`).
 
-## Implementing the host in Node: `smrt-planner/core`
+## Implementing the host in Node: `@happyvertical/smrt-planner/core`
 
 `./commands` is Svelte source and cannot be imported by plain Node. `./core` is
 the rune-free part, compiled to plain JavaScript, with no Vite and no Svelte
@@ -168,7 +172,7 @@ Any OpenAI-compatible endpoint works (`BASE_URL` such as
 ```js
 import { createServer } from 'node:http';
 import { buildHostPrompt, parseHostReply, parseHostRequest, replySchema }
-  from 'smrt-planner/core';
+  from '@happyvertical/smrt-planner/core';
 
 const { BASE_URL, MODEL, API_KEY = '' } = process.env;
 
@@ -212,15 +216,15 @@ A model without `json_schema` support: drop `response_format` or use
 `{ type: 'json_object' }`; `parseHostReply` still repairs prose, cut-off JSON
 and unknown ids.
 
-### Serving the planner app: `smrt-planner/app`
+### Serving the planner app: `@happyvertical/smrt-planner/app`
 
 `pnpm package` also builds the prerendered static app into the package's
-`app/` directory. `appDir` from `smrt-planner/app` is its absolute path (Node
+`app/` directory. `appDir` from `@happyvertical/smrt-planner/app` is its absolute path (Node
 only; `appFile('x')` resolves one file in it). The files are also addressable as
 `smrt-planner/app/*`.
 
 ```js
-import { appDir } from 'smrt-planner/app';
+import { appDir } from '@happyvertical/smrt-planner/app';
 // serve appDir at `/` or at `/planner`; for example with sirv, express.static or serve-static
 ```
 
@@ -245,3 +249,20 @@ import { appDir } from 'smrt-planner/app';
   base is. Without the file the app runs in `browser` mode.
 - The directory is about 70 MB (the on-device model runtime is most of it);
   serve it with compression and long-lived caching for `_app/immutable/`.
+
+## Send to kitchen
+
+`smrt kitchen` (the `smrt` CLI) serves this app on `127.0.0.1`, answers the host
+contract above with the user's own AI provider, and announces itself with the
+`kitchen` block of `planner.config.json`. The page then `POST`s the cookbook:
+
+- `POST <endpoint>`, `content-type: application/json`, header
+  `x-kitchen-token: <token>`, body = the cookbook JSON (`cookbook/v1`).
+- `200 { "ok": true, "dir", "mode": "new" | "update", "installed", "added": [package names], "nextSteps": [commands] }`:
+  the project was written. The CLI prints the same steps and exits.
+- `4xx/5xx { "ok": false, "errors": [...] }`: nothing was applied; the CLI keeps
+  listening, so the visitor can change the cookbook and send again.
+
+The client is `src/lib/kitchen/client.ts` (`sendToKitchen`); the panel reads
+`kitchenState`. Change the contract here and in the CLI's
+`packages/cli/agents/kitchen.md` together.

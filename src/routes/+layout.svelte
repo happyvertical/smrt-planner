@@ -26,6 +26,7 @@ import { provideDataSource } from '$lib/data/context.ts';
 import { humanize } from '$lib/data/format.ts';
 import { createPlannerDataSource } from '$lib/data/planner-source.ts';
 import { loadInferenceConfig } from '$lib/inference/config.ts';
+import { kitchenState } from '$lib/kitchen/state.svelte.ts';
 import { libraryState } from '$lib/library/state.svelte.ts';
 import { appHref, appQuery, setBasePath } from '$lib/planner/app.svelte.ts';
 import { plannerRuntime } from '$lib/planner/instance.ts';
@@ -234,7 +235,10 @@ afterNavigate((navigation) => {
     // the first-visit decision waits for it.
     aiState.awaitConfig();
     aiState.hydrate(!!(recipeState.ids.length || recipeState.features.length));
-    void loadInferenceConfig(base).then((result) => aiState.configure(result));
+    void loadInferenceConfig(base).then((result) => {
+      aiState.configure(result);
+      kitchenState.configure(result.kitchen);
+    });
   }
   if (hasAppState(location.search)) selection.fromSearch(location.search);
   if (onPlanner()) {

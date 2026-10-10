@@ -3,6 +3,9 @@ import type { DataSource } from './source.ts';
 
 const KEY = Symbol('smrt-planner:data-source');
 
+/** The context key, for tests that render a component without the layout. */
+export const DATA_SOURCE_KEY: symbol = KEY;
+
 /** Provide the data source for every generated view below the caller. */
 export function provideDataSource(source: DataSource): DataSource {
   setContext(KEY, source);

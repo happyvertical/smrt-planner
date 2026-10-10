@@ -20,6 +20,13 @@ export {
 } from './inference/host.ts';
 export { createOpenAIChat, testConnection } from './inference/openai.ts';
 export {
+  type KitchenConfig,
+  type KitchenOutcome,
+  type KitchenResult,
+  parseKitchenConfig,
+  sendToKitchen,
+} from './kitchen/client.ts';
+export {
   createPlannerAssistant,
   type PlannerAssistant,
   type PlannerChatInference,

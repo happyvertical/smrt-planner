@@ -1,4 +1,4 @@
-import { effectiveRecipeDemo } from '@happyvertical/smrt-core';
+import { effectiveRecipeDemo } from '@happyvertical/smrt-core/recipe-demo';
 import type { Recipe } from '../../recipes/types.ts';
 import type { CatalogPackage } from '../types.ts';
 

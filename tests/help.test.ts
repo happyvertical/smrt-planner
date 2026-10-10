@@ -274,7 +274,9 @@ describe('every recipe', () => {
       expect(tasks.length).toBeGreaterThanOrEqual(2);
       // Every shown field has a glossary entry.
       for (const m of models) {
-        const shown = m.fields.filter((x) => x.visibility === 'basic');
+        const shown = m.fields.filter(
+          (x) => m.glossary !== false && x.visibility === 'basic',
+        );
         expect(glossary.filter((g) => g.model === m.name)).toHaveLength(
           shown.length,
         );
@@ -289,12 +291,33 @@ describe('every recipe', () => {
     }
   });
 
+  it('a recipe with no menu entry keeps the steps that name its fields', () => {
+    const recipe = recipes.find(
+      (r) => r.nav.length === 0 && (r.help?.fieldRefs.length ?? 0) > 0,
+    );
+    if (!recipe?.help) return;
+    const { models } = effective(recipe.id);
+    const shown = lines(renderHelp(recipe.help, models).blocks).join('\n');
+    const steps = (recipe.help.markdown.match(/\{field:/g) ?? []).length;
+    expect(steps).toBeGreaterThan(0);
+    expect(shown).not.toMatch(/\{field:/);
+    for (const ref of recipe.help.fieldRefs) {
+      const field = models.flatMap((m) => m.fields).find((f) => f.name === ref);
+      expect(shown, ref).toContain(field?.label);
+    }
+  });
+
   it('declares only fields the catalog models declare', () => {
     for (const recipe of recipes) {
-      // No menu entry, no list or form: nothing is shown to describe.
+      // No menu entry, no list or form: its fields resolve in the prose but
+      // nothing is shown to describe in a glossary.
       if (recipe.nav.length === 0) {
-        expect(effective(recipe.id).models).toEqual([]);
-        continue;
+        const { models } = effective(recipe.id);
+        expect(models.every((m) => m.glossary === false)).toBe(true);
+        expect(
+          renderHelp(recipe.help ?? { markdown: '', fieldRefs: [] }, models)
+            .glossary,
+        ).toEqual([]);
       }
       for (const id of recipe.models) {
         const catalog = getModelByQualifiedName(id)?.model;

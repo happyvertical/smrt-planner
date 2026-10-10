@@ -39,7 +39,11 @@ const isIcon = (name: string | undefined) =>
 
 describe('section icons and descriptions', () => {
   it('every suggested recipe section has a known icon and a description', () => {
-    const navSections = buildNavSections(recipes);
+    // A section none of whose recipes has a menu entry is not in the sidebar
+    // (the assistant, form customization), so it needs neither.
+    const navSections = buildNavSections(recipes).filter((section) =>
+      section.recipes.some((recipe) => recipe.nav.length > 0),
+    );
     expect(navSections.length).toBeGreaterThan(5);
     for (const section of navSections) {
       expect(isIcon(section.icon), `${section.id} icon`).toBe(true);

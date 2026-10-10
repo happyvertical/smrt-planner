@@ -127,11 +127,14 @@ export function helpModels(
   rows: readonly FieldPolicyRow[] = [],
 ): HelpModel[] {
   // A recipe with no menu entry has no list or form, so no field is shown to
-  // describe (the assistant's session records, a policy table).
-  if (recipe.nav.length === 0) return [];
+  // describe (the assistant's session records, a policy table). Its prose can
+  // still name fields (Form customization's steps), so they resolve; they just
+  // get no glossary entry.
+  const listed = recipe.nav.length > 0;
   return recipeModels(recipe).map(({ model }) => ({
     id: model.id,
     name: model.name,
+    ...(listed ? {} : { glossary: false }),
     // The curated local text first (it is plain language, checked by tests);
     // a field it does not cover falls back to the description its package
     // declares, which is how feature recipes' models get a glossary.

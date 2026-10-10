@@ -5,8 +5,8 @@ import {
   ColorSchemeToggle,
   ThemeSwitcher,
 } from '@happyvertical/smrt-ui/themes';
-import { cookbookStore } from '$lib/cookbook/store.svelte.ts';
-import { normalizeHex, THEME_FONTS } from '$lib/theme/theme.ts';
+import { cookbookStore } from '../cookbook/store.svelte.ts';
+import { normalizeHex, THEME_FONTS } from '../theme/theme.ts';
 
 interface ThemeSectionProps {
   /**

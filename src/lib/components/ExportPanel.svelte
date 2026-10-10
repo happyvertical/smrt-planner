@@ -1,15 +1,15 @@
 <script lang="ts">
 import { Button } from '@happyvertical/smrt-ui';
 import { Alert, ConfirmDialog } from '@happyvertical/smrt-ui/feedback';
-import { downloadCookbook } from '$lib/cookbook/file.ts';
-import { cookbookStore } from '$lib/cookbook/store.svelte.ts';
-import type { Cookbook } from '$lib/cookbook/types.ts';
-import { parseCookbookText } from '$lib/cookbook/validate.ts';
-import { useDataSource } from '$lib/data/context.ts';
-import { humanize } from '$lib/data/format.ts';
-import { getLibraryCookbook } from '$lib/library/index.ts';
-import { libraryState } from '$lib/library/state.svelte.ts';
-import { recipesById } from '$lib/recipes/index.ts';
+import { downloadCookbook } from '../cookbook/file.ts';
+import { cookbookStore } from '../cookbook/store.svelte.ts';
+import type { Cookbook } from '../cookbook/types.ts';
+import { parseCookbookText } from '../cookbook/validate.ts';
+import { useDataSource } from '../data/context.ts';
+import { humanize } from '../data/format.ts';
+import { getLibraryCookbook } from '../library/index.ts';
+import { libraryState } from '../library/state.svelte.ts';
+import { recipesById } from '../recipes/index.ts';
 
 let fileInput: HTMLInputElement | undefined = $state();
 /** A validated import waiting for the visitor's confirmation. */

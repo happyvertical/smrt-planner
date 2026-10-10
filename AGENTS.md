@@ -137,6 +137,32 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   widgets and unknown ids are dropped and reported (`CookbookResult.dropped`), only canonical
   non-empty overrides are kept. `page.ts`: the controller wiring (`override` reads
   `cookbookStore.overview(id)`, `onchange` writes `setOverview`), shared by the page and the tests.
+- `src/lib/planner/commands/`: the planner command set (#22), the one seam that changes the app.
+  `types.ts` (versioned commands, `PlanSnapshot`, typed errors), `schemas.ts` (`commandTools` /
+  `commandSchemas`: every command's input as JSON Schema, with recipe and cookbook ids as enums;
+  `checkSchema` is the ONE validator the controller runs, so schema and runtime cannot drift),
+  `execute.ts` (the handlers, reusing `assistant/change.ts` for recipes, settings and theme),
+  `snapshot.ts` (compact plan, size-tested), `host.ts` (what a controller needs from the app; every
+  part but `recipes` optional, a missing one answers `unsupported`), `controller.svelte.ts`
+  (`createPlannerController(store)`: `run`, `snapshot`, `subscribe`; Undo entries per command with a
+  stale check, `force` for a person's own Undo; `revision` follows the plan, not the focus). Commands
+  are `{ name, input }` and return `{ ok: true, snapshot, receipt, data? } | { ok: false, error }`.
+  Add a command: input type in `CommandInputs`, schema in `buildCommandTools`, handler in
+  `execute.ts`, its slice in `TOUCHES` if it can be undone, an `EXAMPLES` row in
+  `tests/planner-commands.test.ts`. The assistant (`assistant/transport.ts`) applies its changes as
+  these commands, and its theme Undo is the `undo` command. `instance.ts` is the app's controller;
+  `plannerRuntime` is how the layout lends it the data-source reset and section navigation.
+  `Planner.svelte` is the mountable component (props in `types.ts`); the static app's Planner page
+  renders the same one (`layout="shell"`, `persistence="host"`). `assistant.ts` builds a chat
+  transport over any controller. The stores (`cookbookStore`, `recipeState`) are still module
+  singletons: one planner per page.
+- Packaging: `pnpm package` (`svelte-package` with `tsconfig.package.json`, then `publint`) builds
+  `dist/` from `src/lib` with exports `.` and `./commands`. Code in `src/lib` imports relatively,
+  never through `$lib` (svelte-package does not resolve kit aliases here). The components that import
+  `$app/*` (section and model pages, the palette) are app-only: packaged but not reachable from
+  either entry, so `@sveltejs/kit` is an optional peer. Everything the entries reach reads its base
+  path from `planner/app.svelte.ts` (`setBasePath`), which the layout sets from `$app/paths`. The
+  package is `private` until its name and registry are decided; flipping that is the publish step.
 - `src/lib/planner/`: the package selection (`?p=a,b`, the only URL state;
   `app.svelte.ts` `appHref` carries it; `selection.svelte.ts`
   is the one store the control panel, navigation and a future chat assistant
@@ -210,6 +236,7 @@ pnpm typecheck
 pnpm lint
 pnpm test
 pnpm build
+pnpm package
 ```
 
 `pnpm build` writes the static site to `build/`.

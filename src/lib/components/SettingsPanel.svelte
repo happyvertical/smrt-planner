@@ -1,6 +1,6 @@
 <script lang="ts">
-import { cookbookStore } from '$lib/cookbook/store.svelte.ts';
-import type { AppSettings as Settings } from '$lib/settings/app-settings.ts';
+import { cookbookStore } from '../cookbook/store.svelte.ts';
+import type { AppSettings as Settings } from '../settings/app-settings.ts';
 import AppSettings from './AppSettings.svelte';
 import ThemeSection from './ThemeSection.svelte';
 

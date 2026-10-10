@@ -1,5 +1,6 @@
 import { isWebGPUAvailable, WebLLMProvider } from '@happyvertical/ai/local';
 import { getLibraryCookbook, libraryCookbooks } from '../library/index.ts';
+import type { PlannerController } from '../planner/commands/index.ts';
 import type { Recipe } from '../recipes/types.ts';
 import type { RecipeStore, SettingsStore, ThemeStore } from './change.ts';
 import {
@@ -45,6 +46,8 @@ export interface SessionOptions {
   settings?: SettingsStore;
   /** The app theme the assistant may change (with Undo); omit to leave it out. */
   theme?: ThemeStore;
+  /** The controller the assistant's changes go through; made from the slices if omitted. */
+  controller?: PlannerController;
   storage: Storage | null;
   /** Defaults to the browser's WebGPU check. */
   webgpu?: () => boolean;
@@ -80,7 +83,9 @@ export class AssistantSession {
     this.status = (options.webgpu ?? isWebGPUAvailable)()
       ? 'idle'
       : 'unsupported';
-    this.themeUndos = options.theme ? new ThemeUndos(options.theme) : null;
+    this.themeUndos = options.theme
+      ? new ThemeUndos(options.theme, options.controller)
+      : null;
     this.transport = createBrowserAssistantTransport({
       model: () => this.chat,
       store: options.store,
@@ -89,6 +94,7 @@ export class AssistantSession {
       offers: this.offers,
       settings: options.settings,
       theme: options.theme,
+      controller: options.controller,
       themeUndos: this.themeUndos ?? undefined,
       onReply: (text) => options.onReply?.(text),
     });

@@ -1,3 +1,4 @@
+import type { PlannerController } from '../planner/commands/index.ts';
 import type { ThemeSetting } from '../theme/theme.ts';
 import type { ThemeStore } from './change.ts';
 
@@ -8,6 +9,8 @@ export interface ThemeUndo {
   /** The theme before the assistant changed it (undefined was the default). */
   previous: ThemeSetting | undefined;
   status: UndoStatus;
+  /** The controller's undo id for the same change, when it made one. */
+  commandUndoId?: string;
 }
 
 /** What a chat message carries (`toolCallData`) to render its Undo. */
@@ -30,9 +33,20 @@ export class ThemeUndos {
   undos = $state<Record<string, ThemeUndo>>({});
   private counter = 0;
 
-  constructor(private readonly store: ThemeStore) {}
+  /**
+   * With a controller, Undo goes through its undo command (the path every
+   * other client uses); the theme the change replaced is the fallback when
+   * the controller no longer holds that entry.
+   */
+  constructor(
+    private readonly store: ThemeStore,
+    private readonly controller?: PlannerController,
+  ) {}
 
-  record(previous: ThemeSetting | undefined): ThemeUndoRef {
+  record(
+    previous: ThemeSetting | undefined,
+    commandUndoId?: string,
+  ): ThemeUndoRef {
     const id = `theme-undo-${++this.counter}`;
     this.undos[id] = {
       id,
@@ -40,6 +54,7 @@ export class ThemeUndos {
         ? structuredClone($state.snapshot(previous))
         : undefined,
       status: 'available',
+      ...(commandUndoId ? { commandUndoId } : {}),
     };
     return { kind: 'theme-undo', undoId: id };
   }
@@ -47,7 +62,14 @@ export class ThemeUndos {
   undo(id: string): void {
     const entry = this.undos[id];
     if (entry?.status !== 'available') return;
-    this.store.write(entry.previous);
+    // The person pressed Undo: later edits do not stop it, so it is forced.
+    const undone =
+      entry.commandUndoId &&
+      this.controller?.run({
+        name: 'undo',
+        input: { undoId: entry.commandUndoId, force: true },
+      }).ok;
+    if (!undone) this.store.write(entry.previous);
     entry.status = 'undone';
   }
 }

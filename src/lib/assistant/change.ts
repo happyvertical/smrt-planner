@@ -133,7 +133,7 @@ export function buildResponseSchema(
 }
 
 /** Keep only valid settings: circulating currency, tax 0-100, short terms. */
-function parseSettings(value: unknown): SettingsPatch {
+export function parseSettings(value: unknown): SettingsPatch {
   const out: SettingsPatch = {};
   if (!value || typeof value !== 'object' || Array.isArray(value)) return out;
   const object = value as Record<string, unknown>;
@@ -163,7 +163,7 @@ function parseSettings(value: unknown): SettingsPatch {
 }
 
 /** Keep only a known preset, a hex colour and light or dark. */
-function parseThemePatch(value: unknown): ThemePatch {
+export function parseThemePatch(value: unknown): ThemePatch {
   const out: ThemePatch = {};
   if (!value || typeof value !== 'object' || Array.isArray(value)) return out;
   const object = value as Record<string, unknown>;

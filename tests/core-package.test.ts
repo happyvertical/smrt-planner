@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -7,8 +7,9 @@ import { afterAll, beforeAll, expect, it } from 'vitest';
 
 /**
  * `./core` must run in plain Node: packaged by svelte-package (as `pnpm
- * package` does) and imported by a bare `node` process, with no Vite, no
- * Svelte compiler and no workspace resolution.
+ * package` does) and imported by a bare `node` process, with no Vite and no
+ * Svelte compiler. Its published dependencies resolve as they do after an
+ * install: `node_modules` is linked beside the output, nothing else is.
  */
 const root = resolve(import.meta.dirname, '..');
 let out = '';
@@ -29,6 +30,8 @@ beforeAll(() => {
     ],
     { cwd: root, stdio: 'pipe' },
   );
+  // After packaging, which clears the directory.
+  symlinkSync(join(root, 'node_modules'), join(out, 'node_modules'), 'dir');
 }, 120_000);
 
 afterAll(() => rmSync(out, { recursive: true, force: true }));
@@ -79,6 +82,46 @@ it('imports and runs under plain Node', () => {
   expect(result.last).toEqual({ role: 'user', content: 'I run a bakery' });
   expect(result.add).toEqual(['commerce.invoicing']);
   expect(result.schema).toBe('object');
+});
+
+it('runs the headless planner under plain Node', () => {
+  const entry = pathToFileURL(join(out, 'core', 'index.js')).href;
+  const script = `
+    const core = await import(${JSON.stringify(entry)});
+    const a = core.createHeadlessPlanner();
+    const b = core.createHeadlessPlanner();
+    const added = a.run({ name: 'add_cookbook', input: { id: 'bakery' } });
+    const bad = a.run({ name: 'add_recipes', input: { ids: ['nope'] } });
+    const tax = a.run({ name: 'set_settings', input: { taxRate: 13 } });
+    const undone = a.undo();
+    const exported = a.run({ name: 'export_cookbook', input: {} });
+    console.log(JSON.stringify({
+      added: added.ok && added.receipt.changed,
+      bad: bad.ok ? 'ok' : bad.error.code,
+      tax: tax.ok && tax.snapshot.settings.taxRate,
+      undone: undone.ok && undone.snapshot.settings.taxRate,
+      recipes: a.snapshot().recipes.length,
+      other: b.snapshot().recipes.length,
+      doc: a.cookbook().recipes.length,
+      file: exported.ok && exported.data.fileName,
+      same: exported.ok && exported.data.text === JSON.stringify(a.cookbook(), null, 2) + '\\n',
+    }));
+  `;
+  const stdout = execFileSync(
+    process.execPath,
+    ['--input-type=module', '-e', script],
+    { cwd: out, encoding: 'utf8' },
+  );
+  const result = JSON.parse(stdout.trim().split('\n').at(-1) ?? '{}');
+  expect(result.added).toBe(true);
+  expect(result.bad).toBe('invalid_input');
+  expect(result.tax).toBe(13);
+  expect(result.undone).toBe(0);
+  expect(result.recipes).toBeGreaterThan(0);
+  expect(result.other).toBe(0);
+  expect(result.doc).toBe(result.recipes);
+  expect(result.file).toBe('my-app.cookbook.json');
+  expect(result.same).toBe(true);
 });
 
 it('locates the packaged app directory', async () => {

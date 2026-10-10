@@ -155,7 +155,17 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `Planner.svelte` is the mountable component (props in `types.ts`); the static app's Planner page
   renders the same one (`layout="shell"`, `persistence="host"`). `assistant.ts` builds a chat
   transport over any controller. The stores (`cookbookStore`, `recipeState`) are still module
-  singletons: one planner per page.
+  singletons: one planner per page. The rules are not in the controller: `runner.ts`
+  (`createCommandRunner`: validation, revisions, undo, receipts, snapshot, no runes) and
+  `execute.ts` run over a `PlannerHost`; `controller.svelte.ts` is the thin reactive wrapper
+  (`$state` cells, one `$effect` for manual edits) and `plain-host.ts` the plain-object host the
+  headless planner (`core/headless.ts`, `createHeadlessPlanner`) uses. The recipe-owned data
+  rules are pure (`recipes/plan-data.ts`), `cookbook/assemble.ts` builds the document,
+  `cookbook/parse.ts` checks it with page customisations injected (`validate.ts` supplies the
+  browser registry; smrt-svelte's core widgets import `.svelte`, so a Node host drops `overviews`
+  and says so), `library/document.ts` is the Node-safe half of applying a library cookbook. Add a
+  rule in one of those, never in both wrappers; `tests/headless-planner.test.ts` runs one script
+  through both controllers and compares everything.
 - Packaging: `pnpm package` (`svelte-package` with `tsconfig.package.json`, then `publint`) builds
   `dist/` from `src/lib` with exports `.`, `./commands`, `./core` and `./app`, then
   `scripts/package-app.ts` builds the static app into `app/`. Code in `src/lib` imports relatively,

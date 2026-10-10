@@ -21,9 +21,8 @@ import {
   exportFileName,
   serializeCookbook,
 } from '../../cookbook/file.ts';
-import { parseCookbook } from '../../cookbook/validate.ts';
 import { humanize } from '../../data/format.ts';
-import { isCookbookEmpty } from '../../library/apply.ts';
+import { isCookbookEmpty } from '../../library/document.ts';
 import { getLibraryCookbook } from '../../library/index.ts';
 import { cookbookNavGroups } from '../../library/menu.ts';
 import { recipes, recipesById } from '../../recipes/index.ts';
@@ -231,7 +230,8 @@ const handlers: { [N in CommandName]?: Handler<N> } = {
   },
   import_cookbook(host, { document, replace }) {
     if (!host.cookbook) return unsupported('whole-app cookbook');
-    const result = parseCookbook(document);
+    if (!host.cookbook) return unsupported('whole-app cookbook');
+    const result = host.cookbook.parse(document);
     if (!result.ok) return fail('invalid_input', result.error);
     if (!replace && !isEmpty(host)) {
       return fail('confirmation_required', REPLACE_NEEDED);

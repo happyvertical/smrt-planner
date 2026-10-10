@@ -8,10 +8,13 @@
  * - `replySchema` / `buildReplySchema`: the JSON Schema of the model's answer;
  * - `parseHostReply`: validate that answer into the response body;
  * - `parseHostRequest`: validate the request body;
- * - the library catalog (recipes and cookbooks) the prompt is built from.
+ * - the library catalog (recipes and cookbooks) the prompt is built from;
+ * - `createHeadlessPlanner`: the command set over a plain-object plan (many may
+ *   coexist), the same commands, validation and snapshots as the browser
+ *   controller, which shares its command runner.
  *
- * The controller (`createPlannerController`) is not here: it drives the UI's
- * stores and lives in `./commands` (Svelte source).
+ * The browser controller (`createPlannerController`) is not here: it drives
+ * the UI's stores and lives in `./commands` (Svelte source).
  *
  * @module
  */
@@ -60,6 +63,11 @@ export {
   recipes,
   recipesById,
 } from './catalog.ts';
+export {
+  createHeadlessPlanner,
+  type HeadlessPlanner,
+  type HeadlessPlannerOptions,
+} from './headless.ts';
 export {
   buildHostPrompt,
   type HostPrompt,

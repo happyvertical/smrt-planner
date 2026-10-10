@@ -144,7 +144,8 @@ address, the model and the key).
 ## Implementing the host in Node: `@happyvertical/smrt-planner/core`
 
 `./commands` is Svelte source and cannot be imported by plain Node. `./core` is
-the rune-free part, compiled to plain JavaScript, with no Vite and no Svelte
+the rune-free part (including `createHeadlessPlanner`, the command set over a
+plain-object plan: see below), compiled to plain JavaScript, with no Vite and no Svelte
 compiler involved. It has everything a server needs to speak this contract:
 
 | Export | Use |
@@ -154,6 +155,7 @@ compiler involved. It has everything a server needs to speak this contract:
 | `replySchema` / `buildReplySchema(catalog?)` | JSON Schema of the model's answer (ids are enums) |
 | `parseHostReply(text, catalog?)` | `{ ok, reply, issues }`; `reply` is the response body |
 | `commandTools`, `commandSchemas`, `checkSchema` | the 19 commands as tool definitions |
+| `createHeadlessPlanner(cookbook?, { catalog? })` | one plan in plain Node: `run`, `snapshot`, `cookbook`, `undo`, `subscribe` |
 | `recipes`, `libraryCookbooks`, `defaultCatalog` | the catalog the prompt is built from |
 | `PlanSnapshot`, `CommandInputs`, `HostRequest`, `HostReply` ... | types |
 
@@ -163,6 +165,26 @@ settings, theme and recipes) plus a host-only section naming the `commands` and
 the menu ids. `system` is separate, so it fits both API styles: OpenAI-style,
 send `[{ role: 'system', content: system }, ...messages]`; Anthropic-style, pass
 `system` and `messages` as they are.
+
+### Holding a plan: `createHeadlessPlanner`
+
+```js
+import { createHeadlessPlanner } from '@happyvertical/smrt-planner/core';
+
+const plan = createHeadlessPlanner();           // or (cookbookDocument, { catalog })
+plan.run({ name: 'add_cookbook', input: { id: 'bakery' } }); // { ok, snapshot, receipt }
+plan.snapshot();   // the same PlanSnapshot the browser controller returns
+plan.cookbook();   // the plan as a cookbook document
+plan.undo();       // undo the latest undoable change
+```
+
+The commands, input schemas, validation, error codes and receipts are the
+browser controller's: both run the same command runner, and the parity test runs
+one script through each. State is a plain object, so any number of plans may
+coexist in one process. Two differences: it keeps no sample records, and a
+document's `overviews` (page customisations) are dropped with a notice, because
+checking them needs smrt-svelte's widget registry, which loads Svelte
+components. `catalog` limits the recipe and cookbook ids a plan accepts.
 
 ### Minimal reference server
 

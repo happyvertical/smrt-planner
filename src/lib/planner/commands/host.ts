@@ -4,7 +4,7 @@ import type {
   SettingsStore,
   ThemeStore,
 } from '../../assistant/change.ts';
-import type { Cookbook } from '../../cookbook/types.ts';
+import type { Cookbook, CookbookResult } from '../../cookbook/types.ts';
 import type { LibraryCookbook } from '../../library/types.ts';
 import type { FieldPolicyRow } from '../../recipes/policy.ts';
 import type { ExposureSurface } from '../../recipes/types.ts';
@@ -53,6 +53,8 @@ export interface PlannerHost {
   /** The whole document, for cookbook, import and export commands. */
   cookbook?: {
     snapshot(): Cookbook;
+    /** The strict check an import runs; the host decides how page customisations are checked. */
+    parse(input: unknown): CookbookResult;
     /** Replace everything; the caller already validated the document. */
     replace(cookbook: Cookbook): void;
     /** Apply a library cookbook the way the Cookbooks tab does; an error or null. */

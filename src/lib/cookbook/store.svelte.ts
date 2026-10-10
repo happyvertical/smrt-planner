@@ -12,6 +12,7 @@ import {
   writeSettings,
 } from '../settings/app-settings.ts';
 import { compactTheme, type ThemeSetting } from '../theme/theme.ts';
+import { assembleCookbook } from './assemble.ts';
 import { cookbookFromLegacySearch, hasLegacyState } from './legacy.ts';
 import {
   BACKUP_KEY,
@@ -22,12 +23,7 @@ import {
   saveCookbook,
   writeKey,
 } from './storage.ts';
-import {
-  COOKBOOK_SCHEMA,
-  COOKBOOK_VERSION,
-  type Cookbook,
-  type CookbookResult,
-} from './types.ts';
+import type { Cookbook, CookbookResult } from './types.ts';
 import { parseCookbookText } from './validate.ts';
 
 /** Where the planner's AppShell keeps its own settings (panel states, sizes). */
@@ -80,23 +76,11 @@ export class CookbookStore {
   private timer: ReturnType<typeof setTimeout> | undefined;
 
   snapshot(): Cookbook {
-    const cookbook: Cookbook = {
-      $schema: COOKBOOK_SCHEMA,
-      version: COOKBOOK_VERSION,
-      ...recipeState.snapshot(),
-    };
-    if (this.layout) cookbook.layout = this.layout;
-    const theme = compactTheme(
-      $state.snapshot(this.theme) as ThemeSetting | undefined,
-    );
-    if (theme) cookbook.theme = theme;
-    const ids = Object.keys(this.overviews).sort();
-    if (ids.length) {
-      cookbook.overviews = Object.fromEntries(
-        ids.map((id) => [id, this.overviews[id]]),
-      );
-    }
-    return cookbook;
+    return assembleCookbook(recipeState.data, {
+      layout: this.layout,
+      theme: $state.snapshot(this.theme) as ThemeSetting | undefined,
+      overviews: this.overviews,
+    });
   }
 
   /** A page's stored override, or `null` when it is on its defaults. */

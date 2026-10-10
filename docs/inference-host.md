@@ -136,3 +136,112 @@ address, the model and the key).
   `openai`, Anthropic and AWS SDKs, and its browser-safe `./local` entry only
   has the WebLLM provider, so the client is a single `fetch`
   (`src/lib/inference/openai.ts`).
+
+## Implementing the host in Node: `smrt-planner/core`
+
+`./commands` is Svelte source and cannot be imported by plain Node. `./core` is
+the rune-free part, compiled to plain JavaScript, with no Vite and no Svelte
+compiler involved. It has everything a server needs to speak this contract:
+
+| Export | Use |
+| --- | --- |
+| `parseHostRequest(body)` | check the POST body: `{ ok, request }` or `{ ok: false, error }` |
+| `buildHostPrompt({ message, snapshot, history?, catalog? })` | `{ system, messages }` for one chat call |
+| `replySchema` / `buildReplySchema(catalog?)` | JSON Schema of the model's answer (ids are enums) |
+| `parseHostReply(text, catalog?)` | `{ ok, reply, issues }`; `reply` is the response body |
+| `commandTools`, `commandSchemas`, `checkSchema` | the 19 commands as tool definitions |
+| `recipes`, `libraryCookbooks`, `defaultCatalog` | the catalog the prompt is built from |
+| `PlanSnapshot`, `CommandInputs`, `HostRequest`, `HostReply` ... | types |
+
+`buildHostPrompt` is the browser assistant's own prompt (same wording and worked
+examples, focused on the recipes the message matches, with the snapshot's
+settings, theme and recipes) plus a host-only section naming the `commands` and
+the menu ids. `system` is separate, so it fits both API styles: OpenAI-style,
+send `[{ role: 'system', content: system }, ...messages]`; Anthropic-style, pass
+`system` and `messages` as they are.
+
+### Minimal reference server
+
+Any OpenAI-compatible endpoint works (`BASE_URL` such as
+`http://localhost:11434/v1` for Ollama, `MODEL` its model name):
+
+```js
+import { createServer } from 'node:http';
+import { buildHostPrompt, parseHostReply, parseHostRequest, replySchema }
+  from 'smrt-planner/core';
+
+const { BASE_URL, MODEL, API_KEY = '' } = process.env;
+
+async function chat(req) {
+  const { system, messages } = buildHostPrompt(req);
+  const res = await fetch(`${BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${API_KEY}` },
+    body: JSON.stringify({
+      model: MODEL,
+      temperature: 0,
+      messages: [{ role: 'system', content: system }, ...messages],
+      response_format: { type: 'json_schema', json_schema: { name: 'turn', schema: replySchema } },
+    }),
+  });
+  if (!res.ok) throw new Error(`model answered ${res.status}`);
+  return (await res.json()).choices[0].message.content;
+}
+
+createServer(async (req, res) => {
+  if (req.method !== 'POST' || req.url !== '/api/planner/chat') {
+    return res.writeHead(404).end();
+  }
+  let body = '';
+  for await (const part of req) body += part;
+  let parsed;
+  try { parsed = parseHostRequest(JSON.parse(body)); } catch { parsed = { ok: false, error: 'bad JSON' }; }
+  if (!parsed.ok) return res.writeHead(400).end(parsed.error);
+  try {
+    const { reply, issues } = parseHostReply(await chat(parsed.request));
+    if (issues.length) console.warn('planner reply:', issues);
+    res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(reply));
+  } catch (error) {
+    console.error(error);
+    res.writeHead(502).end();
+  }
+}).listen(8787);
+```
+
+A model without `json_schema` support: drop `response_format` or use
+`{ type: 'json_object' }`; `parseHostReply` still repairs prose, cut-off JSON
+and unknown ids.
+
+### Serving the planner app: `smrt-planner/app`
+
+`pnpm package` also builds the prerendered static app into the package's
+`app/` directory. `appDir` from `smrt-planner/app` is its absolute path (Node
+only; `appFile('x')` resolves one file in it). The files are also addressable as
+`smrt-planner/app/*`.
+
+```js
+import { appDir } from 'smrt-planner/app';
+// serve appDir at `/` or at `/planner`; for example with sirv, express.static or serve-static
+```
+
+- **Base path.** The app is built with SvelteKit's relative paths: every asset
+  and link in each prerendered page is relative, and the page works out its base
+  from `location` in the browser. The same files serve at `/`, at `/planner/`
+  or anywhere else, with no rebuild or setting. Serve `index.html` for
+  directories (every route is `<dir>/index.html`, trailing slash always) and
+  redirect `/planner` to `/planner/`.
+- **`404.html`** is the SPA fallback for paths that were not prerendered; it is
+  built for base `/`, so at a sub-path serve it only if you built from source
+  with `BASE_PATH=/planner pnpm build`, or answer unknown paths with `404`.
+- **Config.** The app fetches `<base>/planner.config.json` at startup. Answer
+  that one path yourself (or copy `appDir` to a writable directory and add the
+  file) to choose the inference mode:
+
+  ```json
+  { "inference": { "mode": "host", "host": { "endpoint": "/api/planner/chat" } } }
+  ```
+
+  `endpoint` is a path on the page's own origin, so it is the same whatever the
+  base is. Without the file the app runs in `browser` mode.
+- The directory is about 70 MB (the on-device model runtime is most of it);
+  serve it with compression and long-lived caching for `_app/immutable/`.

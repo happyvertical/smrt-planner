@@ -98,8 +98,11 @@ is a compact read-only plan (a few KB) fit for a model prompt. Commands:
 `set_settings`, `set_policy`, `set_theme`, `reset_theme`, `rename_section`,
 `rename_item`, `hide`, `show`, `focus`, `export_cookbook`, `undo`.
 
-The package is Svelte source (runes) and JSON, so consume it through Vite or
-another Svelte-compiling bundler.
+`smrt-planner` and `smrt-planner/commands` are Svelte source (runes) and JSON,
+so consume them through Vite or another Svelte-compiling bundler. A plain Node
+server uses `smrt-planner/core` instead (command schemas, the assistant prompt,
+reply validation, the library catalog) and can serve the prebuilt app from
+`smrt-planner/app`; see `docs/inference-host.md`.
 
 ## How the catalog is generated
 

@@ -157,12 +157,22 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   transport over any controller. The stores (`cookbookStore`, `recipeState`) are still module
   singletons: one planner per page.
 - Packaging: `pnpm package` (`svelte-package` with `tsconfig.package.json`, then `publint`) builds
-  `dist/` from `src/lib` with exports `.` and `./commands`. Code in `src/lib` imports relatively,
+  `dist/` from `src/lib` with exports `.`, `./commands`, `./core` and `./app`, then
+  `scripts/package-app.ts` builds the static app into `app/`. Code in `src/lib` imports relatively,
   never through `$lib` (svelte-package does not resolve kit aliases here). The components that import
   `$app/*` (section and model pages, the palette) are app-only: packaged but not reachable from
   either entry, so `@sveltejs/kit` is an optional peer. Everything the entries reach reads its base
   path from `planner/app.svelte.ts` (`setBasePath`), which the layout sets from `$app/paths`. The
   package is `private` until its name and registry are decided; flipping that is the publish step.
+- `src/lib/core/`: the `./core` export, for plain Node servers (no Vite, no runes, no `.svelte`).
+  `catalog.ts` (recipes, library cookbooks, `defaultCatalog`), `prompt.ts` (`buildHostPrompt`, which
+  calls the browser assistant's `buildSystemPrompt` and adds the host-only commands section: never a
+  second copy of the prompt), `reply.ts` (`replySchema`, `parseHostReply`), `request.ts`
+  (`parseHostRequest`), `app.ts` (`appDir`, the `./app` export; the only Node-built-in module here).
+  Everything it imports must stay rune-free and import JSON with `with { type: 'json' }`;
+  `tests/core-package.test.ts` packages with svelte-package and runs it under bare `node`.
+  `theme/presets.ts` is a plain copy of smrt-ui's preset list (its `./themes` entry loads `.svelte`),
+  held equal by `tests/theme-presets.test.ts`.
 - `src/lib/planner/`: the package selection (`?p=a,b`, the only URL state;
   `app.svelte.ts` `appHref` carries it; `selection.svelte.ts`
   is the one store the control panel, navigation and a future chat assistant

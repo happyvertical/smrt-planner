@@ -1,3 +1,7 @@
+import '@happyvertical/smrt-ui/styles/tokens.css';
+import '@happyvertical/smrt-ui/themes/styles/all.css';
+import '@happyvertical/smrt-ui/themes/styles/base.css';
+import '@happyvertical/smrt-ui/themes/styles/fonts.css';
 import { mount } from 'svelte';
 import HostPlanner from '../lib/planner/host/HostPlanner.svelte';
 import type { CallKitchenTool, HostSession } from '../lib/planner/host/session.svelte.ts';

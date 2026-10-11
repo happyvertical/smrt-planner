@@ -225,7 +225,14 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   is `kitchenState` (`config` needs endpoint and token; `needsLink` is endpoint without token), which
   `ExportPanel` reads to show **Send to kitchen** first and Download second, or the missing-link
   notice. Contract: `docs/inference-host.md`; the server side is smrt `packages/cli/agents/kitchen.md`.
-- Package name is `@happyvertical/smrt-planner` (still `private`; publishing is a release decision).
+- Package name is `@happyvertical/smrt-planner`, still `private`. Publishing to npm.happyvertical.com
+  follows the sdk and smrt convention (publish token only in a `release` environment whose deployment
+  rule allows `main`, registry host a literal in the workflow, `NPM_HAPPYVERTICAL_PUBLISH_TOKEN` as
+  the org secret, npmjs as a best-effort mirror with `NPM_TOKEN`). This repo has no `release`
+  environment, no ruleset and no publish workflow, so `private` stays until those exist; then add a
+  single-package workflow (the sdk/smrt ones are changeset/monorepo based and use scripts and a
+  `setup-environment` action this repo lacks), drop `private`, and set the version (0.0.1, about
+  20 MB packed, 84 MB unpacked, 815 files). Never publish from a workstation.
 - `src/lib/ai/`: THINK (the language model), HEAR (voice typing) and SPEAK
   (read replies aloud with `speechSynthesis`) as one store. `state.svelte.ts`
   (`AiState`, singleton in `instance.ts`) owns the `AssistantSession`, the

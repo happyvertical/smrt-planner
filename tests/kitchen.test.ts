@@ -9,21 +9,34 @@ import {
   parseKitchenConfig,
   sendToKitchen,
 } from '../src/lib/kitchen/client.ts';
+import { readKitchenFragment } from '../src/lib/kitchen/fragment.ts';
 import { KitchenState, kitchenState } from '../src/lib/kitchen/state.svelte.ts';
 import { startStub } from './stub-server.ts';
 
-const kitchen = { endpoint: '/api/kitchen/cookbook', token: 'abc123' };
+const endpoint = { endpoint: '/api/kitchen/cookbook' };
+const kitchen = { ...endpoint, token: 'abc123' };
 
 describe('the kitchen block of planner.config.json', () => {
   it('is read next to the inference block', () => {
     const result = parseInferenceConfig(
       JSON.stringify({
         inference: { mode: 'host', host: { endpoint: '/api/planner/chat' } },
-        kitchen,
+        kitchen: endpoint,
       }),
     );
     expect(result.config.mode).toBe('host');
-    expect(result.kitchen).toEqual(kitchen);
+    expect(result.kitchen).toEqual(endpoint);
+  });
+
+  it('never yields a token, even from a server that still sends one', () => {
+    const result = parseInferenceConfig(
+      JSON.stringify({ kitchen: { ...endpoint, token: 'leaked-token' } }),
+    );
+    expect(result.kitchen).toEqual(endpoint);
+    expect(JSON.stringify(result)).not.toContain('leaked-token');
+    expect(parseKitchenConfig({ ...endpoint, token: 'x' })).not.toHaveProperty(
+      'token',
+    );
   });
 
   it('is absent, with no notice, when the file has none', () => {
@@ -33,8 +46,6 @@ describe('the kitchen block of planner.config.json', () => {
   });
 
   it.each([
-    ['a missing token', { endpoint: '/x' }],
-    ['a blank token', { endpoint: '/x', token: ' ' }],
     ['a missing endpoint', { token: 't' }],
     [
       'a protocol-relative endpoint',
@@ -140,7 +151,7 @@ describe('KitchenState', () => {
     const state = new KitchenState();
     await state.send(cookbookStore.snapshot());
     expect(state.status).toBe('idle');
-    state.configure(kitchen);
+    state.configure(endpoint, 'abc123');
     await state.send(
       cookbookStore.snapshot(),
       (async () =>
@@ -160,6 +171,52 @@ describe('KitchenState', () => {
 const context = new Map<unknown, unknown>();
 context.set(DATA_SOURCE_KEY, {});
 
+describe('the kitchen token in the address fragment', () => {
+  it('reads it, strips it, and keeps other parameters', () => {
+    expect(readKitchenFragment('#kitchen=abc_DEF-123.~x')).toEqual({
+      token: 'abc_DEF-123.~x',
+      present: true,
+      hash: '',
+    });
+    expect(readKitchenFragment('#a=1&kitchen=tok&b=2')).toEqual({
+      token: 'tok',
+      present: true,
+      hash: '#a=1&b=2',
+    });
+    expect(readKitchenFragment('kitchen=tok')).toMatchObject({ token: 'tok' });
+  });
+
+  it('leaves an address with no kitchen parameter alone', () => {
+    expect(readKitchenFragment('')).toEqual({ present: false, hash: '' });
+    expect(readKitchenFragment('#')).toEqual({ present: false, hash: '' });
+    expect(readKitchenFragment('#section-2')).toEqual({
+      present: false,
+      hash: '#section-2',
+    });
+  });
+
+  it.each([
+    ['empty', '#kitchen='],
+    ['with a space', '#kitchen=a%20b'],
+    ['with a slash', '#kitchen=a%2Fb'],
+    ['too long', `#kitchen=${'a'.repeat(257)}`],
+  ])('strips a token that is %s but does not use it', (_name, hash) => {
+    const read = readKitchenFragment(hash);
+    expect(read.token).toBeUndefined();
+    expect(read.present).toBe(true);
+    expect(read.hash).toBe('');
+  });
+
+  it('reads only the kitchen key, and the first of a repeated one', () => {
+    expect(readKitchenFragment('#kitchenx=1')).toMatchObject({
+      present: false,
+    });
+    const twice = readKitchenFragment('#kitchen=one&kitchen=two');
+    expect(twice.token).toBe('one');
+    expect(twice.hash).toBe('');
+  });
+});
+
 describe('the export panel', () => {
   beforeEach(() => kitchenState.configure(undefined));
 
@@ -171,7 +228,7 @@ describe('the export panel', () => {
   });
 
   it('puts Send to kitchen first and keeps Download as the secondary option', () => {
-    kitchenState.configure(kitchen);
+    kitchenState.configure(endpoint, kitchen.token);
     const { body } = render(ExportPanel, { context });
     expect(body).toContain('Send to kitchen');
     expect(body).toContain('Download cookbook');
@@ -179,5 +236,17 @@ describe('the export panel', () => {
       body.indexOf('Download cookbook'),
     );
     expect(body).not.toContain('Export cookbook');
+    expect(body).not.toContain('needs its link');
+  });
+
+  it('says what is missing when the page has no token, and offers only Export', () => {
+    kitchenState.configure(endpoint);
+    expect(kitchenState.config).toBeUndefined();
+    expect(kitchenState.needsLink).toBe(true);
+    const { body } = render(ExportPanel, { context });
+    expect(body).toContain('needs its link');
+    expect(body).toContain('#kitchen=');
+    expect(body).toContain('Export cookbook');
+    expect(body).not.toContain('Send to kitchen</button>');
   });
 });

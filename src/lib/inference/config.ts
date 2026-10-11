@@ -1,4 +1,4 @@
-import { type KitchenConfig, parseKitchenConfig } from '../kitchen/client.ts';
+import { type KitchenEndpoint, parseKitchenConfig } from '../kitchen/client.ts';
 
 /**
  * Where the assistant's language model runs, chosen at runtime by
@@ -55,7 +55,7 @@ export const CONFIG_FILE = 'planner.config.json';
 export interface ConfigResult {
   config: InferenceConfig;
   /** The `kitchen` block (`smrt kitchen`), when the file has a usable one. */
-  kitchen?: KitchenConfig;
+  kitchen?: KitchenEndpoint;
   /** Shown to the visitor when the config was unusable and `browser` is used instead. */
   notice?: string;
 }

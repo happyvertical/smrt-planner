@@ -1,6 +1,7 @@
 import type { Cookbook } from '../cookbook/types.ts';
 import {
   type KitchenConfig,
+  type KitchenEndpoint,
   type KitchenOutcome,
   sendToKitchen,
 } from './client.ts';
@@ -9,12 +10,32 @@ export type KitchenStatus = 'idle' | 'sending' | 'sent' | 'failed';
 
 /** Whether a kitchen is listening, and the state of the current send. */
 export class KitchenState {
-  config = $state<KitchenConfig | undefined>(undefined);
+  /** Where the kitchen listens, from `planner.config.json`. */
+  endpoint = $state<string | undefined>(undefined);
+  /** The one-time token, from the address's fragment. Memory only. */
+  private token = $state<string | undefined>(undefined);
   status = $state<KitchenStatus>('idle');
   outcome = $state<KitchenOutcome | undefined>(undefined);
 
-  configure(config: KitchenConfig | undefined): void {
-    this.config = config;
+  /** A kitchen is listening and this page holds its token: sending is possible. */
+  get config(): KitchenConfig | undefined {
+    return this.endpoint && this.token
+      ? { endpoint: this.endpoint, token: this.token }
+      : undefined;
+  }
+
+  /**
+   * A kitchen is listening but this page was opened without its token (the
+   * address had no `#kitchen=` fragment, or the page was reloaded after the
+   * fragment was removed): the person needs the address `smrt kitchen` printed.
+   */
+  get needsLink(): boolean {
+    return !!this.endpoint && !this.token;
+  }
+
+  configure(config: KitchenEndpoint | undefined, token?: string): void {
+    this.endpoint = config?.endpoint;
+    this.token = config ? token : undefined;
     this.status = 'idle';
     this.outcome = undefined;
   }

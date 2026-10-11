@@ -21,11 +21,17 @@ export {
 export { createOpenAIChat, testConnection } from './inference/openai.ts';
 export {
   type KitchenConfig,
+  type KitchenEndpoint,
   type KitchenOutcome,
   type KitchenResult,
   parseKitchenConfig,
   sendToKitchen,
 } from './kitchen/client.ts';
+export {
+  KITCHEN_FRAGMENT_KEY,
+  type KitchenFragment,
+  readKitchenFragment,
+} from './kitchen/fragment.ts';
 export {
   createPlannerAssistant,
   type PlannerAssistant,

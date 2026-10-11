@@ -120,6 +120,14 @@ function confirmReset() {
     />
   </div>
 
+  {#if kitchenState.needsLink}
+    <Alert variant="info" title="Send to kitchen needs its link">
+      The kitchen is running, but this page was opened without its one-time
+      token. Open the address <code>smrt kitchen</code> printed (it ends in
+      <code>#kitchen=…</code>), or download the cookbook and run
+      <code>smrt cookbook apply</code> on the file.
+    </Alert>
+  {/if}
   {#if error}
     <Alert variant="error" title="Import failed">{error}</Alert>
   {/if}

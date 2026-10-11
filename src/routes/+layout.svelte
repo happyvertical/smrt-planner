@@ -26,6 +26,10 @@ import { provideDataSource } from '$lib/data/context.ts';
 import { humanize } from '$lib/data/format.ts';
 import { createPlannerDataSource } from '$lib/data/planner-source.ts';
 import { loadInferenceConfig } from '$lib/inference/config.ts';
+import {
+  type KitchenFragment,
+  readKitchenFragment,
+} from '$lib/kitchen/fragment.ts';
 import { kitchenState } from '$lib/kitchen/state.svelte.ts';
 import { libraryState } from '$lib/library/state.svelte.ts';
 import { appHref, appQuery, setBasePath } from '$lib/planner/app.svelte.ts';
@@ -208,6 +212,7 @@ const navGroups: ShellNavGroup[] = $derived([
 // prerendered, so both are only read in the browser, after navigation.
 let ready = false;
 let hydrated = false;
+let kitchenFragment: KitchenFragment = { present: false, hash: '' };
 
 const onPlanner = () => page.route.id === '/';
 
@@ -235,9 +240,14 @@ afterNavigate((navigation) => {
     // the first-visit decision waits for it.
     aiState.awaitConfig();
     aiState.hydrate(!!(recipeState.ids.length || recipeState.features.length));
+    // `smrt kitchen` opens the page with its one-time token in the fragment
+    // (`#kitchen=<token>`), never in planner.config.json. Read it now, keep it
+    // in memory, and remove it from the address in `sync` below.
+    kitchenFragment = readKitchenFragment(location.hash);
+    const kitchenToken = kitchenFragment.token;
     void loadInferenceConfig(base).then((result) => {
       aiState.configure(result);
-      kitchenState.configure(result.kitchen);
+      kitchenState.configure(result.kitchen, kitchenToken);
     });
   }
   if (hasAppState(location.search)) selection.fromSearch(location.search);
@@ -254,6 +264,14 @@ afterNavigate((navigation) => {
   // started, and replaceState throws until then, so wait one microtask.
   const sync = () => {
     ready = true;
+    // The token is out of the address (and its history entry) before anything
+    // else reads or rewrites the URL.
+    if (kitchenFragment.present) {
+      replaceState(
+        `${location.pathname}${location.search}${kitchenFragment.hash}`,
+        page.state,
+      );
+    }
     syncUrl();
   };
   if (navigation.type === 'enter') queueMicrotask(sync);

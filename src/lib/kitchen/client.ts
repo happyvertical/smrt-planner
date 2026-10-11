@@ -1,12 +1,16 @@
 /**
  * Send to kitchen: the hand-off to `smrt kitchen`, the CLI that serves this
  * app on localhost and turns the cookbook into a project. The CLI announces
- * itself in `planner.config.json`:
+ * itself in `planner.config.json` with where to send, and in the address it
+ * opens with the one-time token, as a fragment (`fragment.ts`):
  *
- *   { "kitchen": { "endpoint": "/api/kitchen/cookbook", "token": "<one-time>" } }
+ *   planner.config.json  { "kitchen": { "endpoint": "/api/kitchen/cookbook" } }
+ *   address              http://127.0.0.1:<port>/#kitchen=<token>
  *
- * The page POSTs the cookbook there with the token in `x-kitchen-token`. Wire
- * contract, version 1:
+ * The config never carries a token (any local process sending the right Host
+ * header could read it); a `token` in the file is ignored. The page POSTs the
+ * cookbook to the endpoint with the token in `x-kitchen-token`. Wire contract,
+ * version 1:
  *
  * - `200 { ok: true, dir, mode, installed, added, nextSteps }`: the project
  *   was written (`mode` is `new` or `update`).
@@ -16,9 +20,13 @@
 import { serializeCookbook } from '../cookbook/file.ts';
 import type { Cookbook } from '../cookbook/types.ts';
 
-/** Where and how to send. Absent from the config means no kitchen. */
-export interface KitchenConfig {
+/** Where to send, from the config. Absent from the config means no kitchen. */
+export interface KitchenEndpoint {
   endpoint: string;
+}
+
+/** Where and how to send: the config's endpoint and the address's token. */
+export interface KitchenConfig extends KitchenEndpoint {
   token: string;
 }
 
@@ -54,13 +62,17 @@ function usableEndpoint(value: unknown): value is string {
   }
 }
 
-/** Validate the config's `kitchen` block. Anything unusable means no kitchen. */
-export function parseKitchenConfig(value: unknown): KitchenConfig | undefined {
+/**
+ * Validate the config's `kitchen` block. Anything unusable means no kitchen.
+ * Only the endpoint is read: a `token` here is ignored, never used.
+ */
+export function parseKitchenConfig(
+  value: unknown,
+): KitchenEndpoint | undefined {
   if (!isObject(value)) return undefined;
-  const { endpoint, token } = value;
+  const { endpoint } = value;
   if (!usableEndpoint(endpoint)) return undefined;
-  if (typeof token !== 'string' || !token.trim()) return undefined;
-  return { endpoint: endpoint.trim(), token: token.trim() };
+  return { endpoint: endpoint.trim() };
 }
 
 const strings = (value: unknown): string[] =>

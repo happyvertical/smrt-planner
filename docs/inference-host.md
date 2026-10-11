@@ -27,9 +27,10 @@ defaults. A mounted `Planner` can pass the same object as its `inference` prop
   `openai`, `custom`) or full definitions
   `{ id, label, baseUrl, model?, keyless?, cors? }`. Default: all four.
 - `kitchen` (a sibling of `inference`, optional) is set by `smrt kitchen`:
-  `{ "endpoint": "/api/kitchen/cookbook", "token": "<one-time>" }`. With it the
-  export panel shows **Send to kitchen** (Download stays as the secondary
-  option); see "Send to kitchen" below. Unusable values are ignored.
+  `{ "endpoint": "/api/kitchen/cookbook" }`. With it the export panel shows
+  **Send to kitchen** (Download stays as the secondary option) once the page
+  also holds the one-time token, which is **never in this file**; see "Send to
+  kitchen" below. A `token` in the file is ignored. Unusable values are ignored.
 - Anything invalid (bad JSON, unknown mode, `host` without a usable endpoint,
   malformed presets) falls back to `browser` and shows a visible notice on the
   AI page. A 404 or an HTML fallback page is "no file", with no notice.
@@ -319,7 +320,8 @@ import { appDir } from '@happyvertical/smrt-planner/app';
 
 `smrt kitchen` (the `smrt` CLI) serves this app on `127.0.0.1`, answers the host
 contract above with the user's own AI provider, and announces itself with the
-`kitchen` block of `planner.config.json`. The page then `POST`s the cookbook:
+`kitchen` block of `planner.config.json` (the endpoint only). The page then
+`POST`s the cookbook:
 
 - `POST <endpoint>`, `content-type: application/json`, header
   `x-kitchen-token: <token>`, body = the cookbook JSON (`cookbook/v1`).
@@ -327,6 +329,29 @@ contract above with the user's own AI provider, and announces itself with the
   the project was written. The CLI prints the same steps and exits.
 - `4xx/5xx { "ok": false, "errors": [...] }`: nothing was applied; the CLI keeps
   listening, so the visitor can change the cookbook and send again.
+
+### The token travels in the address fragment
+
+The one-time token is **not in `planner.config.json`** (any local process that
+sends the server's `Host` header could read it there). `smrt kitchen` opens and
+prints
+
+    http://127.0.0.1:<port>/#kitchen=<token>
+
+A fragment is never sent to a server, so no endpoint can serve it. The page:
+
+1. reads `location.hash` once, at startup, before the first URL rewrite
+   (`readKitchenFragment`, `src/lib/kitchen/fragment.ts`; the token must be
+   1 to 256 URL-safe characters, `A-Z a-z 0-9 . _ ~ -`, anything else is dropped);
+2. keeps it in memory only (`kitchenState`): not in `localStorage`, not in the
+   cookbook, not in any URL, and in no request but the cookbook POST's
+   `x-kitchen-token` header;
+3. removes the `kitchen` parameter from the address with `replaceState`
+   (other fragment parameters stay), so it is not in the history entry either.
+
+Opening the page without the fragment, or reloading after it was removed, leaves
+the page with no token: the export panel says so ("Send to kitchen needs its
+link") and offers Download. Reopen the address `smrt kitchen` printed.
 
 The client is `src/lib/kitchen/client.ts` (`sendToKitchen`); the panel reads
 `kitchenState`. Change the contract here and in the CLI's

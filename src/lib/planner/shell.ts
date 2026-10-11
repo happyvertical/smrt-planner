@@ -17,3 +17,11 @@ export const PLANNER_SHELL_PANEL_DEFAULTS: ShellPanelDefaults = {
   left: { initial: 'collapsed' },
   right: { initial: 'collapsed', rail: false, presentation: 'overlay' },
 };
+
+/** Props for an AppShell that hosts Planner. */
+export function plannerShellProps() {
+  return {
+    edgeToggles: PLANNER_SHELL_EDGE_TOGGLES,
+    config: PLANNER_SHELL_PANEL_DEFAULTS,
+  };
+}

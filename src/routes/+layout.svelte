@@ -36,6 +36,10 @@ import { appHref, appQuery, setBasePath } from '$lib/planner/app.svelte.ts';
 import { plannerRuntime } from '$lib/planner/instance.ts';
 import { hasAppState, withTab } from '$lib/planner/query.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
+import {
+  PLANNER_SHELL_EDGE_TOGGLES,
+  PLANNER_SHELL_PANEL_DEFAULTS,
+} from '$lib/planner/shell.ts';
 import { plannerTab } from '$lib/planner/tab.svelte.ts';
 import { FEATURE_SECTION, featureNavItems } from '$lib/recipes/features.ts';
 import {
@@ -356,7 +360,8 @@ function flushOnHide() {
     },
   ]}
   dockToggles={[{ tool: 'assistant', label: 'Assistant', slot: 'header.end' }]}
-  config={{ right: { initial: 'collapsed', rail: false, presentation: 'overlay' } }}
+  edgeToggles={PLANNER_SHELL_EDGE_TOGGLES}
+  config={PLANNER_SHELL_PANEL_DEFAULTS}
   layoutEditing={{ slot: 'header.start' }}
   navMode="sections"
   sectionHref={(id) => appHref(sectionPath(id))}

@@ -181,8 +181,8 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   (`parseHostRequest`), `app.ts` (`appDir`, the `./app` export; the only Node-built-in module here).
   Everything it imports must stay rune-free and import JSON with `with { type: 'json' }`;
   `tests/core-package.test.ts` packages with svelte-package and runs it under bare `node`.
-  `theme/presets.ts` is a plain copy of smrt-ui's preset list (its `./themes` entry loads `.svelte`),
-  held equal by `tests/theme-presets.test.ts`.
+  `theme/theme.ts` reads the preset list from smrt-ui's Node-safe `@happyvertical/smrt-ui/themes/presets`
+  (no copy, no drift test).
 - `src/lib/planner/`: the package selection (`?p=a,b`, the only URL state;
   `app.svelte.ts` `appHref` carries it; `selection.svelte.ts`
   is the one store the control panel, navigation and a future chat assistant

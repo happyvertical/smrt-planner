@@ -3,7 +3,9 @@ import type { ByoPresetDefinition } from './config.ts';
 import {
   type ConnectionResult,
   createOpenAIChat,
+  keyMaySendTo,
   normalizeBaseUrl,
+  originOf,
   testConnection,
 } from './openai.ts';
 import { resolvePresets } from './presets.ts';
@@ -53,14 +55,30 @@ export function loadByoPrefs(storage: Storage | null): ByoPrefs {
   return prefs;
 }
 
-export function loadByoKeys(storage: Storage | null): Record<string, string> {
-  const keys: Record<string, string> = {};
+/** A saved key and the origin (scheme, host, port) it was entered for. */
+export interface ByoKey {
+  origin: string;
+  key: string;
+}
+
+export function loadByoKeys(storage: Storage | null): Record<string, ByoKey> {
+  const keys: Record<string, ByoKey> = {};
   try {
     const raw = storage?.getItem(BYO_KEYS_KEY);
     const value: unknown = raw ? JSON.parse(raw) : null;
     if (isObject(value)) {
-      for (const [id, key] of Object.entries(value)) {
-        if (typeof key === 'string' && key) keys[id] = key;
+      for (const [id, entry] of Object.entries(value)) {
+        // A key with no origin (the format before keys were bound to one) is
+        // not trusted with any address: it is dropped.
+        if (
+          isObject(entry) &&
+          typeof entry.key === 'string' &&
+          entry.key &&
+          typeof entry.origin === 'string' &&
+          entry.origin
+        ) {
+          keys[id] = { origin: entry.origin, key: entry.key };
+        }
       }
     }
   } catch {
@@ -90,7 +108,7 @@ export class ByoModel {
   readonly presets: ByoPresetDefinition[];
   presetId = $state('');
   entries = $state<Record<string, ByoEntry>>({});
-  keys = $state<Record<string, string>>({});
+  keys = $state<Record<string, ByoKey>>({});
   active = $state(false);
   testStatus = $state<ByoTestStatus>('idle');
   testMessage = $state('');
@@ -121,16 +139,29 @@ export class ByoModel {
     return this.entries[this.presetId]?.model ?? this.preset?.model ?? '';
   }
 
+  /**
+   * The saved key, only while the address is the origin it was entered for:
+   * changing the address (or a config that reuses a preset id for another
+   * address) never sends the key somewhere new.
+   */
   get key(): string {
-    return this.keys[this.presetId] ?? '';
+    const saved = this.keys[this.presetId];
+    return saved && saved.origin === originOf(this.baseUrl) ? saved.key : '';
   }
 
-  /** Address valid, model named, and a key where the preset needs one. */
+  /** A key is saved for this preset, but for another address. */
+  get keyForOtherAddress(): boolean {
+    const saved = this.keys[this.presetId];
+    return !!saved && saved.origin !== originOf(this.baseUrl);
+  }
+
+  /** Address valid, model named, and a key where the preset needs one (sendable there). */
   get complete(): boolean {
+    const base = normalizeBaseUrl(this.baseUrl);
     return (
-      !!normalizeBaseUrl(this.baseUrl) &&
+      !!base &&
       !!this.model.trim() &&
-      (!!this.preset?.keyless || !!this.key.trim())
+      (!!this.preset?.keyless || (!!this.key.trim() && keyMaySendTo(base)))
     );
   }
 
@@ -158,7 +189,13 @@ export class ByoModel {
   }
 
   setKey(key: string): void {
-    this.keys = { ...this.keys, [this.presetId]: key.trim() };
+    const origin = originOf(this.baseUrl);
+    const clean = key.trim();
+    if (!clean || !origin) {
+      this.forgetKey();
+      return;
+    }
+    this.keys = { ...this.keys, [this.presetId]: { origin, key: clean } };
     this.edited();
   }
 
@@ -191,7 +228,15 @@ export class ByoModel {
     }
     if (!this.preset?.keyless && !this.key.trim()) {
       this.testStatus = 'failed';
-      this.testMessage = 'Enter a key first.';
+      this.testMessage = this.keyForOtherAddress
+        ? 'The saved key was entered for another address. Enter it again for this one.'
+        : 'Enter a key first.';
+      return { ok: false, message: this.testMessage };
+    }
+    if (!this.preset?.keyless && !keyMaySendTo(baseUrl)) {
+      this.testStatus = 'failed';
+      this.testMessage =
+        'A key is only sent over https, or to this computer. Use an https address.';
       return { ok: false, message: this.testMessage };
     }
     this.testStatus = 'testing';
@@ -268,8 +313,11 @@ export function savedByoChat(
   const entry = prefs.entries[prefs.preset];
   const baseUrl = normalizeBaseUrl(entry?.baseUrl ?? preset?.baseUrl ?? '');
   const model = (entry?.model ?? preset?.model ?? '').trim();
-  const key = loadByoKeys(storage)[prefs.preset] ?? '';
-  if (!preset || !baseUrl || !model || (!preset.keyless && !key)) return null;
+  const saved = loadByoKeys(storage)[prefs.preset];
+  const key =
+    saved && saved.origin === originOf(baseUrl ?? '') ? saved.key : '';
+  if (!preset || !baseUrl || !model) return null;
+  if (!preset.keyless && (!key || !keyMaySendTo(baseUrl))) return null;
   return createOpenAIChat({
     baseUrl,
     model,

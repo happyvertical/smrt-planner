@@ -128,6 +128,14 @@ function confirmReset() {
       <code>smrt cookbook apply</code> on the file.
     </Alert>
   {/if}
+  {#if kitchenState.tokenInConfig}
+    <Alert variant="warning" title="Send to kitchen is off">
+      This version of <code>smrt kitchen</code> puts its one-time token in a
+      file other programs on this computer can read, so the planner does not
+      use it. Update the <code>smrt</code> CLI, or download the cookbook and run
+      <code>smrt cookbook apply</code> on the file.
+    </Alert>
+  {/if}
   {#if error}
     <Alert variant="error" title="Import failed">{error}</Alert>
   {/if}

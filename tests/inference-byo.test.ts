@@ -352,3 +352,123 @@ describe('AiState in byo mode', () => {
     expect(hosted.firstRun).toBe(false);
   });
 });
+
+describe('a key stays with the address it was entered for', () => {
+  const entered = (store: ReturnType<typeof storage>, baseUrl: string) => {
+    const byo = new ByoModel({ storage: store });
+    byo.select('custom');
+    byo.setBaseUrl(baseUrl);
+    byo.setModel('m1');
+    byo.setKey(KEY);
+    byo.use();
+    return byo;
+  };
+
+  it('is not used once the address changes, and is used again when it is restored', () => {
+    const store = storage();
+    const byo = entered(store, 'https://models.example/v1');
+    expect(byo.complete).toBe(true);
+    byo.setBaseUrl('https://elsewhere.example/v1');
+    expect(byo.key).toBe('');
+    expect(byo.keyForOtherAddress).toBe(true);
+    expect(byo.complete).toBe(false);
+    expect(byo.active).toBe(false);
+    expect(byo.chat()).toBeNull();
+    byo.setBaseUrl('https://models.example/v2');
+    expect(byo.complete).toBe(true); // same origin, another path
+    byo.setBaseUrl('https://models.example/v1');
+    expect(byo.key).toBe(KEY);
+  });
+
+  it('is not handed to a config that reuses the preset id for another address', () => {
+    const store = storage();
+    entered(store, 'https://models.example/v1');
+    const hijacked = new ByoModel({
+      storage: store,
+      presets: [
+        {
+          id: 'custom',
+          label: 'Custom',
+          baseUrl: 'https://attacker.example/v1',
+          model: 'm1',
+        },
+      ],
+    });
+    // Its entry for `custom` holds the saved models.example address, so the
+    // config's address is only a default; with no saved entry it must not get the key.
+    const fresh = storage();
+    fresh.data.set(BYO_KEYS_KEY, store.data.get(BYO_KEYS_KEY) as string);
+    const other = new ByoModel({
+      storage: fresh,
+      presets: [
+        {
+          id: 'custom',
+          label: 'Custom',
+          baseUrl: 'https://attacker.example/v1',
+          model: 'm1',
+        },
+      ],
+    });
+    expect(other.key).toBe('');
+    expect(other.complete).toBe(false);
+    expect(hijacked.key).toBe(KEY);
+    expect(
+      savedByoChat(fresh, [
+        {
+          id: 'custom',
+          label: 'c',
+          baseUrl: 'https://attacker.example/v1',
+          model: 'm1',
+        },
+      ]),
+    ).toBeNull();
+  });
+
+  it('drops a key saved without an origin (the old format)', () => {
+    const store = storage();
+    store.data.set(BYO_KEYS_KEY, JSON.stringify({ custom: KEY }));
+    const byo = new ByoModel({ storage: store });
+    byo.select('custom');
+    byo.setBaseUrl('https://models.example/v1');
+    expect(byo.key).toBe('');
+  });
+
+  it('only goes over https, or to this computer', async () => {
+    expect(() =>
+      createOpenAIChat({
+        baseUrl: 'http://192.168.1.5:11434/v1',
+        model: 'm',
+        apiKey: KEY,
+      }),
+    ).toThrow(/https/);
+    expect(
+      await testConnection({
+        baseUrl: 'http://models.example/v1',
+        model: 'm',
+        apiKey: KEY,
+      }),
+    ).toEqual({
+      ok: false,
+      message: expect.stringContaining('only sent over https'),
+    });
+    for (const url of [
+      'http://localhost:11434/v1',
+      'http://127.0.0.1:8080/v1',
+      'http://[::1]:8080/v1',
+      'http://ollama.localhost/v1',
+      'https://api.example/v1',
+    ]) {
+      expect(
+        () => createOpenAIChat({ baseUrl: url, model: 'm', apiKey: KEY }),
+        url,
+      ).not.toThrow();
+    }
+    // Keyless (Ollama on another machine) sends no key, so plain http is fine.
+    expect(() =>
+      createOpenAIChat({ baseUrl: 'http://192.168.1.5:11434/v1', model: 'm' }),
+    ).not.toThrow();
+    const byo = entered(storage(), 'http://models.example/v1');
+    expect(byo.complete).toBe(false);
+    expect((await byo.test()).message).toMatch(/https/);
+  });
+});

@@ -12,6 +12,8 @@ export type KitchenStatus = 'idle' | 'sending' | 'sent' | 'failed';
 export class KitchenState {
   /** Where the kitchen listens, from `planner.config.json`. */
   endpoint = $state<string | undefined>(undefined);
+  /** An older CLI still puts its token in the config: never used, and sending is off. */
+  tokenInConfig = $state(false);
   /** The one-time token, from the address's fragment. Memory only. */
   private token = $state<string | undefined>(undefined);
   status = $state<KitchenStatus>('idle');
@@ -19,7 +21,7 @@ export class KitchenState {
 
   /** A kitchen is listening and this page holds its token: sending is possible. */
   get config(): KitchenConfig | undefined {
-    return this.endpoint && this.token
+    return this.endpoint && this.token && !this.tokenInConfig
       ? { endpoint: this.endpoint, token: this.token }
       : undefined;
   }
@@ -30,11 +32,12 @@ export class KitchenState {
    * fragment was removed): the person needs the address `smrt kitchen` printed.
    */
   get needsLink(): boolean {
-    return !!this.endpoint && !this.token;
+    return !!this.endpoint && !this.token && !this.tokenInConfig;
   }
 
   configure(config: KitchenEndpoint | undefined, token?: string): void {
     this.endpoint = config?.endpoint;
+    this.tokenInConfig = config?.tokenInConfig === true;
     this.token = config ? token : undefined;
     this.status = 'idle';
     this.outcome = undefined;

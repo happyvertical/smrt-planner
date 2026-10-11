@@ -211,7 +211,8 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `ChatModel` (POSTs `{ version, message, snapshot, history? }`; the server owns the prompt),
   `openai.ts` the browser fetch client for OpenAI-compatible endpoints plus Test connection,
   `presets.ts` Ollama/OpenRouter/OpenAI/custom with CORS notes, `byo.svelte.ts` the AI page state (key in
-  `smrt-planner:inference-key:v1`, sent only as the Authorization header to the chosen origin). The wire
+  `smrt-planner:inference-key:v1` saved with the origin it was entered for, sent only as the
+  Authorization header to that origin, https or loopback only). The wire
   contract and config are specified in `docs/inference-host.md`; change them together with that file.
   `AiState.configure` applies a config (the layout fetches it); Think's `where` reads In browser /
   Server / Your model: <name>.
@@ -220,8 +221,10 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `ConfigResult.kitchen`; a `token` there is ignored) and `sendToKitchen` (POST the cookbook,
   `x-kitchen-token` header, outcome never throws). The one-time token is NEVER in the config:
   `smrt kitchen` opens `http://127.0.0.1:<port>/#kitchen=<token>`, `fragment.ts` reads it from
-  `location.hash`, the layout strips the `kitchen` parameter with `replaceState` before the first URL
-  rewrite and hands the token to `kitchenState` (memory only, never storage or a URL). `state.svelte.ts`
+  `location.hash`, the layout strips the `kitchen` parameter with a replacing `goto` (not bare `replaceState`: that
+  leaves the token in `page.url` and the history state's `pageurl`) before the first URL rewrite and
+  hands the token to `kitchenState` (memory only, never storage or a URL); a `token` still in the
+  config (an older CLI) is never read, only reported (`tokenInConfig`) and Send stays off. `state.svelte.ts`
   is `kitchenState` (`config` needs endpoint and token; `needsLink` is endpoint without token), which
   `ExportPanel` reads to show **Send to kitchen** first and Download second, or the missing-link
   notice. Contract: `docs/inference-host.md`; the server side is smrt `packages/cli/agents/kitchen.md`.

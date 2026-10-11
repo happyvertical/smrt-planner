@@ -94,6 +94,11 @@ export function dropUnrenderableRecipes(
     for (const id of recipe.requires) {
       if (dropped.has(id)) return `needs ${id}`;
     }
+    for (const group of recipe.requiresAny ?? []) {
+      if (group.length > 0 && group.every((id) => dropped.has(id))) {
+        return `needs one of ${group.join(', ')}`;
+      }
+    }
     return undefined;
   };
   for (let changed = true; changed; ) {

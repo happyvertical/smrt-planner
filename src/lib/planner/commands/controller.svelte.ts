@@ -40,7 +40,7 @@ export function portFromStore(store: CookbookStore): PlannerPort {
     read: () => store.snapshot(),
     applied: () => libraryState.active,
     prepareImport: (document) => parseCookbook(document),
-    write(cookbook, { command, replaced, applied }) {
+    write(cookbook, { replaced, applied, libraryApplied }) {
       // A page's customisations are edited outside the plan; only a command
       // that replaces the whole app brings its own.
       const next = replaced
@@ -48,11 +48,9 @@ export function portFromStore(store: CookbookStore): PlannerPort {
         : { ...cookbook, overviews: store.snapshot().overviews };
       if (replaced) store.replace(next);
       else store.apply(next);
-      if (command === 'apply_cookbook') {
-        if (applied) {
-          libraryState.select(applied);
-          setSamplePack(applied);
-        }
+      if (libraryApplied && applied) {
+        libraryState.select(applied);
+        setSamplePack(applied);
       }
     },
   };

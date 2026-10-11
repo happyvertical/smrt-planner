@@ -26,25 +26,37 @@ export interface KitchenFragment {
   hash: string;
 }
 
-/** Read `location.hash` (with or without the `#`). Never throws. */
+/**
+ * Read `location.hash` (with or without the `#`). Never throws. Only the
+ * `kitchen` parameter is touched: every other part of the fragment is returned
+ * exactly as it was (no re-encoding), so an in-page anchor survives. The token
+ * is read raw (it must already be URL-safe), so a percent-encoded or `+`-spaced
+ * value is not a token; the parameter is removed all the same.
+ */
 export function readKitchenFragment(hash: string): KitchenFragment {
   const text = hash.startsWith('#') ? hash.slice(1) : hash;
   if (!text) return { present: false, hash: '' };
-  let params: URLSearchParams;
-  try {
-    params = new URLSearchParams(text);
-  } catch {
-    return { present: false, hash: hash.startsWith('#') ? hash : `#${hash}` };
+  let token: string | undefined;
+  let present = false;
+  const kept: string[] = [];
+  for (const part of text.split('&')) {
+    const equals = part.indexOf('=');
+    const key = equals < 0 ? part : part.slice(0, equals);
+    if (key !== KITCHEN_FRAGMENT_KEY) {
+      kept.push(part);
+      continue;
+    }
+    // The first `kitchen` wins; all of them are removed.
+    if (!present && equals >= 0) {
+      const value = part.slice(equals + 1);
+      if (TOKEN.test(value)) token = value;
+    }
+    present = true;
   }
-  if (!params.has(KITCHEN_FRAGMENT_KEY)) {
-    return { present: false, hash: `#${text}` };
-  }
-  const given = params.get(KITCHEN_FRAGMENT_KEY) ?? '';
-  params.delete(KITCHEN_FRAGMENT_KEY);
-  const rest = params.toString();
+  const rest = kept.filter((part) => part !== '').join('&');
   return {
-    ...(TOKEN.test(given) ? { token: given } : {}),
-    present: true,
+    ...(token ? { token } : {}),
+    present,
     hash: rest ? `#${rest}` : '',
   };
 }

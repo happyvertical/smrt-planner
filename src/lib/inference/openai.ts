@@ -46,6 +46,39 @@ export function normalizeBaseUrl(value: string): string | null {
   }
 }
 
+/** Hosts that are this computer: a key may travel to them over plain http. */
+export function isLoopbackHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  return (
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    host === '::1' ||
+    /^127(\.\d{1,3}){3}$/.test(host)
+  );
+}
+
+/** Can a key be sent to this address? `https`, or `http` to this computer only. */
+export function keyMaySendTo(baseUrl: string): boolean {
+  try {
+    const url = new URL(baseUrl.trim());
+    return (
+      url.protocol === 'https:' ||
+      (url.protocol === 'http:' && isLoopbackHost(url.hostname))
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** The origin a key was entered for: scheme, host and port of the address. */
+export function originOf(baseUrl: string): string | null {
+  try {
+    return new URL(baseUrl.trim()).origin;
+  } catch {
+    return null;
+  }
+}
+
 /** A failure that says what happened and never carries the key. */
 export class EndpointError extends Error {
   constructor(
@@ -126,6 +159,11 @@ export interface OpenAIChat extends ChatModel {
 export function createOpenAIChat(options: OpenAIChatOptions): OpenAIChat {
   const base = normalizeBaseUrl(options.baseUrl);
   if (!base) throw new EndpointError('the address is not a valid http(s) URL');
+  if (options.apiKey && !keyMaySendTo(base)) {
+    throw new EndpointError(
+      'a key is only sent over https, or to this computer; use an https address',
+    );
+  }
   const url = `${base}/chat/completions`;
   const doFetch = options.fetch ?? fetch;
   let level = Math.max(

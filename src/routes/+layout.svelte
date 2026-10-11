@@ -262,16 +262,34 @@ afterNavigate((navigation) => {
   }
   // SvelteKit runs the initial 'enter' callbacks before the router counts as
   // started, and replaceState throws until then, so wait one microtask.
-  const sync = () => {
-    ready = true;
+  const sync = async () => {
     // The token is out of the address (and its history entry) before anything
-    // else reads or rewrites the URL.
+    // else reads or rewrites the URL. `replaceState` alone would leave it in
+    // SvelteKit's own copy of the address (`page.url`, and the `pageurl` in
+    // the history state), so this is a real navigation, replacing the entry.
     if (kitchenFragment.present) {
-      replaceState(
-        `${location.pathname}${location.search}${kitchenFragment.hash}`,
-        page.state,
-      );
+      // Once only: the navigation below runs this callback again.
+      const clean = `${location.pathname}${location.search}${kitchenFragment.hash}`;
+      kitchenFragment = { present: false, hash: kitchenFragment.hash };
+      try {
+        await goto(clean, {
+          replaceState: true,
+          noScroll: true,
+          keepFocus: true,
+        });
+      } catch {
+        // The router refused: strip it by hand, from SvelteKit's copy too.
+        history.replaceState(
+          {
+            ...history.state,
+            'sveltekit:pageurl': new URL(clean, location.href).href,
+          },
+          '',
+          clean,
+        );
+      }
     }
+    ready = true;
     syncUrl();
   };
   if (navigation.type === 'enter') queueMicrotask(sync);

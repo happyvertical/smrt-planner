@@ -124,6 +124,15 @@ address, the model and the key).
   `smrt-planner:inference-key:v1`, apart from the choices in
   `smrt-planner:inference:v1`. It is sent only as `Authorization: Bearer <key>`
   to the chosen address, never in a URL, a body, a message or a log.
+- A key is saved **with the origin it was entered for** (`{ origin, key }`):
+  changing the address to another origin, or a config that reuses a preset id
+  such as `openai` for another `baseUrl`, does not send the saved key there (the
+  AI page says a key is saved for another address). A key saved without an
+  origin is dropped. Keys are per browser origin, not per path: planner apps
+  served from one origin share `localStorage`.
+- A key is only sent over `https`, or over `http` to this computer
+  (`localhost`, `*.localhost`, `127.0.0.0/8`, `[::1]`). A keyless preset (Ollama
+  on another machine) sends no key, so plain `http` is fine for it.
 - The client builds the planner prompt itself (as in browser mode) and POSTs
   `${baseUrl}/chat/completions` with `response_format` JSON mode: the planner's
   `json_schema`, stepping down to `json_object` and then plain text when the
@@ -227,6 +236,27 @@ set keeps working.
   the code and `path` of a refusal are the engine's.
 - **Library cookbook with no theme** keeps the person's own look, in the same
   undoable step (a batch of `apply_cookbook` and `set_theme`).
+- **Page customisations** (`overviews`) are edited outside the plan: `export_cookbook`
+  and `cookbook()` carry the app's live ones, an apply or import without
+  `replace` is refused when the app holds only those, and `undo` never touches
+  them. Undoing an `apply_cookbook` restores the document but not the Cookbooks
+  tab's "in use" note or the sample data (applying again, or a batch containing
+  it, selects the cookbook and resets the sample data).
+- **`focus`** is checked like the engine's commands (unknown keys, `id`,
+  `expectedRevision`), but keeps no journal: a repeated `id` is not replayed.
+- A **replayed** command (same `id`) returns the first result without its
+  `undoId`; use the one the first answer carried. An undo id answers
+  `not_found` once used, after a manual edit, or past the 20 the engine keeps.
+- A page whose stored document the engine rejects does not throw: reads keep
+  the last good plan and commands answer `failed` (naming the problem) until it
+  is fixed. The first read of a freshly loaded page adopts the saved cookbook as
+  one manual edit (the revision is 1, not 0).
+- The **slice controller** (`createSliceController`, for hosts that only have a
+  recipe store, settings and theme) writes back recipes, settings and the theme;
+  the engine also accepts feature and menu commands there, but with no store to
+  hold them they are not kept (they were `unsupported`).
+- `apply_cookbook` with a library cookbook that sets no theme keeps the
+  person's preset, brand colour and colour scheme (not the font).
 - `@happyvertical/smrt-core` is now a runtime dependency of the package
   (it was a dev dependency); `./core` imports its engine entry.
 
@@ -346,12 +376,23 @@ A fragment is never sent to a server, so no endpoint can serve it. The page:
 2. keeps it in memory only (`kitchenState`): not in `localStorage`, not in the
    cookbook, not in any URL, and in no request but the cookbook POST's
    `x-kitchen-token` header;
-3. removes the `kitchen` parameter from the address with `replaceState`
-   (other fragment parameters stay), so it is not in the history entry either.
+3. removes the `kitchen` parameter from the address with a replacing
+   navigation (`goto(..., { replaceState: true })`, not a bare
+   `history.replaceState`, which would leave the token in SvelteKit's own copy
+   of the address: `page.url` and the `pageurl` in the history state). Other
+   fragment parameters are kept exactly as they were.
 
 Opening the page without the fragment, or reloading after it was removed, leaves
 the page with no token: the export panel says so ("Send to kitchen needs its
 link") and offers Download. Reopen the address `smrt kitchen` printed.
+
+An older `smrt` CLI (0.55.11 and earlier) still puts `token` in the config. The
+planner never reads that value; it reports that the file carried one
+(`ConfigResult.kitchen.tokenInConfig`) and Send to kitchen stays off with
+"Send to kitchen is off, update the smrt CLI". Release the planner together
+with, or after, the smrt release that carries happyvertical/smrt#3772; the CLI
+finds the newest planner in the registry, so a planner older than this
+contract (no fragment reading) shows no Send button at all.
 
 The client is `src/lib/kitchen/client.ts` (`sendToKitchen`); the panel reads
 `kitchenState`. Change the contract here and in the CLI's

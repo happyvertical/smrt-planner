@@ -140,8 +140,13 @@ const handsFreeAvailable = $derived(voice.status === 'ready');
               oninput={(event) => byo.setKey(event.currentTarget.value)}
             />
           </div>
+          {#if byo.keyForOtherAddress}
+            <p class="meta">
+              A key is saved for another address, so it is not used here. Paste it again for this address.
+            </p>
+          {/if}
           <p class="meta">
-            Stored only in this browser, and sent only to {byo.baseUrl || 'the address above'}.
+            Stored only in this browser, and sent only to {byo.baseUrl || 'the address above'} (https, or this computer).
             <button class="link" type="button" onclick={() => byo.forgetKey()}>
               Forget the key
             </button>

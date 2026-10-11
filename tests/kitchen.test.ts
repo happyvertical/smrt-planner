@@ -32,7 +32,8 @@ describe('the kitchen block of planner.config.json', () => {
     const result = parseInferenceConfig(
       JSON.stringify({ kitchen: { ...endpoint, token: 'leaked-token' } }),
     );
-    expect(result.kitchen).toEqual(endpoint);
+    // Reported (an older CLI), never kept.
+    expect(result.kitchen).toEqual({ ...endpoint, tokenInConfig: true });
     expect(JSON.stringify(result)).not.toContain('leaked-token');
     expect(parseKitchenConfig({ ...endpoint, token: 'x' })).not.toHaveProperty(
       'token',
@@ -186,6 +187,17 @@ describe('the kitchen token in the address fragment', () => {
     expect(readKitchenFragment('kitchen=tok')).toMatchObject({ token: 'tok' });
   });
 
+  it('leaves the rest of the fragment exactly as it was', () => {
+    expect(readKitchenFragment('#foo&kitchen=tok&bar=a%20b+c')).toEqual({
+      token: 'tok',
+      present: true,
+      hash: '#foo&bar=a%20b+c',
+    });
+    expect(readKitchenFragment('#section-2&kitchen=tok').hash).toBe(
+      '#section-2',
+    );
+  });
+
   it('leaves an address with no kitchen parameter alone', () => {
     expect(readKitchenFragment('')).toEqual({ present: false, hash: '' });
     expect(readKitchenFragment('#')).toEqual({ present: false, hash: '' });
@@ -236,6 +248,16 @@ describe('the export panel', () => {
       body.indexOf('Download cookbook'),
     );
     expect(body).not.toContain('Export cookbook');
+    expect(body).not.toContain('needs its link');
+  });
+
+  it('stays off, and says why, when the CLI serves its token in the config', () => {
+    kitchenState.configure({ ...endpoint, tokenInConfig: true }, 'abc123');
+    expect(kitchenState.config).toBeUndefined();
+    expect(kitchenState.needsLink).toBe(false);
+    const { body } = render(ExportPanel, { context });
+    expect(body).toContain('Send to kitchen is off');
+    expect(body).toContain('Export cookbook');
     expect(body).not.toContain('needs its link');
   });
 

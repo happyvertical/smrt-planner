@@ -1,10 +1,11 @@
 import {
   type CookbookEngine,
+  canonical,
   createCookbookEngine,
-  type BatchResult as EngineBatchResult,
   type EngineCatalog,
   type CommandResult as EngineCommandResult,
   type EngineState,
+  isEmptyCookbook,
 } from '@happyvertical/smrt-core/cookbook/engine';
 import type { Cookbook, CookbookResult } from '../../cookbook/types.ts';
 import { checkSchema, toolsFor } from './schemas.ts';
@@ -69,10 +70,18 @@ export interface PlannerPort {
   write?(
     cookbook: Cookbook,
     change: {
-      command: CommandName | 'batch';
+      /** The commands that ran (a batch lists each; an undo is `undo`). */
+      commands: readonly string[];
+      /**
+       * A whole-app command ran (`apply_cookbook`, `import_cookbook`): take
+       * everything from `cookbook`, page customisations included. Otherwise
+       * the app's own page customisations are kept.
+       */
       replaced: boolean;
       /** The library cookbook the engine records the plan as set up from. */
       applied: string | null;
+      /** A library cookbook was just set up: select it and reset sample data. */
+      libraryApplied: boolean;
     },
   ): void;
   /** The app's own check of an imported document (it may migrate or trim it). */
@@ -177,6 +186,10 @@ const fail = (error: CommandError, id?: string): CommandResult => ({
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+const REPLACING = new Set(['apply_cookbook', 'import_cookbook']);
+const message = (cause: unknown) =>
+  cause instanceof Error ? cause.message : String(cause);
+
 /** The document without `overviews`: page edits are not plan changes. */
 function signature(doc: unknown, applied: string | null): string {
   if (!isObject(doc)) return JSON.stringify([applied, doc ?? null]);
@@ -201,6 +214,8 @@ export function createPlannerAdapter(
 
   let engine: CookbookEngine;
   let lastKey = '';
+  /** Why the app's document could not be adopted; commands fail until it can. */
+  let syncError: string | null = null;
   /** Undo ids the outside has seen, by the engine's own id; closed on a new epoch. */
   let outward = new Map<string, string>();
   let inward = new Map<string, string>();
@@ -211,10 +226,27 @@ export function createPlannerAdapter(
   const currentTab = () => options.navigation?.getTab() ?? tab.get();
 
   function start(): void {
-    const given = port?.read ? port.read() : config.cookbook;
-    if (given === undefined) {
-      engine = createCookbookEngine({ catalog });
-    } else {
+    if (!port?.read) {
+      // Headless: the given document is the plan, and a bad one is the caller's error.
+      engine = createCookbookEngine(
+        config.cookbook === undefined
+          ? { catalog }
+          : {
+              catalog,
+              state: {
+                version: 1,
+                revision: 0,
+                applied: null,
+                cookbook: config.cookbook as never,
+                journal: [],
+              },
+            },
+      );
+      return;
+    }
+    const given = port.read();
+    lastKey = signature(given, resolvedApplied());
+    try {
       engine = createCookbookEngine({
         catalog,
         state: {
@@ -225,37 +257,58 @@ export function createPlannerAdapter(
           journal: [],
         },
       });
+    } catch (cause) {
+      // The app's document is not one the engine accepts: start empty, say so.
+      engine = createCookbookEngine({ catalog });
+      syncError = message(cause);
     }
-    lastKey = port?.read ? signature(given, resolvedApplied()) : '';
   }
   start();
 
   /** The app edited the document by hand: a new epoch, one revision on. */
   function adoptManualEdit(doc: unknown, key: string): void {
     const state = engine.state();
-    engine = createCookbookEngine({
-      catalog,
-      state: {
-        version: 1,
-        revision: state.revision + 1,
-        applied: resolvedApplied(),
-        cookbook: doc as never,
-        journal: state.journal,
-      },
-    });
+    try {
+      engine = createCookbookEngine({
+        catalog,
+        state: {
+          version: 1,
+          revision: state.revision + 1,
+          applied: resolvedApplied(),
+          cookbook: doc as never,
+          journal: state.journal,
+        },
+      });
+      syncError = null;
+    } catch (cause) {
+      // Keep the engine as it was; commands answer `failed` until the document is valid.
+      syncError = message(cause);
+    }
     outward = new Map();
     inward = new Map();
     lastKey = key;
   }
 
-  /** Compare the app's document with the engine's; adopt a difference. */
+  /** Compare the app's document with the engine's; adopt a difference. Never throws. */
   function sync(): void {
     if (!port?.read) return;
-    const doc = port.read();
-    const key = signature(doc, resolvedApplied());
-    if (key === lastKey) return;
-    adoptManualEdit(doc, key);
+    try {
+      const doc = port.read();
+      const key = signature(doc, resolvedApplied());
+      if (key === lastKey) return;
+      adoptManualEdit(doc, key);
+    } catch (cause) {
+      syncError = message(cause);
+    }
   }
+
+  const syncFailureError = (): CommandError =>
+    err(
+      'failed',
+      `The app's document is not one the planner can read (${syncError}). Fix it or reset the cookbook, then try again.`,
+    );
+  const syncFailure = (id?: string): CommandResult =>
+    fail(syncFailureError(), id);
 
   function undoIdOut(inner: string | undefined): string | undefined {
     if (!inner) return undefined;
@@ -268,6 +321,16 @@ export function createPlannerAdapter(
     return id;
   }
 
+  /** Forget undo ids the engine no longer holds (used or past its cap). */
+  function pruneUndoIds(live: readonly string[]): void {
+    const keep = new Set(live);
+    for (const [inner, id] of outward) {
+      if (keep.has(inner)) continue;
+      outward.delete(inner);
+      inward.delete(id);
+    }
+  }
+
   const withView = (
     base: ReturnType<CookbookEngine['snapshot']>,
   ): PlanSnapshot => ({
@@ -276,36 +339,71 @@ export function createPlannerAdapter(
     focus: { tab: currentTab(), section: section.get() },
   });
 
-  const build = (): PlanSnapshot => withView(engine.snapshot());
+  function build(): PlanSnapshot {
+    const base = engine.snapshot();
+    pruneUndoIds(base.undo);
+    return withView(base);
+  }
+
+  /** The engine's document with the app's live page customisations. */
+  function liveDocument(doc: Record<string, unknown>): Record<string, unknown> {
+    if (!port?.read) return doc;
+    try {
+      const live = port.read();
+      const overviews = isObject(live) ? live.overviews : undefined;
+      const { overviews: _stale, ...rest } = doc;
+      return canonical(
+        (isObject(overviews) && Object.keys(overviews).length
+          ? { ...rest, overviews }
+          : rest) as never,
+      ) as unknown as Record<string, unknown>;
+    } catch {
+      return doc;
+    }
+  }
 
   function decorate(result: EngineCommandResult): CommandResult {
     if (!result.ok) return result;
     const { receipt } = result;
-    const undoId = result.replayed
-      ? receipt.undoId
-        ? outward.get(receipt.undoId)
-        : undefined
-      : undoIdOut(receipt.undoId);
+    // A replay answers an earlier epoch's change: its undo id may now name another.
+    const undoId = result.replayed ? undefined : undoIdOut(receipt.undoId);
     const { undoId: _drop, ...rest } = receipt;
+    let data = result.data;
+    if (
+      receipt.name === 'export_cookbook' &&
+      isObject(data) &&
+      !result.replayed
+    ) {
+      const cookbook = liveDocument(data.cookbook as Record<string, unknown>);
+      data = {
+        ...data,
+        cookbook,
+        text: `${JSON.stringify(cookbook, null, 2)}\n`,
+      };
+    }
     return {
       ...result,
-      snapshot: result.replayed ? (result.snapshot as PlanSnapshot) : build(),
+      ...(data !== undefined ? { data } : {}),
+      snapshot: build(),
       receipt: { ...rest, ...(undoId ? { undoId } : {}) },
     } as CommandResult;
   }
 
-  function commit(command: CommandName | 'batch', replaced: boolean): void {
+  /** Hand the engine's document to the app after a change. */
+  function commit(commands: readonly string[], appliedBefore: string | null) {
     if (!port?.write) return;
+    const applied = engine.snapshot().app.cookbook;
+    const libraryApplied =
+      commands.includes('apply_cookbook') ||
+      (applied !== null && applied !== appliedBefore);
     port.write(engine.cookbook() as never, {
-      command,
-      replaced,
-      applied: engine.snapshot().app.cookbook,
+      commands,
+      replaced: commands.some((name) => REPLACING.has(name)),
+      applied,
+      libraryApplied,
     });
     if (port.read) lastKey = signature(port.read(), resolvedApplied());
-  }
-
-  function changedBy(result: EngineCommandResult | EngineBatchResult): boolean {
-    return result.ok && !result.replayed && result.receipt.changed;
+    if (libraryApplied) options.onReplaced?.();
   }
 
   function deliver(): void {
@@ -320,11 +418,48 @@ export function createPlannerAdapter(
     }
   }
 
+  /** `id`, `expectedRevision` and stray keys, checked as the engine checks them. */
+  function checkEnvelope(
+    raw: Record<string, unknown>,
+    runOptions: RunOptions,
+  ): CommandError | null {
+    for (const key of Object.keys(raw)) {
+      if (!['name', 'input', 'id', 'expectedRevision'].includes(key)) {
+        return err('invalid_input', `${key} is not part of a command.`, {
+          path: key,
+        });
+      }
+    }
+    const { id } = raw;
+    if (
+      id !== undefined &&
+      !(typeof id === 'string' && id.length > 0 && id.length <= 200)
+    ) {
+      return err(
+        'invalid_input',
+        'id must be a non-empty string of at most 200 characters.',
+        { path: 'id' },
+      );
+    }
+    const expected = raw.expectedRevision ?? runOptions.expectedRevision;
+    if (
+      expected !== undefined &&
+      !(Number.isInteger(expected) && (expected as number) >= 0)
+    ) {
+      return err('invalid_input', 'expectedRevision must be a whole number.', {
+        path: 'expectedRevision',
+      });
+    }
+    return null;
+  }
+
   function runFocus(
     raw: Record<string, unknown>,
     runOptions: RunOptions,
   ): CommandResult {
-    const id = raw.id as string | undefined;
+    const bad = checkEnvelope(raw, runOptions);
+    const id = typeof raw.id === 'string' ? raw.id : undefined;
+    if (bad) return fail(bad, id);
     const expected = raw.expectedRevision ?? runOptions.expectedRevision;
     const input = (raw.input ?? {}) as { tab?: PlannerTabId; section?: string };
     const problem = checkSchema(focusSchema, input);
@@ -401,13 +536,66 @@ export function createPlannerAdapter(
     };
   }
 
+  /**
+   * Replacing a whole app needs `replace: true` unless the app holds nothing.
+   * The engine checks its own copy, which can lack page customisations the app
+   * has (they are edited outside the plan). Before such a command, if the app
+   * holds something the engine's copy does not, adopt the app's document (same
+   * revision) so the engine's own refusal, in its own order of checks, is right.
+   */
+  function alignForReplace(names: readonly unknown[]): void {
+    if (
+      !port?.read ||
+      !names.some((n) => typeof n === 'string' && REPLACING.has(n))
+    ) {
+      return;
+    }
+    try {
+      const app = port.read();
+      if (
+        isEmptyCookbook(engine.cookbook()) &&
+        !isEmptyCookbook(app as never)
+      ) {
+        const state = engine.state();
+        engine = createCookbookEngine({
+          catalog,
+          state: {
+            version: 1,
+            revision: state.revision,
+            applied: resolvedApplied(),
+            cookbook: app as never,
+            journal: state.journal,
+          },
+        });
+        outward = new Map();
+        inward = new Map();
+        lastKey = signature(app, resolvedApplied());
+      }
+    } catch (cause) {
+      syncError = message(cause);
+    }
+  }
+
   function run(command: unknown, runOptions: RunOptions = {}): CommandResult {
     try {
       sync();
+      if (syncError) {
+        return syncFailure(
+          isObject(command) && typeof command.id === 'string'
+            ? command.id
+            : undefined,
+        );
+      }
       if (!isObject(command)) {
         return decorate(engine.run(command, runOptions));
       }
       if (command.name === 'focus') return runFocus(command, runOptions);
+      alignForReplace([command.name]);
+      if (syncError) {
+        return syncFailure(
+          typeof command.id === 'string' ? command.id : undefined,
+        );
+      }
       let raw: Record<string, unknown> = command;
       let dropped: string[] | undefined;
       if (command.name === 'import_cookbook') {
@@ -416,16 +604,14 @@ export function createPlannerAdapter(
         raw = prepared.raw;
         dropped = prepared.dropped;
       }
+      const appliedBefore = engine.snapshot().app.cookbook;
       const keepTheme = themeToKeep(raw);
       const result = keepTheme
         ? runKeepingTheme(raw, runOptions, keepTheme)
         : decorate(engine.run(raw, runOptions));
       if (!result.ok) return result;
       if (!result.replayed && result.receipt.changed) {
-        const replaced =
-          raw.name === 'apply_cookbook' || raw.name === 'import_cookbook';
-        commit(raw.name as CommandName, replaced);
-        if (raw.name === 'apply_cookbook') options.onReplaced?.();
+        commit([String(raw.name)], appliedBefore);
       }
       let finished = result;
       if (dropped?.length) {
@@ -443,15 +629,14 @@ export function createPlannerAdapter(
       deliver();
       return finished.ok ? { ...finished, snapshot: build() } : finished;
     } catch (cause) {
-      return fail(
-        err('failed', cause instanceof Error ? cause.message : String(cause)),
-      );
+      return fail(err('failed', message(cause)));
     }
   }
 
   /**
    * Applying a library cookbook that sets no theme keeps the person's own look
-   * (as the Cookbooks tab does). Returns the theme to put back, if any.
+   * (as the Cookbooks tab does): the preset, brand colour and colour scheme
+   * (the font is not carried; `set_theme` has no font). Returns the patch.
    */
   function themeToKeep(
     raw: Record<string, unknown>,
@@ -491,7 +676,7 @@ export function createPlannerAdapter(
       );
     }
     const first = batch.results[0];
-    const undoId = undoIdOut(batch.receipt.undoId);
+    const undoId = batch.replayed ? undefined : undoIdOut(batch.receipt.undoId);
     return {
       ...first,
       ...(batch.id !== undefined ? { id: batch.id } : {}),
@@ -511,23 +696,45 @@ export function createPlannerAdapter(
   function batch(input: unknown): BatchResult {
     try {
       sync();
+      if (syncError) {
+        return {
+          ok: false,
+          error: syncFailureError(),
+          snapshot: build(),
+        };
+      }
+      const commands =
+        isObject(input) && Array.isArray(input.commands) ? input.commands : [];
+      alignForReplace(commands.map((c) => (isObject(c) ? c.name : undefined)));
+      if (syncError) {
+        return { ok: false, error: syncFailureError(), snapshot: build() };
+      }
+      const appliedBefore = engine.snapshot().app.cookbook;
       const result = engine.batch(input);
       if (!result.ok) {
         return { ...result, snapshot: build() } as BatchResult;
       }
-      if (changedBy(result)) commit('batch', false);
-      const undoId = undoIdOut(result.receipt.undoId);
+      if (!result.replayed && result.receipt.changed) {
+        commit(
+          commands.map((c) => String((c as { name?: unknown })?.name)),
+          appliedBefore,
+        );
+      }
+      const undoId = result.replayed
+        ? undefined
+        : undoIdOut(result.receipt.undoId);
       const { undoId: _drop, ...receipt } = result.receipt;
+      const current = build();
       const out = {
         ...result,
-        snapshot: build(),
+        snapshot: current,
         receipt: { ...receipt, ...(undoId ? { undoId } : {}) },
         results: result.results.map(
           (item) =>
-            ({ ...item, snapshot: withView(item.snapshot) }) as Extract<
-              CommandResult,
-              { ok: true }
-            >,
+            ({
+              ...item,
+              snapshot: result.replayed ? current : withView(item.snapshot),
+            }) as Extract<CommandResult, { ok: true }>,
         ),
       } as BatchResult;
       deliver();
@@ -535,10 +742,7 @@ export function createPlannerAdapter(
     } catch (cause) {
       return {
         ok: false,
-        error: err(
-          'failed',
-          cause instanceof Error ? cause.message : String(cause),
-        ),
+        error: err('failed', message(cause)),
         snapshot: build(),
       };
     }
@@ -550,6 +754,21 @@ export function createPlannerAdapter(
     const id = raw.input.undoId;
     if (typeof id !== 'string') return raw;
     return { ...raw, input: { ...raw.input, undoId: inward.get(id) ?? '' } };
+  }
+
+  /** The engine's refusal names its own undo id; say the one the caller sent. */
+  function reword(result: CommandResult, given: string): CommandResult {
+    if (result.ok || result.error.code !== 'not_found') return result;
+    const inner = inward.get(given);
+    return inner
+      ? {
+          ...result,
+          error: {
+            ...result.error,
+            message: result.error.message.replace(`"${inner}"`, `"${given}"`),
+          },
+        }
+      : result;
   }
 
   const runWithUndo: PlannerController['run'] = (
@@ -568,6 +787,7 @@ export function createPlannerAdapter(
         checkSchema(undoSchema, command.input) === null
       ) {
         sync();
+        build();
         if (!inward.has(given)) {
           return fail(
             err('not_found', `Nothing to undo for "${given}".`, {
@@ -576,6 +796,7 @@ export function createPlannerAdapter(
             command.id as string | undefined,
           );
         }
+        return reword(run(untranslate(command), runOptions), given);
       }
     }
     return run(untranslate(command), runOptions);
@@ -590,7 +811,7 @@ export function createPlannerAdapter(
     },
     cookbook() {
       sync();
-      return engine.cookbook() as never;
+      return liveDocument(engine.cookbook() as never) as never;
     },
     undo() {
       sync();

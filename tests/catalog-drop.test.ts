@@ -48,6 +48,14 @@ describe('dropUnrenderableRecipes', () => {
           }),
           recipe('a.ghost', { models: ['@a:Gone'] }),
           recipe('a.needs', { models: ['@a:One'], requires: ['a.ghost'] }),
+          recipe('a.either', {
+            models: ['@a:One'],
+            requiresAny: [['a.ghost', 'a.hidden']],
+          }),
+          recipe('a.orOk', {
+            models: ['@a:One'],
+            requiresAny: [['a.ghost', 'a.ok']],
+          }),
         ],
       ),
       pkg(
@@ -66,7 +74,10 @@ describe('dropUnrenderableRecipes', () => {
 
   it('keeps what renders and drops what cannot, with a reason each', () => {
     expect(out.map((p) => p.id)).toEqual(['a']);
-    expect(out[0].recipes?.map((r) => r.id)).toEqual(['a.ok']);
+    expect(out[0].recipes?.map((r) => r.id)).toEqual(['a.ok', 'a.orOk']);
+    expect(log.join('\n')).toContain(
+      'a.either: needs one of a.ghost, a.hidden',
+    );
     expect(log.join('\n')).toContain('a.hidden: opens @a:Hidden');
     expect(log.join('\n')).toContain('a.ghost: lists @a:Gone');
     expect(log.join('\n')).toContain('a.needs: needs a.ghost');

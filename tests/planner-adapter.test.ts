@@ -70,7 +70,10 @@ describe('the browser controller is an adapter over the engine', () => {
     const controller = fresh();
     controller.run(SALES);
     const revision = controller.snapshot().revision;
-    cookbookStore.setOverview('section:sales', { widgets: [] } as never);
+    cookbookStore.setOverview('section:sales', {
+      version: 1,
+      removed: ['count'],
+    });
     expect(controller.snapshot().revision).toBe(revision);
     // The next command keeps the page edit.
     controller.run({
@@ -201,6 +204,175 @@ describe('the browser controller is an adapter over the engine', () => {
     expect(result.ok && result.receipt.changed).toBe(true);
     expect(controller.snapshot().focus.tab).toBe('layout');
     expect(controller.snapshot().revision).toBe(revision);
+  });
+});
+
+describe('what the review of the adapter found', () => {
+  it('exports and reports the live page customisations, not the engine copy', () => {
+    const controller = fresh();
+    controller.run(SALES);
+    cookbookStore.setOverview('section:sales', {
+      version: 1,
+      removed: ['count'],
+    });
+    const exported = controller.run({ name: 'export_cookbook', input: {} });
+    if (!exported.ok) throw new Error('export failed');
+    const data = exported.data as {
+      text: string;
+      cookbook: { overviews?: unknown };
+    };
+    expect(data.cookbook.overviews).toEqual(cookbookStore.snapshot().overviews);
+    expect(JSON.parse(data.text).overviews).toBeDefined();
+    expect(controller.cookbook().overviews).toBeDefined();
+  });
+
+  it('asks before an apply wipes only page customisations', () => {
+    const controller = fresh();
+    cookbookStore.setOverview('section:sales', {
+      version: 1,
+      removed: ['count'],
+    });
+    const refused = controller.run({
+      name: 'apply_cookbook',
+      input: { id: 'bakery' },
+    });
+    expect(!refused.ok && refused.error.code).toBe('confirmation_required');
+    expect(cookbookStore.overviews['section:sales']).toBeDefined();
+    // Validation still comes first, as in the engine.
+    const bad = controller.run({
+      name: 'apply_cookbook',
+      input: { id: 'no-such-cookbook' },
+    });
+    expect(!bad.ok && bad.error.code).toBe('invalid_input');
+  });
+
+  it('a replayed command never hands back an undo id from another epoch', () => {
+    const controller = fresh();
+    const first = controller.run({
+      name: 'set_name',
+      input: { name: 'A' },
+      id: 'x',
+    });
+    expect(first.ok && first.receipt.undoId).toBeTruthy();
+    recipeState.add('commerce.vendors');
+    const second = controller.run({ name: 'set_name', input: { name: 'B' } });
+    if (!second.ok) throw new Error('set_name failed');
+    const replay = controller.run({
+      name: 'set_name',
+      input: { name: 'A' },
+      id: 'x',
+    });
+    expect(replay.ok && replay.replayed).toBe(true);
+    expect(replay.ok && replay.receipt.undoId).toBeUndefined();
+    // B's undo is still B's.
+    const undone = controller.run({
+      name: 'undo',
+      input: { undoId: second.receipt.undoId as string },
+    });
+    expect(undone.ok).toBe(true);
+    expect(cookbookStore.name).toBe('A');
+  });
+
+  it('never throws on a document the engine rejects, and says so', () => {
+    const controller = fresh();
+    controller.run(SALES);
+    cookbookStore.theme = { custom: { primary: '#12' } };
+    expect(() => controller.snapshot()).not.toThrow();
+    expect(() => controller.undo()).not.toThrow();
+    expect(() => controller.subscribe(() => {})()).not.toThrow();
+    const refused = controller.run({
+      name: 'add_recipes',
+      input: { ids: ['commerce.estimates'] },
+    });
+    expect(!refused.ok && refused.error.code).toBe('failed');
+    expect(!refused.ok && refused.error.message).toMatch(
+      /not one the planner can read/,
+    );
+    const batch = controller.batch({ commands: [SALES] });
+    expect(!batch.ok && batch.error.code).toBe('failed');
+    // Fixing the document brings it back.
+    cookbookStore.theme = undefined;
+    expect(
+      controller.run({
+        name: 'add_recipes',
+        input: { ids: ['commerce.estimates'] },
+      }).ok,
+    ).toBe(true);
+  });
+
+  it('starts empty, without throwing, over an invalid app document', () => {
+    recipeState.clear();
+    cookbookStore.reset();
+    cookbookStore.theme = { custom: { primary: '#12' } };
+    const controller = createPlannerController(cookbookStore);
+    expect(controller.snapshot().recipes).toEqual([]);
+    cookbookStore.reset();
+  });
+
+  it('a batch that applies a library cookbook selects it and resets sample data', () => {
+    let replaced = 0;
+    const controller = fresh(() => {
+      replaced += 1;
+    });
+    const done = controller.batch({
+      commands: [
+        { name: 'apply_cookbook', input: { id: 'bakery', replace: true } },
+        { name: 'set_name', input: { name: 'Corner Bakery' } },
+      ],
+    });
+    expect(done.ok).toBe(true);
+    expect(libraryState.active).toBe('bakery');
+    expect(replaced).toBe(1);
+    expect(recipeState.ids.length).toBeGreaterThan(0);
+    expect(cookbookStore.name).toBe('Corner Bakery');
+  });
+
+  it('undoing an apply restores the plan and leaves page customisations alone', () => {
+    const controller = fresh();
+    const applied = controller.run({
+      name: 'apply_cookbook',
+      input: { id: 'bakery' },
+    });
+    if (!applied.ok) throw new Error('apply failed');
+    cookbookStore.setOverview('section:sales', {
+      version: 1,
+      removed: ['count'],
+    });
+    const undone = controller.run({
+      name: 'undo',
+      input: { undoId: applied.receipt.undoId as string },
+    });
+    expect(undone.ok).toBe(true);
+    expect(recipeState.ids).toEqual([]);
+    expect(cookbookStore.overviews['section:sales']).toBeDefined();
+  });
+
+  it('checks focus like every other command', () => {
+    const controller = fresh();
+    for (const command of [
+      { name: 'focus', input: {}, bogus: 1 },
+      { name: 'focus', input: {}, id: 3 },
+      { name: 'focus', input: {}, id: '' },
+      { name: 'focus', input: {}, expectedRevision: 1.5 },
+    ]) {
+      const result = controller.run(command);
+      expect(!result.ok && result.error.code, JSON.stringify(command)).toBe(
+        'invalid_input',
+      );
+    }
+  });
+
+  it('names the undo id the caller sent, and forgets used ones', () => {
+    const controller = fresh();
+    const added = controller.run(SALES);
+    if (!added.ok) throw new Error('add failed');
+    const id = added.receipt.undoId as string;
+    expect(controller.run({ name: 'undo', input: { undoId: id } }).ok).toBe(
+      true,
+    );
+    const again = controller.run({ name: 'undo', input: { undoId: id } });
+    expect(!again.ok && again.error.code).toBe('not_found');
+    expect(!again.ok && again.error.message).toContain(`"${id}"`);
   });
 });
 

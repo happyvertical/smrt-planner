@@ -8,7 +8,8 @@
  *   address              http://127.0.0.1:<port>/#kitchen=<token>
  *
  * The config never carries a token (any local process sending the right Host
- * header could read it); a `token` in the file is ignored. The page POSTs the
+ * header could read it); a `token` in the file is ignored (and reported, see
+ * `tokenInConfig`). The page POSTs the
  * cookbook to the endpoint with the token in `x-kitchen-token`. Wire contract,
  * version 1:
  *
@@ -23,6 +24,12 @@ import type { Cookbook } from '../cookbook/types.ts';
 /** Where to send, from the config. Absent from the config means no kitchen. */
 export interface KitchenEndpoint {
   endpoint: string;
+  /**
+   * True when the file still carried a `token`: an older `smrt` CLI that serves
+   * it where any local process can read it. The value is never kept, and
+   * sending is off until the CLI is updated.
+   */
+  tokenInConfig?: true;
 }
 
 /** Where and how to send: the config's endpoint and the address's token. */
@@ -72,7 +79,10 @@ export function parseKitchenConfig(
   if (!isObject(value)) return undefined;
   const { endpoint } = value;
   if (!usableEndpoint(endpoint)) return undefined;
-  return { endpoint: endpoint.trim() };
+  return {
+    endpoint: endpoint.trim(),
+    ...(Object.hasOwn(value, 'token') ? { tokenInConfig: true as const } : {}),
+  };
 }
 
 const strings = (value: unknown): string[] =>

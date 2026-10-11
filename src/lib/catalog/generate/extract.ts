@@ -242,14 +242,31 @@ function ownerName(raw: RawObject): string {
   return raw.extendsTypeArg ?? raw.className.replace(/Collection$/, '');
 }
 
-function isModel(raw: RawObject): boolean {
-  // Collections can inherit a model's schema; reject their ownership metadata
-  // before identifying a fieldless model by its ancestry or generated table.
-  if (raw.extends === 'SmrtCollection' || raw.extendsTypeArg !== undefined) {
-    return false;
+function isModel(raw: RawObject, objects: Map<string, RawObject>): boolean {
+  // A derived collection may inherit a table schema without carrying its own
+  // type argument. Resolve ancestry before accepting schema/field evidence.
+  const seen = new Set<RawObject>();
+  let ancestor: RawObject | undefined = raw;
+  while (ancestor && !seen.has(ancestor)) {
+    seen.add(ancestor);
+    if (
+      ancestor.extends === 'SmrtCollection' ||
+      ancestor.extendsTypeArg !== undefined
+    ) {
+      return false;
+    }
+    if (ancestor.extends === 'SmrtObject') return true;
+    if (!ancestor.extends) break;
+    const namespace = ancestor.qualifiedName.slice(
+      0,
+      ancestor.qualifiedName.lastIndexOf(':'),
+    );
+    const parent = ancestor.extends.includes(':')
+      ? ancestor.extends
+      : `${namespace}:${ancestor.extends}`;
+    ancestor = objects.get(parent);
   }
   return (
-    raw.extends === 'SmrtObject' ||
     !!raw.schema?.tableName ||
     Object.values(raw.fields).some((f) => !NON_VALUE_TYPES.has(f.type))
   );
@@ -306,9 +323,10 @@ export function extractPackage(raw: RawPackage): CatalogPackage {
   const recipes = extractRecipes(raw);
   const browser = extractBrowser(knowledge?.browser ?? manifest.browser);
   const objects = Object.values(manifest.objects);
-  const rawModels = objects.filter(isModel);
+  const objectMap = new Map(objects.map((o) => [o.qualifiedName, o]));
+  const rawModels = objects.filter((o) => isModel(o, objectMap));
   const modelMap = new Map(rawModels.map((m) => [m.qualifiedName, m]));
-  const collections = objects.filter((o) => !isModel(o));
+  const collections = objects.filter((o) => !modelMap.has(o.qualifiedName));
   const knowledgeSurfaces = knowledge?.surfaces ?? null;
 
   const models: CatalogModel[] = rawModels.map((model) => {

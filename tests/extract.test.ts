@@ -144,6 +144,70 @@ describe('extractPackage', () => {
     expect(log).toEqual([]);
   });
 
+  it('excludes derived collections by manifest ancestry, including qualified bases', () => {
+    const packageName = '@happyvertical/smrt-messages';
+    const account = `${packageName}:EmailAccount`;
+    const base = `${packageName}:AccountCollection`;
+    const derived = `${packageName}:EmailAccountCollection`;
+    const indirect = `${packageName}:MailAccounts`;
+    const common = {
+      collection: 'accounts',
+      fields: {},
+      methods: {},
+      decoratorConfig: {},
+      schema: { tableName: 'accounts' },
+    };
+    const fixture: RawPackage = {
+      packageName,
+      version: '0.55.11',
+      description: 'Messages',
+      knowledge: null,
+      manifest: {
+        packageName,
+        objects: {
+          [account]: {
+            ...common,
+            className: 'EmailAccount',
+            qualifiedName: account,
+            extends: 'Account',
+            fields: { name: { type: 'text' } },
+          },
+          [base]: {
+            ...common,
+            className: 'AccountCollection',
+            qualifiedName: base,
+            extends: 'SmrtCollection',
+            extendsTypeArg: 'Account',
+          },
+          [derived]: {
+            ...common,
+            className: 'EmailAccountCollection',
+            qualifiedName: derived,
+            extends: 'AccountCollection',
+          },
+          [indirect]: {
+            ...common,
+            className: 'MailAccounts',
+            qualifiedName: indirect,
+            extends: derived,
+          },
+        },
+      },
+    };
+    expect(extractPackage(fixture).models.map((model) => model.id)).toEqual([
+      account,
+    ]);
+  });
+
+  it('terminates malformed cyclic ancestry without dropping legacy value models', () => {
+    const fixture = structuredClone(raw);
+    const item = fixture.manifest.objects['@happyvertical/smrt-shop:Item'];
+    item.extends = item.qualifiedName;
+    expect(extractPackage(fixture).models.map((model) => model.id)).toEqual([
+      item.qualifiedName,
+    ]);
+  });
+
   it('derives surfaces from decoratorConfig when there is no knowledge', () => {
     expect(pkg.surfaceSource).toBe('manifest');
     expect(item.rest).toEqual([

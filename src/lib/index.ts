@@ -49,3 +49,5 @@ export {
   plannerShellProps,
 } from './planner/shell.ts';
 export type { PlannerHandle, PlannerProps } from './planner/types.ts';
+export { default as HostPlanner } from './planner/host/HostPlanner.svelte';
+export { createHostSession, type HostSession, type HostPlan, type CallKitchenTool } from './planner/host/session.svelte.ts';

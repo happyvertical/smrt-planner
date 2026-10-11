@@ -16,7 +16,7 @@ import { commandSchemas as fromCommands } from '../src/lib/planner/commands/inde
 const snapshot: PlanSnapshot = {
   version: 1,
   revision: 3,
-  app: { name: 'my-app', cookbook: null },
+  app: { name: 'my-app', description: null, cookbook: null },
   recipes: [{ id: 'commerce.invoicing', label: 'Invoicing' }],
   features: [],
   unavailable: [],

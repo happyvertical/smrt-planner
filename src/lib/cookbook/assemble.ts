@@ -6,8 +6,7 @@ import { COOKBOOK_SCHEMA, COOKBOOK_VERSION, type Cookbook } from './types.ts';
 
 /**
  * The cookbook a plan and its layout, theme and page customisations make, in
- * the stable order every export uses. Pure: the browser store (runes) and the
- * headless planner both build their document here.
+ * the stable order every export uses. Pure: no runes, no browser.
  */
 export function assembleCookbook(
   plan: PlanData,
@@ -15,6 +14,8 @@ export function assembleCookbook(
     layout?: ShellLayout;
     theme?: ThemeSetting;
     overviews?: Record<string, OverviewOverride>;
+    name?: string;
+    description?: string;
   } = {},
 ): Cookbook {
   const cookbook: Cookbook = {
@@ -22,6 +23,8 @@ export function assembleCookbook(
     version: COOKBOOK_VERSION,
     ...planFields(plan),
   };
+  if (extras.name) cookbook.name = extras.name;
+  if (extras.description) cookbook.description = extras.description;
   if (extras.layout) cookbook.layout = extras.layout;
   const theme = compactTheme(extras.theme);
   if (theme) cookbook.theme = theme;

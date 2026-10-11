@@ -2,14 +2,11 @@ import type { Recipe } from '../recipes/types.ts';
 import type { AppSettings } from '../settings/app-settings.ts';
 import { CURRENCY_CODES } from '../settings/currencies.ts';
 import {
-  COLOR_SCHEMES,
   type ColorSchemeSetting,
-  describeTheme,
   normalizeHex,
   THEME_PRESETS,
   type ThemeSetting,
 } from '../theme/theme.ts';
-import { formatTaxPercent } from './prompt.ts';
 
 /** Settings as the model states them: tax in percent. All optional. */
 export interface SettingsPatch {
@@ -295,22 +292,6 @@ function pickCommands(value: unknown): { name: string; input: unknown }[] {
   return out;
 }
 
-/** Apply a change through the store and report what really changed. */
-export function applyChange(
-  store: RecipeStore,
-  change: Pick<AssistantChange, 'add' | 'remove'>,
-): AppliedChange {
-  const before = new Set(store.ids);
-  if (change.add.length) store.add(...change.add);
-  if (change.remove.length) store.remove(...change.remove);
-  const after = new Set(store.ids);
-  return {
-    added: [...after].filter((id) => !before.has(id)),
-    removed: [...before].filter((id) => !after.has(id)),
-    kept: change.remove.filter((id) => after.has(id) && before.has(id)),
-  };
-}
-
 /** A sentence for the chat saying what changed, by recipe label. */
 export function describeChange(
   applied: AppliedChange,
@@ -326,78 +307,4 @@ export function describeChange(
     parts.push(`Kept ${names(applied.kept)} (needed).`);
   }
   return parts.join(' ');
-}
-
-/**
- * Write the settings that really change (they are reversible, so no click)
- * and say so tersely, e.g. "Currency CAD, tax 13%." Returns '' when nothing
- * changed.
- */
-export function applySettings(
-  store: SettingsStore,
-  patch: SettingsPatch,
-): string {
-  const before = store.read();
-  const next: AppSettings = { ...before };
-  const parts: string[] = [];
-  if (patch.currency && patch.currency !== before.currency) {
-    next.currency = patch.currency;
-    parts.push(`currency ${patch.currency}`);
-  }
-  if (patch.taxRate !== undefined) {
-    const fraction = Number((patch.taxRate / 100).toFixed(6));
-    if (fraction !== before.taxRate) {
-      next.taxRate = fraction;
-      parts.push(`tax ${formatTaxPercent(fraction)}`);
-    }
-  }
-  if (patch.paymentTerms && patch.paymentTerms !== before.paymentTerms) {
-    next.paymentTerms = patch.paymentTerms;
-    parts.push(`terms ${patch.paymentTerms}`);
-  }
-  if (!parts.length) return '';
-  store.write(next);
-  const text = parts.join(', ');
-  return `${text[0].toUpperCase()}${text.slice(1)}.`;
-}
-
-/** What applying a theme change did, so the chat can say it and offer Undo. */
-export interface AppliedTheme {
-  /** A terse sentence, e.g. "Theme: glass." */
-  text: string;
-  /** The theme before the change, for Undo (undefined was the default). */
-  previous: ThemeSetting | undefined;
-}
-
-/**
- * Apply a theme change (reversible, so no click) and say so tersely.
- * Returns null when nothing would change. A preset replaces a brand colour; a
- * brand colour sits on top of the preset; light or dark is kept either way.
- */
-export function applyThemePatch(
-  store: ThemeStore,
-  patch: ThemePatch,
-): AppliedTheme | null {
-  if (!patch.preset && !patch.primary && !patch.colorScheme) return null;
-  const previous = store.read();
-  const next: ThemeSetting = { ...previous };
-  if (patch.preset) {
-    next.preset = patch.preset;
-    delete next.custom;
-  }
-  if (patch.primary) {
-    next.custom = {
-      primary: patch.primary,
-      ...(previous?.custom?.fontFamily
-        ? { fontFamily: previous.custom.fontFamily }
-        : {}),
-    };
-  }
-  if (patch.colorScheme && COLOR_SCHEMES.includes(patch.colorScheme)) {
-    next.colorScheme = patch.colorScheme;
-  }
-  if (JSON.stringify(next) === JSON.stringify(previous ?? {})) return null;
-  store.write(next);
-  const text = `Theme: ${describeTheme(store.read())}.`;
-  return { text, previous };
 }

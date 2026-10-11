@@ -43,6 +43,9 @@ export type PersistState = 'unknown' | 'ok' | 'memory';
 export class CookbookStore {
   /** The shell layout, owned here and passed to `AppShell`. */
   layout = $state<ShellLayout | undefined>();
+  /** The app's name and description (`set_name`); not shown in the UI yet. */
+  name = $state<string | undefined>();
+  description = $state<string | undefined>();
   /** The app's theme; undefined is the default. The shell applies it live. */
   theme = $state<ThemeSetting | undefined>();
   /**
@@ -80,6 +83,8 @@ export class CookbookStore {
       layout: this.layout,
       theme: $state.snapshot(this.theme) as ThemeSetting | undefined,
       overviews: this.overviews,
+      name: this.name,
+      description: this.description,
     });
   }
 
@@ -110,6 +115,8 @@ export class CookbookStore {
     recipeState.load(cookbook);
     this.layout = cookbook.layout;
     this.theme = cookbook.theme;
+    this.name = cookbook.name;
+    this.description = cookbook.description;
     this.overviews = { ...(cookbook.overviews ?? {}) };
     setSampleTaxRate(
       hasTaxRateRow(cookbook) ? readSettings(cookbook).taxRate : undefined,
@@ -168,6 +175,8 @@ export class CookbookStore {
     recipeState.clear();
     this.layout = undefined;
     this.theme = undefined;
+    this.name = undefined;
+    this.description = undefined;
     this.overviews = {};
     try {
       globalThis.localStorage?.removeItem(SHELL_STORAGE_KEY);

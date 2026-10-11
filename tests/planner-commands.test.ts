@@ -151,6 +151,18 @@ const EXAMPLES: Record<CommandName, { valid: object[]; invalid: unknown[] }> = {
     valid: [{}, { tab: 'layout' }, { section: 'section:sales' }],
     invalid: [{ tab: 'nowhere' }, { section: '' }],
   },
+  set_name: {
+    valid: [
+      { name: 'Corner Bakery' },
+      { description: 'Bread' },
+      { name: null },
+    ],
+    invalid: [{ name: 3 }, { name: '' }, { x: 1 }],
+  },
+  validate: {
+    valid: [{}],
+    invalid: [{ x: 1 }],
+  },
   export_cookbook: {
     valid: [{}, { name: 'Shop' }],
     invalid: [{ name: '' }, { name: 3 }],
@@ -307,9 +319,11 @@ describe('runtime', () => {
     const applied = ok(controller, 'apply_cookbook', { id: 'bakery' });
     expect(applied.snapshot.app).toEqual({
       name: 'Bakery',
+      description: null,
       cookbook: 'bakery',
     });
-    expect(applied.receipt.undoId).toBeUndefined();
+    // The engine undoes a whole-document change too (the old per-slice undo had none).
+    expect(applied.receipt.undoId).toBeDefined();
     // Not empty: refused until confirmed, and nothing changes.
     const before = controller.snapshot();
     const refused = errorOf(controller, 'apply_cookbook', { id: 'mechanic' });

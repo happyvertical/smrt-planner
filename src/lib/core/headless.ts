@@ -1,14 +1,13 @@
 import { parseCookbookWith } from '../cookbook/parse.ts';
 import type { Cookbook } from '../cookbook/types.ts';
-import { createPlainHost } from '../planner/commands/plain-host.ts';
-import { createCommandRunner } from '../planner/commands/runner.ts';
 import {
-  buildCommandTools,
-  type CommandTool,
-  commandTools,
-} from '../planner/commands/schemas.ts';
+  createPlannerAdapter,
+  type PlannerAdapter,
+} from '../planner/commands/adapter.ts';
+import { engineCatalog, restrictCatalog } from '../planner/commands/catalog.ts';
+import type { CommandTool } from '../planner/commands/schemas.ts';
 import type {
-  CommandName,
+  BatchResult,
   CommandResult,
   PlannerCommand,
   PlanSnapshot,
@@ -38,6 +37,8 @@ export interface HeadlessPlanner {
   run(command: PlannerCommand, options?: RunOptions): CommandResult;
   /** Untyped form for commands that arrive as data (a model's tool call). */
   run(command: unknown, options?: RunOptions): CommandResult;
+  /** Several commands, all or nothing (the engine's `batch`). */
+  batch(batch: unknown): BatchResult;
   /** The current plan, read-only and compact. */
   snapshot(): PlanSnapshot;
   /** The plan as a cookbook document (what `export_cookbook` writes). */
@@ -56,6 +57,8 @@ export interface HeadlessPlanner {
 /**
  * A planner with no UI, no runes and no module state: the command set over a
  * plain-object plan, for a Node server (an MCP server holds one per plan id).
+ * It is smrt's cookbook command engine (`createCookbookEngine`) behind the
+ * planner's names, plus `focus`.
  *
  * `cookbook` is the starting document; it goes through the strict import
  * check and the call throws on a document that fails it. Everything after that
@@ -71,38 +74,21 @@ export function createHeadlessPlanner(
     if (!parsed.ok) throw new Error(parsed.error);
     initial = parsed.cookbook;
   }
-  const host = createPlainHost(initial);
-  const catalog = options.catalog;
-  const tools = catalog
-    ? buildCommandTools(
-        catalog.recipes.map((recipe) => recipe.id),
-        catalog.cookbooks.map((entry) => entry.id),
-      )
-    : undefined;
-  const runner = createCommandRunner(
-    host,
-    {},
-    tools && {
-      schemas: Object.fromEntries(
-        tools.map((tool) => [tool.name, tool.inputSchema]),
-      ) as Record<CommandName, CommandTool['inputSchema']>,
-    },
-  );
+  const base = engineCatalog();
+  const adapter: PlannerAdapter = createPlannerAdapter({
+    catalog: options.catalog ? restrictCatalog(base, options.catalog) : base,
+    cookbook: initial,
+    port: { prepareImport: (document) => parseCookbookWith(document) },
+  });
   return {
-    run: runner.run,
-    snapshot: runner.snapshot,
-    subscribe: runner.subscribe,
-    cookbook: () => host.cookbook.snapshot(),
-    undo() {
-      const undoId = runner.snapshot().undo.at(-1);
-      if (!undoId) {
-        return {
-          ok: false,
-          error: { code: 'not_found', message: 'Nothing to undo.' },
-        };
-      }
-      return runner.run({ name: 'undo', input: { undoId } });
+    run: adapter.run,
+    batch: adapter.batch,
+    snapshot: adapter.snapshot,
+    subscribe: adapter.subscribe,
+    cookbook: adapter.cookbook,
+    undo: adapter.undo,
+    get tools() {
+      return adapter.tools;
     },
-    tools: tools ?? commandTools,
   };
 }

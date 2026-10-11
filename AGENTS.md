@@ -137,35 +137,38 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   widgets and unknown ids are dropped and reported (`CookbookResult.dropped`), only canonical
   non-empty overrides are kept. `page.ts`: the controller wiring (`override` reads
   `cookbookStore.overview(id)`, `onchange` writes `setOverview`), shared by the page and the tests.
-- `src/lib/planner/commands/`: the planner command set (#22), the one seam that changes the app.
-  `types.ts` (versioned commands, `PlanSnapshot`, typed errors), `schemas.ts` (`commandTools` /
-  `commandSchemas`: every command's input as JSON Schema, with recipe and cookbook ids as enums;
-  `checkSchema` is the ONE validator the controller runs, so schema and runtime cannot drift),
-  `execute.ts` (the handlers, reusing `assistant/change.ts` for recipes, settings and theme),
-  `snapshot.ts` (compact plan, size-tested), `host.ts` (what a controller needs from the app; every
-  part but `recipes` optional, a missing one answers `unsupported`), `controller.svelte.ts`
-  (`createPlannerController(store)`: `run`, `snapshot`, `subscribe`; Undo entries per command with a
-  stale check, `force` for a person's own Undo; `revision` follows the plan, not the focus). Commands
-  are `{ name, input }` and return `{ ok: true, snapshot, receipt, data? } | { ok: false, error }`.
-  Add a command: input type in `CommandInputs`, schema in `buildCommandTools`, handler in
-  `execute.ts`, its slice in `TOUCHES` if it can be undone, an `EXAMPLES` row in
-  `tests/planner-commands.test.ts`. The assistant (`assistant/transport.ts`) applies its changes as
-  these commands, and its theme Undo is the `undo` command. `instance.ts` is the app's controller;
-  `plannerRuntime` is how the layout lends it the data-source reset and section navigation.
-  `Planner.svelte` is the mountable component (props in `types.ts`); the static app's Planner page
-  renders the same one (`layout="shell"`, `persistence="host"`). `assistant.ts` builds a chat
-  transport over any controller. The stores (`cookbookStore`, `recipeState`) are still module
-  singletons: one planner per page. The rules are not in the controller: `runner.ts`
-  (`createCommandRunner`: validation, revisions, undo, receipts, snapshot, no runes) and
-  `execute.ts` run over a `PlannerHost`; `controller.svelte.ts` is the thin reactive wrapper
-  (`$state` cells, one `$effect` for manual edits) and `plain-host.ts` the plain-object host the
-  headless planner (`core/headless.ts`, `createHeadlessPlanner`) uses. The recipe-owned data
-  rules are pure (`recipes/plan-data.ts`), `cookbook/assemble.ts` builds the document,
-  `cookbook/parse.ts` checks it with page customisations injected (`validate.ts` supplies the
-  browser registry; smrt-svelte's core widgets import `.svelte`, so a Node host drops `overviews`
-  and says so), `library/document.ts` is the Node-safe half of applying a library cookbook. Add a
-  rule in one of those, never in both wrappers; `tests/headless-planner.test.ts` runs one script
-  through both controllers and compares everything.
+- `src/lib/planner/commands/`: the planner command set (#22) is **smrt's cookbook command engine**
+  (`@happyvertical/smrt-core/cookbook/engine`, smrt#3753) behind the planner's names; the planner is an
+  adapter, so every rule of the commands (validation, revisions, command ids, atomic batches, undo,
+  receipts, snapshot, `validate`/`export`) lives upstream. Fix a rule there, never here. Planner-side:
+  `adapter.ts` (`createPlannerAdapter`, rune-free: `focus`, the planner tab/section cells, keeping the
+  engine in step with an app whose UI edits the document between commands, handing the engine's new
+  document back through a `PlannerPort`, the planner's strict import check before the engine's, "a
+  library cookbook with no theme keeps the person's look"), `catalog.ts` (`engineCatalog()`: the
+  planner's recipes, catalog models, library cookbooks, smrt-ui presets, currencies and setting targets
+  as an `EngineCatalog`; nothing is bundled in the engine), `schemas.ts` (`commandTools` /
+  `commandSchemas` / `buildCommandTools(recipeIds, cookbookIds)` over the engine's, plus the `focus`
+  tool), `types.ts` (the engine's types; `PlanSnapshot` adds `focus`; `PlannerCommand` adds `focus`),
+  `controller.svelte.ts` (`createPlannerController(store)`: the adapter over `cookbookStore` with
+  `$state` cells and one `$effect` that tells subscribers about manual edits; `portFromStore`),
+  `slices.ts` (`createSliceController`: the same over a bare recipe/settings/theme store, for hosts and
+  tests). Commands are `{ name, input, id?, expectedRevision? }` and return
+  `{ ok: true, snapshot, receipt, data?, replayed? } | { ok: false, error }`; `batch({ commands })`
+  is all or nothing. A manual edit in the app (a store changed outside a command) is adopted on the next
+  call as one revision and a new undo epoch: older undo ids answer `not_found`. Page customisations
+  (`overviews`) are edited outside the plan and do not move the revision. Add a command upstream, then
+  add its `EXAMPLES` row in `tests/planner-commands.test.ts`; `tests/headless-planner.test.ts` runs one
+  script through the browser controller, the headless planner and a bare `createCookbookEngine`.
+  `instance.ts` is the app's controller; `plannerRuntime` is how the layout lends it the data-source
+  reset and section navigation. `Planner.svelte` is the mountable component (props in `types.ts`);
+  the static app's Planner page renders the same one (`layout="shell"`, `persistence="host"`).
+  `assistant.ts` builds a chat transport over any controller. The stores (`cookbookStore`,
+  `recipeState`) are still module singletons: one planner per page. Still planner-side and NOT yet
+  deleted because the UI uses them directly (follow-up: route the UI through commands):
+  `recipes/plan-data.ts`, `recipes/resolve.ts`, `settings/app-settings.ts`, `cookbook/assemble.ts`
+  and `cookbook/parse.ts` (the import check, which also migrates old ids and checks page
+  customisations; smrt-svelte's core widgets import `.svelte`, so a Node host drops `overviews` and
+  says so).
 - Packaging: `pnpm package` (`svelte-package` with `tsconfig.package.json`, then `publint`) builds
   `dist/` from `src/lib` with exports `.`, `./commands`, `./core` and `./app`, then
   `scripts/package-app.ts` builds the static app into `app/`. Code in `src/lib` imports relatively,
@@ -175,6 +178,7 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   path from `planner/app.svelte.ts` (`setBasePath`), which the layout sets from `$app/paths`. The
   package is `private` until its name and registry are decided; flipping that is the publish step.
 - `src/lib/core/`: the `./core` export, for plain Node servers (no Vite, no runes, no `.svelte`).
+  `headless.ts` (`createHeadlessPlanner`: the engine over a plain-object plan, with `focus`),
   `catalog.ts` (recipes, library cookbooks, `defaultCatalog`), `prompt.ts` (`buildHostPrompt`, which
   calls the browser assistant's `buildSystemPrompt` and adds the host-only commands section: never a
   second copy of the prompt), `reply.ts` (`replySchema`, `parseHostReply`), `request.ts`

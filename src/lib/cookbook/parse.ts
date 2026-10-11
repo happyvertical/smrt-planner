@@ -275,6 +275,14 @@ export function parseCookbookWith(
     features,
     policies,
   };
+  for (const key of ['name', 'description'] as const) {
+    const value = input[key];
+    if (value === undefined) continue;
+    if (typeof value !== 'string') {
+      return fail(`The cookbook "${key}" must be a string.`);
+    }
+    if (value.trim()) cookbook[key] = value.trim();
+  }
   if (exposure && Object.keys(exposure).length) cookbook.exposure = exposure;
   if (layout) cookbook.layout = layout;
   if (theme) cookbook.theme = theme;

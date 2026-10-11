@@ -154,8 +154,8 @@ compiler involved. It has everything a server needs to speak this contract:
 | `buildHostPrompt({ message, snapshot, history?, catalog? })` | `{ system, messages }` for one chat call |
 | `replySchema` / `buildReplySchema(catalog?)` | JSON Schema of the model's answer (ids are enums) |
 | `parseHostReply(text, catalog?)` | `{ ok, reply, issues }`; `reply` is the response body |
-| `commandTools`, `commandSchemas`, `checkSchema` | the 19 commands as tool definitions |
-| `createHeadlessPlanner(cookbook?, { catalog? })` | one plan in plain Node: `run`, `snapshot`, `cookbook`, `undo`, `subscribe` |
+| `commandTools`, `commandSchemas`, `checkSchema` | the 21 commands as tool definitions |
+| `createHeadlessPlanner(cookbook?, { catalog? })` | one plan in plain Node: `run`, `batch`, `snapshot`, `cookbook`, `undo`, `subscribe` |
 | `recipes`, `libraryCookbooks`, `defaultCatalog` | the catalog the prompt is built from |
 | `PlanSnapshot`, `CommandInputs`, `HostRequest`, `HostReply` ... | types |
 
@@ -178,13 +178,56 @@ plan.cookbook();   // the plan as a cookbook document
 plan.undo();       // undo the latest undoable change
 ```
 
-The commands, input schemas, validation, error codes and receipts are the
-browser controller's: both run the same command runner, and the parity test runs
-one script through each. State is a plain object, so any number of plans may
-coexist in one process. Two differences: it keeps no sample records, and a
-document's `overviews` (page customisations) are dropped with a notice, because
-checking them needs smrt-svelte's widget registry, which loads Svelte
-components. `catalog` limits the recipe and cookbook ids a plan accepts.
+It is smrt's cookbook command engine (`createCookbookEngine` from
+`@happyvertical/smrt-core/cookbook/engine`) behind the planner's names plus
+`focus`, which moves the planner's view and not the document. The commands,
+input schemas, validation, error codes and receipts are the engine's: the
+browser controller is the same adapter over the app's stores, and the parity
+test runs one script through the browser controller, the headless planner and
+a bare engine. State is a plain object, so any number of plans may coexist in
+one process. It keeps no sample records, and a document's `overviews` (page
+customisations) are dropped with a notice, because checking them needs
+smrt-svelte's widget registry, which loads Svelte components. `catalog` limits
+the recipe and cookbook ids a plan accepts. `plan.batch({ id?, commands })`
+runs up to 50 commands all or nothing.
+
+## Commands: what the engine changed
+
+The planner's command set shipped as 19 commands with its own runner. Since
+smrt 0.55.11 it is the engine's 20 plus `focus` (21). The names and input
+schemas are unchanged unless listed here, so a host written against the old
+set keeps working.
+
+- **New**: `set_name` (name and describe the app) and `validate` (typed
+  diagnostics, changes nothing). `batch` (atomic) and command `id`s (a
+  repeated `id` returns the first result with `replayed: true`; the same `id`
+  for a different command is `id_reuse`).
+- **Commands carry `id` and `expectedRevision`**: `{ name, input, id?,
+  expectedRevision? }`. The `run(command, { expectedRevision })` option still
+  works.
+- **Errors**: `unsupported` is gone (the engine always has every part of the
+  app); `id_reuse` and `batch_failed` are new. `error` may carry `path` and
+  `details`.
+- **Receipts** gain `revisionBefore`, `revisionAfter`, `id` and `warnings`.
+- **Undo is the whole document**, not one part of it. `apply_cookbook` and
+  `import_cookbook` can now be undone (they had no undo). `undo` is a
+  `conflict` while the plan differs from what that change left, unless
+  `force: true`; the assistant's own theme Undo therefore never forces and falls
+  back to putting the previous theme back, leaving later edits alone.
+- **A manual edit in the app** (a store changed by the UI, not by a command)
+  is adopted on the next call: the revision moves by one, and the undo ids
+  issued before it answer `not_found`. Page customisations (`overviews`) are
+  edited outside the plan and do not move the revision.
+- **Snapshot**: `app.description` is new; everything else, `focus` included, is
+  as before. Equal histories give equal revisions, and a command that changes
+  nothing does not move it.
+- **`import_cookbook`** runs the planner's own strict check first (its
+  wording, old-id migration, page-customisation check) and then the engine's;
+  the code and `path` of a refusal are the engine's.
+- **Library cookbook with no theme** keeps the person's own look, in the same
+  undoable step (a batch of `apply_cookbook` and `set_theme`).
+- `@happyvertical/smrt-core` is now a runtime dependency of the package
+  (it was a dev dependency); `./core` imports its engine entry.
 
 ### Minimal reference server
 

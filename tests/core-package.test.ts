@@ -74,8 +74,8 @@ it('imports and runs under plain Node', () => {
     { cwd: out, encoding: 'utf8' },
   );
   const result = JSON.parse(stdout.trim().split('\n').at(-1) ?? '{}');
-  expect(result.tools).toBe(19);
-  expect(result.schemas).toBe(19);
+  expect(result.tools).toBe(21);
+  expect(result.schemas).toBe(21);
   expect(result.recipes).toBeGreaterThan(10);
   expect(result.cookbooks).toBeGreaterThan(0);
   expect(result.system).toBe(true);

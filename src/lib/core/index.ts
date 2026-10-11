@@ -10,8 +10,8 @@
  * - `parseHostRequest`: validate the request body;
  * - the library catalog (recipes and cookbooks) the prompt is built from;
  * - `createHeadlessPlanner`: the command set over a plain-object plan (many may
- *   coexist), the same commands, validation and snapshots as the browser
- *   controller, which shares its command runner.
+ *   coexist): smrt's cookbook command engine behind the planner's names, the
+ *   same commands, validation and snapshots as the browser controller.
  *
  * The browser controller (`createPlannerController`) is not here: it drives
  * the UI's stores and lives in `./commands` (Svelte source).
@@ -36,6 +36,7 @@ export {
   type JsonSchema,
 } from '../planner/commands/schemas.ts';
 export {
+  type BatchResult,
   type CommandError,
   type CommandErrorCode,
   type CommandInputs,

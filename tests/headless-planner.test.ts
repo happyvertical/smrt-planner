@@ -1,3 +1,4 @@
+import { createCookbookEngine } from '@happyvertical/smrt-core/cookbook/engine';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { cookbookStore } from '../src/lib/cookbook/store.svelte.ts';
 import {
@@ -7,6 +8,7 @@ import {
   recipes,
 } from '../src/lib/core/index.ts';
 import { libraryState } from '../src/lib/library/state.svelte.ts';
+import { engineCatalog } from '../src/lib/planner/commands/catalog.ts';
 import {
   COMMAND_NAMES,
   type CommandName,
@@ -51,6 +53,9 @@ const FIRST_SECTION = (s: PlanSnapshot) => s.sections[0];
  */
 const SCRIPT: Step[] = [
   { name: 'focus', input: { tab: 'recipes' } },
+  { name: 'validate' },
+  { name: 'set_name', input: { name: 'Corner Bakery', description: 'Bread' } },
+  { name: 'set_name', input: { name: '' } },
   { name: 'add_cookbook', input: { id: 'bakery' } },
   { name: 'remove_cookbook', input: { id: 'bakery' } },
   { name: 'add_recipes', input: { ids: ['commerce.sales'] } },
@@ -101,7 +106,7 @@ const SCRIPT: Step[] = [
   { name: 'remove_recipes', input: { ids: ['commerce.sales'] } },
 ];
 
-describe('headless planner parity with the browser controller', () => {
+describe('headless planner parity with the browser controller and the smrt engine', () => {
   beforeEach(() => {
     freshBrowser();
   });
@@ -109,7 +114,14 @@ describe('headless planner parity with the browser controller', () => {
   it('runs every command with the same results, snapshots and cookbooks', () => {
     const browser = freshBrowser();
     const headless = createHeadlessPlanner();
+    // The engine itself: the planner adds `focus` and nothing else.
+    const engine = createCookbookEngine({ catalog: engineCatalog() });
+    const viewless = (snapshot: PlanSnapshot) => {
+      const { focus: _focus, ...rest } = snapshot;
+      return rest;
+    };
     expect(headless.snapshot()).toEqual(browser.snapshot());
+    expect(viewless(headless.snapshot())).toEqual(engine.snapshot());
     expect(headless.cookbook()).toEqual(cookbookStore.snapshot());
 
     const succeeded = new Set<string>();
@@ -130,6 +142,34 @@ describe('headless planner parity with the browser controller', () => {
       expect(headless.cookbook(), `cookbook after ${name}`).toEqual(
         cookbookStore.snapshot(),
       );
+      if (name !== 'focus') {
+        const c = engine.run(command, options);
+        // Same results as the engine itself, once the planner's `focus` is set aside.
+        const stripped = b.ok ? { ...b, snapshot: viewless(b.snapshot) } : b;
+        if (name === 'import_cookbook' && b.ok && c.ok) {
+          // The planner's check adds the requirements before the engine counts.
+          expect({
+            ...stripped,
+            receipt: { ...b.receipt, summary: '' },
+          }).toEqual({ ...c, receipt: { ...c.receipt, summary: '' } });
+        } else if (name === 'import_cookbook' && !b.ok && !c.ok) {
+          // The planner's own strict import check speaks first and in its own
+          // words (and migrates old ids); the code and where it points agree.
+          expect(b.error.code).toBe(c.error.code);
+          expect(b.error.path).toBe(c.error.path);
+        } else {
+          expect(stripped, `engine: ${name} ${JSON.stringify(input)}`).toEqual(
+            c,
+          );
+        }
+        expect(
+          viewless(headless.snapshot()),
+          `engine snapshot after ${name}`,
+        ).toEqual(engine.snapshot());
+        expect(headless.cookbook(), `engine cookbook after ${name}`).toEqual(
+          engine.cookbook(),
+        );
+      }
       if (a.ok) succeeded.add(name);
       else codes.add(a.error.code);
       results.push(a);

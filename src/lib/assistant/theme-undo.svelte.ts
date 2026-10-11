@@ -34,9 +34,11 @@ export class ThemeUndos {
   private counter = 0;
 
   /**
-   * With a controller, Undo goes through its undo command (the path every
-   * other client uses); the theme the change replaced is the fallback when
-   * the controller no longer holds that entry.
+   * With a controller, Undo first goes through its undo command (the path
+   * every other client uses). That undoes the whole document, so it is only
+   * tried while nothing else changed since (no `force`); otherwise, or when
+   * the controller no longer holds the entry, the theme the change replaced is
+   * put back on its own, leaving later edits alone.
    */
   constructor(
     private readonly store: ThemeStore,
@@ -62,12 +64,11 @@ export class ThemeUndos {
   undo(id: string): void {
     const entry = this.undos[id];
     if (entry?.status !== 'available') return;
-    // The person pressed Undo: later edits do not stop it, so it is forced.
     const undone =
       entry.commandUndoId &&
       this.controller?.run({
         name: 'undo',
-        input: { undoId: entry.commandUndoId, force: true },
+        input: { undoId: entry.commandUndoId },
       }).ok;
     if (!undone) this.store.write(entry.previous);
     entry.status = 'undone';

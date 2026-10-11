@@ -58,6 +58,8 @@ interface RawObject {
   description?: string;
   /** The own field that labels a record in pickers (smrt#3611). */
   displayLabelField?: string;
+  /** Models and their collections may both carry the generated table schema. */
+  schema?: { tableName?: string };
   fields: Record<string, RawField>;
   methods: Record<string, RawMethod>;
   decoratorConfig: Record<string, unknown>;
@@ -241,7 +243,16 @@ function ownerName(raw: RawObject): string {
 }
 
 function isModel(raw: RawObject): boolean {
-  return Object.values(raw.fields).some((f) => !NON_VALUE_TYPES.has(f.type));
+  // Collections can inherit a model's schema; reject their ownership metadata
+  // before identifying a fieldless model by its ancestry or generated table.
+  if (raw.extends === 'SmrtCollection' || raw.extendsTypeArg !== undefined) {
+    return false;
+  }
+  return (
+    raw.extends === 'SmrtObject' ||
+    !!raw.schema?.tableName ||
+    Object.values(raw.fields).some((f) => !NON_VALUE_TYPES.has(f.type))
+  );
 }
 
 function qualify(

@@ -6,6 +6,8 @@ import {
   approveCustomCss,
   containCustomCss,
   customCssApproved,
+  customCssDisabled,
+  shellScopeOf,
 } from '../theme/custom-css.svelte.ts';
 
 interface Props {
@@ -33,7 +35,10 @@ $effect(() => {
 // Keep the current keystrokes on screen while the host confirms the cookbook.
 $effect(() => {
   if (typeof document === 'undefined' || !editing || !draftCss) return;
-  const contained = containCustomCss(draftCss);
+  if (customCssDisabled(location.search)) return;
+  const scope = shellScopeOf(editor);
+  if (!scope) return;
+  const contained = containCustomCss(draftCss, scope);
   if (!contained) return;
   const style = document.createElement('style');
   style.dataset.smrtPlannerDraft = '';

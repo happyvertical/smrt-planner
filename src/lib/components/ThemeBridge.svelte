@@ -9,6 +9,7 @@ import {
   containCustomCss,
   customCssApproved,
   customCssDisabled,
+  shellScopeOf,
 } from '../theme/custom-css.svelte.ts';
 import { resolveTheme } from '../theme/runtime.ts';
 import type { ColorSchemeSetting } from '../theme/theme.ts';
@@ -81,6 +82,9 @@ $effect(() => {
   }
 });
 
+// Marks where this bridge sits, to find the one shell its CSS may style.
+let anchor = $state<HTMLElement | null>(null);
+
 // Each mounted Planner owns its own style element. Cookbook CSS is untrusted:
 // it applies only once approved, contained to the app shell without external
 // loads (see theme/custom-css), and `?styles=off` switches it off.
@@ -89,7 +93,9 @@ $effect(() => {
   const css = cookbookStore.theme?.customCss;
   if (!css || customCssDisabled(location.search) || !customCssApproved(css))
     return;
-  const contained = containCustomCss(css);
+  const scope = shellScopeOf(anchor);
+  if (!scope) return;
+  const contained = containCustomCss(css, scope);
   if (!contained) return;
   const style = document.createElement('style');
   style.dataset.smrtPlannerCustom = '';
@@ -98,3 +104,5 @@ $effect(() => {
   return () => style.remove();
 });
 </script>
+
+<span bind:this={anchor} hidden data-smrt-planner-anchor></span>

@@ -83,9 +83,10 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   CSS to the shell. `ThemeSection.svelte` shows visual preset and
   appearance choices, a colour picker and font control; `AdvancedStyles.svelte` edits the CSS on
   its own page. Cookbook CSS is untrusted (`theme/custom-css.svelte.ts`): it applies only once the
-  visitor approves that exact text (typing it counts), is re-serialized by the browser inside
-  `@scope (.smrt-admin-shell)` with `@import` and non-`data:` `url()` dropped, and `?styles=off`
-  turns it off. The assistant's token-based theme changes have an Undo. A library cookbook with
+  visitor approves that exact text (SHA-256; typing it counts), is re-serialized by the browser
+  inside an `@scope` rooted at this Planner's own shell (`data-smrt-planner-scope`), with `@import`,
+  `@property`, non-`data:` `url()` and escaped custom properties dropped, and `?styles=off` turns
+  it off, drafts included. The assistant's token-based theme changes have an Undo. A library cookbook with
   no theme keeps the visitor's current look.
 - `src/lib/settings/app-settings.ts`: app settings (currency, default tax rate, default payment terms)
   belong to the visitor's app, never to a cookbook. They are the same app-scope `defaultValue`

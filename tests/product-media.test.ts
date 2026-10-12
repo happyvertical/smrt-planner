@@ -1,13 +1,17 @@
+import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
+import ProductMedia from '../src/lib/components/ProductMedia.svelte';
 import { createPlannerDataSource } from '../src/lib/data/planner-source.ts';
 import { catalogModels } from '../src/lib/forms/shared.ts';
 import {
   ASSET,
+  GALLERY_RECIPE,
   PRODUCT_ASSET,
   planProductImageDelete,
   planProductImageSave,
   productImages,
 } from '../src/lib/products/media.ts';
+import { recipeState } from '../src/lib/recipes/state.svelte.ts';
 
 const PRODUCT = '@happyvertical/smrt-products:Product';
 
@@ -48,5 +52,42 @@ describe('product media demo', () => {
         expect.objectContaining({ productId: product.id }),
       ]),
     );
+  });
+
+  it('shows the canonical asset grid only when the cookbook has the Asset library recipe', () => {
+    const product = { id: 'p1', name: 'Loaf' };
+    const images = new Map([
+      [
+        'p1',
+        [
+          {
+            id: 'a1',
+            name: 'Loaf photo',
+            sourceUri: 'data:image/svg+xml,%3Csvg%2F%3E',
+            mimeType: 'image/svg+xml',
+            description: '',
+            sortOrder: 0,
+          },
+        ],
+      ],
+    ]);
+    const view = () =>
+      render(ProductMedia, {
+        props: { rows: [product], images, onselect: () => {} },
+      }).body.replace(/<!--.*?-->/g, '');
+    try {
+      recipeState.clear();
+      const off = view();
+      expect(off).not.toContain('asset-grid');
+      expect(off).toContain('Add image for Loaf');
+      expect(off).toMatch(/1\s+image\b/);
+      recipeState.add(GALLERY_RECIPE);
+      const on = view();
+      expect(on).toContain('asset-grid');
+      expect(on).toContain('Loaf photo');
+      expect(on).toContain('Add image for Loaf');
+    } finally {
+      recipeState.clear();
+    }
   });
 });

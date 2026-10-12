@@ -4,11 +4,14 @@ import { catalogModels } from '../forms/shared.ts';
 /** Canonical records used to attach an image to a product. */
 export const ASSET = '@happyvertical/smrt-assets:Asset';
 export const PRODUCT_ASSET = '@happyvertical/smrt-products:ProductAsset';
+/** The smrt-assets recipe whose library view is the product gallery. */
+export const GALLERY_RECIPE = 'assets.library';
 
 export interface ProductImage {
   id: string;
   name: string;
   sourceUri: string;
+  mimeType: string;
   description: string;
   sortOrder: number;
 }
@@ -31,6 +34,7 @@ export function productImages(
           id: asset.id,
           name: String(asset.name ?? 'Product image'),
           sourceUri,
+          mimeType: String(asset.mimeType ?? 'image/*'),
           description: String(asset.description ?? ''),
           sortOrder: Number(link.sortOrder ?? 0),
         },

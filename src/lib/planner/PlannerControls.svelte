@@ -170,6 +170,14 @@ $effect(() => {
     padding-top: var(--smrt-spacing-4);
   }
 
+  /* The strip persists across configure-page route changes; the panel below
+     crossfades with the content. smrt-ui's Tabs owns the classes (`tabs-nav`
+     for button tabs, `tabs-links` for link tabs; one strip per Tabs). */
+  .planner :global(.tabs-nav),
+  .planner :global(.tabs-links) {
+    view-transition-name: planner-tabs;
+  }
+
   .pane {
     display: grid;
     gap: var(--smrt-spacing-3);

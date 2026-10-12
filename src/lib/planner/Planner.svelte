@@ -12,7 +12,7 @@ import {
   WorkspaceAccountMenu,
 } from '@happyvertical/smrt-svelte/workspace';
 import type { DataSurfaceRegistry } from '@happyvertical/smrt-ui/data-surface';
-import { type ComponentProps, onMount } from 'svelte';
+import { type ComponentProps, onMount, tick } from 'svelte';
 import smrtMark from '../assets/smrt-mark.svg';
 import { catalog, getModel } from '../catalog/index.ts';
 import AdvancedStyles from '../components/AdvancedStyles.svelte';
@@ -26,6 +26,7 @@ import type { Cookbook } from '../cookbook/types.ts';
 import { provideDataSource, tryUseDataSource } from '../data/context.ts';
 import { createPlannerDataSource } from '../data/planner-source.ts';
 import { activeForms } from '../forms/active.ts';
+import { runViewTransition } from '../motion/view-transition.ts';
 import { recipes } from '../recipes/index.ts';
 import { recipeState } from '../recipes/state.svelte.ts';
 import { DEFAULT_PRESET } from '../theme/theme.ts';
@@ -94,11 +95,25 @@ const defaultRoute = $derived.by(() => {
 });
 if (!tryUseDataSource()) provideDataSource(createPlannerDataSource());
 let route = $state('');
+// The mount's own hash router. Each change morphs through a view transition
+// (the chrome named below stays put, the content crossfades); the first read
+// paints plainly. `tick` keeps the DOM update inside the transition's
+// callback, where the browser snapshots the new state.
 onMount(() => {
+  // One hash change fires both `hashchange` and `popstate`, and `route` is
+  // only assigned inside the transition callback (after the old frame is
+  // captured), so the target is tracked synchronously to transition once.
+  let target = location.hash.slice(1);
+  route = target;
   const read = () => {
-    route = location.hash.slice(1);
+    const next = location.hash.slice(1);
+    if (next === target) return;
+    target = next;
+    void runViewTransition(async () => {
+      route = next;
+      await tick();
+    });
   };
-  read();
   window.addEventListener('hashchange', read);
   window.addEventListener('popstate', read);
   return () => {
@@ -166,6 +181,9 @@ const slotItems = $derived<ShellSlotItem[]>([
 {/snippet}
 
 {#snippet assistantToggle()}
+  <!-- smrt#3853 (header slice) folds this into AppShell's `dock:assistant`
+       item, keeping `header.start` free for `backLink`; this snippet and the
+       `planner-assistant` slot item go then. -->
   <AssistantToggle settingsHref={AI_HREF} />
 {/snippet}
 
@@ -219,11 +237,14 @@ const slotItems = $derived<ShellSlotItem[]>([
 </CookbookApp>
 
 <style>
-  .content { width: min(100%, 72rem); margin-inline: auto; padding: var(--smrt-spacing-6); }
-  .customize { display: inline-grid; place-items: center; inline-size: 2rem; block-size: 2rem; color: inherit; border-radius: var(--smrt-radius-medium, 0.5rem); }
+  /* `view-transition-name`s: one per surface per screen (a duplicate aborts
+     the transition). AppShell will name brand/nav/dock itself (smrt#3850);
+     these are the planner's own. */
+  .content { width: min(100%, 72rem); margin-inline: auto; padding: var(--smrt-spacing-6); view-transition-name: planner-content; }
+  .customize { display: inline-grid; place-items: center; inline-size: 2rem; block-size: 2rem; color: inherit; border-radius: var(--smrt-radius-medium, 0.5rem); view-transition-name: planner-customize; }
   .customize:hover { background: var(--smrt-color-surface-container-high); }
   .customize:focus-visible { outline: 2px solid var(--smrt-color-primary); outline-offset: 2px; }
-  .back { display: inline-flex; align-items: center; gap: var(--smrt-spacing-1); block-size: 2rem; padding-inline: var(--smrt-spacing-2); color: var(--smrt-color-on-surface-variant); font-size: var(--smrt-typography-body-small-size, 0.8125rem); text-decoration: none; white-space: nowrap; border-radius: var(--smrt-radius-medium, 0.5rem); }
+  .back { display: inline-flex; align-items: center; gap: var(--smrt-spacing-1); block-size: 2rem; padding-inline: var(--smrt-spacing-2); color: var(--smrt-color-on-surface-variant); font-size: var(--smrt-typography-body-small-size, 0.8125rem); text-decoration: none; white-space: nowrap; border-radius: var(--smrt-radius-medium, 0.5rem); view-transition-name: planner-back; }
   .back:hover { background: var(--smrt-color-surface-container-high); color: var(--smrt-color-on-surface); }
   .back:focus-visible { outline: 2px solid var(--smrt-color-primary); outline-offset: 2px; }
 </style>

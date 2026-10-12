@@ -6,7 +6,7 @@ import {
   type ShellNavItem,
   WorkspaceAccountMenu,
 } from '@happyvertical/smrt-svelte/workspace';
-import { afterNavigate, goto, replaceState } from '$app/navigation';
+import { afterNavigate, goto, onNavigate, replaceState } from '$app/navigation';
 import { base } from '$app/paths';
 import { page } from '$app/state';
 import { aiState } from '$lib/ai/instance.ts';
@@ -39,6 +39,7 @@ import {
 } from '$lib/kitchen/live.ts';
 import { kitchenState } from '$lib/kitchen/state.svelte.ts';
 import { libraryState } from '$lib/library/state.svelte.ts';
+import { runViewTransition } from '$lib/motion/view-transition.ts';
 import { appHref, appQuery, setBasePath } from '$lib/planner/app.svelte.ts';
 import { plannerRuntime } from '$lib/planner/instance.ts';
 import { hasAppState, withTab } from '$lib/planner/query.ts';
@@ -310,6 +311,20 @@ afterNavigate((navigation) => {
   else sync();
 });
 
+// Route changes morph instead of cutting: the standard SvelteKit pairing of
+// `onNavigate` with `document.startViewTransition`, through the planner's
+// helper so reduced motion and unsupporting browsers fall back to a plain
+// navigation. The navigation waits for the transition to capture the old
+// page, then completes inside its update callback.
+onNavigate((navigation) => {
+  return new Promise<void>((resolve) => {
+    void runViewTransition(async () => {
+      resolve();
+      await navigation.complete;
+    });
+  });
+});
+
 // Keep the address bar in step with the selection as it changes.
 $effect(() => {
   // appQuery reads every part of the shareable state, so this tracks them all.
@@ -348,6 +363,9 @@ function flushOnHide() {
 {/snippet}
 
 {#snippet assistantToggle()}
+  <!-- smrt#3853 (header slice) folds this into AppShell's `dock:assistant`
+       item and keeps `header.start` for `backLink`; this snippet and the
+       `assistant-toggle` slot item go then. -->
   <AssistantToggle settingsHref={appHref('/ai/')} />
 {/snippet}
 

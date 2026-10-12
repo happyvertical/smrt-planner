@@ -7,8 +7,10 @@ import {
   Switch,
   ToggleButton,
 } from '@happyvertical/smrt-ui/forms';
+import { flip } from 'svelte/animate';
 import { catalog } from '../catalog/index.ts';
 import { humanize } from '../data/format.ts';
+import { motionDuration } from '../motion/tokens.ts';
 import { appHref } from '../planner/app.svelte.ts';
 import {
   type FeatureEntry,
@@ -105,7 +107,7 @@ function toggle(entry: FeatureEntry, on: boolean) {
     <ul class="rows" aria-label="Features">
       {#each results as entry (entry.id)}
         {@const on = recipeState.hasFeature(entry.id)}
-        <li class:selected={on}>
+        <li class:selected={on} animate:flip={{ duration: motionDuration('medium2', 300) }}>
           <span class="icon" aria-hidden="true"><Icon path={DATABASE} size={22} /></span>
           <div class="text">
             <span class="name">

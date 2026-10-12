@@ -1,5 +1,6 @@
 <script lang="ts">
 import { Switch } from '@happyvertical/smrt-ui/forms';
+import { flip } from 'svelte/animate';
 import {
   catalog,
   exposedModels,
@@ -7,6 +8,7 @@ import {
   surfaceCount,
 } from '$lib/catalog/index.ts';
 import { humanize } from '$lib/data/format.ts';
+import { motionDuration } from '$lib/motion/tokens.ts';
 import { appHref } from '$lib/planner/app.svelte.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
 
@@ -77,7 +79,7 @@ function toggle(id: string) {
       {#each results as pkg (pkg.id)}
         {@const selected = selection.has(pkg.id)}
         {@const lockedBy = selection.requiredBy(pkg.id)}
-        <li class:selected>
+        <li class:selected animate:flip={{ duration: motionDuration('medium2', 300) }}>
           <h3>
             <a href={appHref(`/packages/${pkg.id}/`)}>{humanize(pkg.id)}</a>
           </h3>

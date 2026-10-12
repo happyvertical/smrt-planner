@@ -149,7 +149,7 @@ const cssPending = $derived.by(() => {
 <style>
   .theme { display: grid; gap: 1.25rem; max-inline-size: 72rem; }
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(10rem, 100%), 1fr)); gap: .75rem; }
-  .choice { display: grid; align-content: start; gap: .8rem; min-block-size: 8.5rem; padding: .85rem; border: 1px solid var(--smrt-color-outline-variant); border-radius: var(--smrt-radius-large, .75rem); background: var(--smrt-color-surface-container-low); color: var(--smrt-color-on-surface); text-align: start; cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
+  .choice { display: grid; align-content: start; gap: .8rem; min-block-size: 8.5rem; padding: .85rem; border: 1px solid var(--smrt-color-outline-variant); border-radius: var(--smrt-radius-large, .75rem); background: var(--smrt-color-surface-container-low); color: var(--smrt-color-on-surface); text-align: start; cursor: pointer; transition: border-color var(--smrt-duration-short3, 150ms) var(--smrt-easing-standard, ease), background var(--smrt-duration-short3, 150ms) var(--smrt-easing-standard, ease), transform var(--smrt-duration-short3, 150ms) var(--smrt-easing-standard, ease); }
   .choice:hover { border-color: var(--smrt-color-primary); background: var(--smrt-color-surface-container); transform: translateY(-2px); }
   .choice.selected { border: 2px solid var(--smrt-color-primary); padding: calc(.85rem - 1px); background: var(--smrt-color-primary-container); color: var(--smrt-color-on-primary-container); }
   .choice:focus-visible, .advanced:focus-visible, .wheel:focus-within, select:focus-visible { outline: 2px solid var(--smrt-color-primary); outline-offset: 2px; }

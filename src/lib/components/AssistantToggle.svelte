@@ -82,6 +82,8 @@ function press(event: MouseEvent) {
     color: var(--smrt-color-on-surface);
     text-decoration: none;
     cursor: pointer;
+    /* One per screen: the header shows a single assistant toggle. */
+    view-transition-name: planner-assistant;
   }
 
   .assistant-toggle:hover {

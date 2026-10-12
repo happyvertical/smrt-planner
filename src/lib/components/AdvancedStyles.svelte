@@ -115,7 +115,7 @@ onDestroy(() => {
   .live { display: inline-flex; align-items: center; gap: .4rem; flex: none; padding: .4rem .65rem; border-radius: 2rem; background: var(--smrt-color-primary-container); color: var(--smrt-color-on-primary-container); font-size: .8rem; font-weight: 700; }
   .live span { inline-size: .5rem; block-size: .5rem; border-radius: 50%; background: var(--smrt-color-primary); }
   label { font-weight: 700; }
-  .editor { position: relative; min-block-size: 24rem; border: 1px solid var(--smrt-color-outline); border-radius: .75rem; background: var(--smrt-color-surface-container-lowest); overflow: hidden; }
+  .editor { position: relative; min-block-size: 24rem; border: 1px solid var(--smrt-color-outline); border-radius: var(--smrt-radius-large, .75rem); background: var(--smrt-color-surface-container-lowest); overflow: hidden; }
   .editor:focus-within { outline: 2px solid var(--smrt-color-primary); outline-offset: 2px; }
   pre, textarea { box-sizing: border-box; position: absolute; inset: 0; inline-size: 100%; block-size: 100%; margin: 0; padding: 1rem; overflow: auto; white-space: pre; tab-size: 2; font: 500 .9rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: normal; }
   pre { pointer-events: none; color: var(--smrt-color-on-surface); }
@@ -123,17 +123,13 @@ onDestroy(() => {
   textarea::selection { background: color-mix(in srgb, var(--smrt-color-primary) 28%, transparent); }
   textarea:focus { outline: none; }
   textarea::placeholder { color: var(--smrt-color-on-surface-variant); -webkit-text-fill-color: var(--smrt-color-on-surface-variant); }
-  .selector { color: #b452ab; }
-  .property { color: #3577b5; }
-  .value { color: #a36712; }
-  .comment { color: #648276; }
+  /* Syntax roles on the theme's own colours, so they follow the scheme and
+     the chosen brand instead of a fixed light/dark palette. */
+  .selector { color: var(--smrt-color-tertiary); }
+  .property { color: var(--smrt-color-primary); }
+  .value { color: var(--smrt-color-secondary); }
+  .comment { color: var(--smrt-color-on-surface-variant); }
   .punctuation { color: var(--smrt-color-on-surface-variant); }
   .help { font-size: .9rem; }
-  @media (prefers-color-scheme: dark) {
-    .selector { color: #e2a4de; }
-    .property { color: #9bcaff; }
-    .value { color: #f0c27e; }
-    .comment { color: #9bbfac; }
-  }
   @media (max-width: 42rem) { .heading { display: grid; } .live { justify-self: start; } }
 </style>

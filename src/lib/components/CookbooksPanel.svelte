@@ -1,4 +1,5 @@
 <script lang="ts">
+import { tryUseAdminShell } from '@happyvertical/smrt-svelte/workspace';
 import { Button } from '@happyvertical/smrt-ui';
 import { Alert, ConfirmDialog } from '@happyvertical/smrt-ui/feedback';
 import { onMount } from 'svelte';
@@ -25,6 +26,7 @@ import {
 import AppSettings from './AppSettings.svelte';
 
 const dataSource = useDataSource();
+const shell = tryUseAdminShell();
 let selectedId = $state<string | null>(null);
 let confirming = $state(false);
 let error = $state('');
@@ -69,7 +71,9 @@ function commit() {
     dataSource.reset?.();
     libraryState.select(selected.id);
     error = '';
-    notice = `Now using the ${selected.name} cookbook.`;
+    const count = previewMenu(selected.document).length;
+    notice = `${selected.name} added ${count} menu sections. Explore them in the left sidebar.`;
+    shell?.setPanelState('left', 'expanded');
   } else {
     error = result.error;
     notice = '';
@@ -78,6 +82,9 @@ function commit() {
 </script>
 
 <div class="cookbooks">
+  {#if notice}
+    <Alert variant="success" title="Cookbook applied">{notice}</Alert>
+  {/if}
   <p class="meta">
     A cookbook is a ready-made starting point: the recipes, menu and settings a
     kind of business usually needs. Pick one, look it over, then change
@@ -93,7 +100,7 @@ function commit() {
           class="card"
           class:selected={selectedId === cookbook.id}
           aria-pressed={selectedId === cookbook.id}
-          onclick={() => (selectedId = cookbook.id)}
+          onclick={() => { selectedId = cookbook.id; notice = ''; }}
         >
           <span class="heading">
             <svg
@@ -166,7 +173,6 @@ function commit() {
   {#if error}
     <Alert variant="error" title="Could not use this cookbook">{error}</Alert>
   {/if}
-  <p class="notice" role="status" aria-live="polite">{notice}</p>
 </div>
 
 <ConfirmDialog
@@ -198,13 +204,8 @@ function commit() {
   }
 
   .meta,
-  .summary,
-  .notice {
+  .summary {
     color: var(--smrt-color-on-surface-variant);
-  }
-
-  .notice:empty {
-    display: none;
   }
 
   .grid {

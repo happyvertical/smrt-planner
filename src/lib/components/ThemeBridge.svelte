@@ -64,6 +64,9 @@ $effect(() => {
     cookbookStore.setTheme({
       ...cookbookStore.theme,
       preset,
+      fontFamily:
+        cookbookStore.theme?.fontFamily ??
+        cookbookStore.theme?.custom?.fontFamily,
       custom: undefined,
     });
   }
@@ -71,5 +74,18 @@ $effect(() => {
     applied = { ...(applied ?? before), colorScheme };
     cookbookStore.setTheme({ ...cookbookStore.theme, colorScheme });
   }
+});
+
+// Each mounted Planner owns its own style element. textContent keeps CSS as
+// CSS text, without interpreting it as markup.
+$effect(() => {
+  if (typeof document === 'undefined' || !cookbookStore.loaded) return;
+  const css = cookbookStore.theme?.customCss;
+  if (!css) return;
+  const style = document.createElement('style');
+  style.dataset.smrtPlannerCustom = '';
+  style.textContent = css;
+  document.head.append(style);
+  return () => style.remove();
 });
 </script>

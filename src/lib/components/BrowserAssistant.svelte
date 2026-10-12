@@ -22,9 +22,12 @@ import VoiceTyping from './VoiceTyping.svelte';
 interface BrowserAssistantProps {
   /** The registry the shell gives its `dock` snippet. */
   registry: DataSurfaceRegistry;
+  /** The AI models page; a mounted `Planner` serves it at `#/ai/`. */
+  settingsHref?: string;
 }
 
-let { registry }: BrowserAssistantProps = $props();
+let { registry, settingsHref = appHref('/ai/') }: BrowserAssistantProps =
+  $props();
 
 // The model and voice live in the shared AI state (the sidebar icons and the
 // AI models page read the same), so closing the dock keeps them loaded.
@@ -145,7 +148,7 @@ $effect(() => {
         <span class="model-name">{thinkName}</span>
         <a
           class="model-link"
-          href={appHref('/ai/')}
+          href={settingsHref}
           aria-label="AI settings: change model or voice"
           title="AI settings"
         >
@@ -201,7 +204,7 @@ $effect(() => {
           : aiState.privacyNote}
       </p>
       <AiSetup show={['think']} />
-      <a href={appHref('/ai/')}>All AI settings</a>
+      <a href={settingsHref}>All AI settings</a>
     </div>
   {/if}
 </div>

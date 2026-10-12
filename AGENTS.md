@@ -168,8 +168,10 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   add its `EXAMPLES` row in `tests/planner-commands.test.ts`; `tests/headless-planner.test.ts` runs one
   script through the browser controller, the headless planner and a bare `createCookbookEngine`.
   `instance.ts` is the app's controller; `plannerRuntime` is how the layout lends it the data-source
-  reset and section navigation. `Planner.svelte` is the mountable component (props in `types.ts`);
-  the static app's Planner page renders the same one (`layout="shell"`, `persistence="host"`).
+  reset and section navigation. `Planner.svelte` is the mountable component (props in `types.ts`; `backLink`
+  is a host's way out, a `header.start` slot item; `inference` switches the assistant on, see
+  `src/lib/ai/`); the static app's Planner page renders the same one (`layout="shell"`,
+  `persistence="host"`).
   `assistant.ts` builds a chat transport over any controller. The stores (`cookbookStore`,
   `recipeState`) are still module singletons: one planner per page. Still planner-side and NOT yet
   deleted because the UI uses them directly (follow-up: route the UI through commands):
@@ -254,7 +256,14 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `status.ts` is the pure derivation (`ready` / `available` / `off`, accessible names,
   `needsFirstRunSetup`); `icons.ts` the three icon paths. The sidebar icons
   (`AiStatusIcons`, a `slotItems` entry `ai-status` in `leftSidebar.footer`), the
-  `/ai/` page and the assistant dock all render `AiSetup.svelte` / read `aiState`.
+  `/ai/` page (`AiModelsPage.svelte`, which a mounted `Planner` serves at `#/ai/`) and the
+  assistant dock all render `AiSetup.svelte` / read `aiState`. `AssistantToggle.svelte` is the
+  chat icon in `header.end` (the app's layout and `Planner` both mount it as a slot item): with
+  `aiState.assistantReady` (think `ready`: a loaded browser model, the host's server, a connected
+  BYO endpoint) it toggles the `assistant` dock through `useShellDock()`, otherwise it is a link
+  to the AI models page. A mounted `Planner` configures `aiState` from its `inference` prop
+  (`PlannerLifecycle`: `configure(configFromProp(...))`, or `useChat` for `{ chat }`) and only
+  then renders the dock and the icon; without the prop it has no assistant.
   First visit: `aiState.hydrate` decides once (nothing downloaded, no read-aloud,
   nothing built, not dismissed) and the Planner page then shows the setup form
   before the tabs; Continue is per visit, "I don't need AI" is remembered.

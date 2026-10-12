@@ -8,7 +8,12 @@ runtime, so one build serves every deployment.
 Served at `${base}/planner.config.json` (next to the app; `base` is the
 SvelteKit base path) and fetched once at startup. A missing file means the
 defaults. A mounted `Planner` can pass the same object as its `inference` prop
-(plus `onReply`); the prop overrides the file.
+(plus `onReply`); the prop overrides the file, and is what gives the mount its
+assistant at all: the chat icon at the end of the header and the dock appear
+only with it, and the AI models page is served inside the mount at `#/ai/`
+(the icon leads there until a model is ready). A site where visitors connect
+their own endpoint passes `{ mode: 'byo', credentialPersistence: 'memory' }`
+(add `alternatives: ['browser']` to offer WebLLM as well).
 
 ```json
 {

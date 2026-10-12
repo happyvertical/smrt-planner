@@ -13,6 +13,7 @@ import { aiState } from '$lib/ai/instance.ts';
 import smrtMark from '$lib/assets/smrt-mark.svg';
 import { exposedModels, getPackage } from '$lib/catalog/index.ts';
 import AiStatusIcons from '$lib/components/AiStatusIcons.svelte';
+import AssistantToggle from '$lib/components/AssistantToggle.svelte';
 import BrowserAssistant from '$lib/components/BrowserAssistant.svelte';
 import PlannerEditBridge from '$lib/components/PlannerEditBridge.svelte';
 import PlannerPalette from '$lib/components/PlannerPalette.svelte';
@@ -346,6 +347,10 @@ function flushOnHide() {
   <PlannerPalette />
 {/snippet}
 
+{#snippet assistantToggle()}
+  <AssistantToggle settingsHref={appHref('/ai/')} />
+{/snippet}
+
 {#snippet userMenu()}
   <WorkspaceAccountMenu userName="User menu" disabled />
 {/snippet}
@@ -381,8 +386,13 @@ function flushOnHide() {
       slot: 'header.center',
       render: palette,
     },
+    {
+      id: 'assistant-toggle',
+      label: 'Assistant',
+      slot: 'header.end',
+      render: assistantToggle,
+    },
   ]}
-  dockToggles={[{ tool: 'assistant', label: 'Assistant', slot: 'header.end' }]}
   {...shellProps}
   layoutEditing={{ slot: 'header.start' }}
   navMode="sections"

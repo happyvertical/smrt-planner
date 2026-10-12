@@ -26,6 +26,33 @@ describe('Planner component', () => {
     expect(PLANNER_TAB_IDS).toHaveLength(7);
   });
 
+  it('shows a host back link at the start of its header only when given one', () => {
+    const plain = render(Planner, { props: { basePath: '/planner' } }).body;
+    expect(plain).not.toContain('data-planner-back');
+    const { body } = render(Planner, {
+      props: {
+        basePath: '/planner',
+        backLink: { href: '/docs', label: 'Back to documentation' },
+      },
+    });
+    expect(body).toContain('data-planner-back');
+    expect(body).toContain('href="/docs"');
+    expect(body).toContain('Back to documentation');
+  });
+
+  it('has an assistant icon and dock only when the host gives it a model', () => {
+    const plain = render(Planner, { props: { basePath: '/planner' } }).body;
+    expect(plain).not.toContain('data-dock-tool="assistant"');
+    const { body } = render(Planner, {
+      props: { basePath: '/planner', inference: { mode: 'byo' } },
+    });
+    // No model is ready yet: the icon leads to the AI models page in the mount.
+    expect(body).toContain('data-dock-tool="assistant"');
+    expect(body).toContain('data-assistant-setup');
+    expect(body).toContain('href="#/ai/"');
+    expect(body).toContain('Set up the assistant');
+  });
+
   it('builds its links from basePath, not from SvelteKit', () => {
     setBasePath('/kitchen/');
     expect(getBasePath()).toBe('/kitchen');

@@ -31,7 +31,7 @@ await page.waitForTimeout(250);
 if((await page.evaluate(()=>window.__calls.length))!==0)throw Error('a stored browser theme changed the Kitchen plan on mount');
 await page.evaluate(()=>window.__emitKitchen(2,'Kitchen QA updated'));
 await page.getByText('Kitchen QA updated',{exact:false}).first().waitFor({timeout:15000});
-await page.getByRole('tab',{name:'Settings'}).click();
+await page.getByRole('tab',{name:'Theme'}).click();
 await page.getByRole('textbox',{name:'Brand colour hex'}).fill('#c2410c');
 await page.getByRole('button',{name:'Retry same edit'}).waitFor({timeout:15000});
 await page.getByRole('button',{name:'Retry same edit'}).click();

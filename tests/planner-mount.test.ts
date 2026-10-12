@@ -16,14 +16,13 @@ describe('Planner component', () => {
     for (const label of [
       'Cookbooks',
       'Recipes',
-      'Features',
-      'Layout',
+      'Theme',
       'Settings',
       'Export',
     ]) {
       expect(body, label).toContain(label);
     }
-    expect(PLANNER_TAB_IDS).toHaveLength(6);
+    expect(PLANNER_TAB_IDS).toHaveLength(7);
   });
 
   it('builds its links from basePath, not from SvelteKit', () => {

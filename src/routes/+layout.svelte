@@ -269,13 +269,8 @@ afterNavigate((navigation) => {
   }
   if (hasAppState(location.search)) selection.fromSearch(location.search);
   if (onPlanner()) {
-    // A visitor with nothing built yet lands on the Cookbooks tab.
-    plannerTab.fromSearch(
-      location.search,
-      recipeState.ids.length || recipeState.features.length
-        ? 'recipes'
-        : 'cookbooks',
-    );
+    // Cookbooks is the entry point even when a plan already exists.
+    plannerTab.fromSearch(location.search);
   }
   // SvelteKit runs the initial 'enter' callbacks before the router counts as
   // started, and replaceState throws until then, so wait one microtask.

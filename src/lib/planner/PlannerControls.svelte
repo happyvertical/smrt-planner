@@ -12,6 +12,7 @@ import ExportPanel from '../components/ExportPanel.svelte';
 import FeaturesPanel from '../components/FeaturesPanel.svelte';
 import RecipeCards from '../components/RecipeCards.svelte';
 import SettingsPanel from '../components/SettingsPanel.svelte';
+import ThemeSection from '../components/ThemeSection.svelte';
 import { cookbookStore } from '../cookbook/store.svelte.ts';
 import { provideDataSource, tryUseDataSource } from '../data/context.ts';
 import { createPlannerDataSource } from '../data/planner-source.ts';
@@ -30,7 +31,7 @@ let {
   layout = 'own',
   persistence = 'self',
   themeControls = false,
-  tabs = PLANNER_TAB_IDS,
+  tabs = ['cookbooks', 'recipes', 'theme', 'settings', 'export'],
   onready,
   managedByParent = false,
 }: PlannerProps & { managedByParent?: boolean } = $props();
@@ -48,6 +49,7 @@ const labels: Record<PlannerTabId, string> = {
   recipes: 'Recipes',
   features: 'Features',
   layout: 'Layout',
+  theme: 'Theme',
   settings: 'Settings',
   export: 'Export',
 };
@@ -129,8 +131,11 @@ $effect(() => {
         <ShellLayoutEditor controller={ownLayout ?? shellLayout ?? undefined} />
       </div>
     {/if}
+    {#if shown.includes('theme')}
+      <div hidden={active !== 'theme'}><ThemeSection provider={themeControls} /></div>
+    {/if}
     {#if shown.includes('settings')}
-      <div hidden={active !== 'settings'}><SettingsPanel {themeControls} /></div>
+      <div hidden={active !== 'settings'}><SettingsPanel /></div>
     {/if}
     {#if shown.includes('export')}
       <div hidden={active !== 'export'}><ExportPanel /></div>

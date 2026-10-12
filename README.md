@@ -64,6 +64,7 @@ need AI, let's just build" skips it for good. Live s-m-r-t objects are tracked i
 
 Generated record forms use the Planner’s responsive, open form layout. Custom CSS notes are saved with the cookbook and included in export and import.
 Generated record lists let you sort any data column by selecting its heading; select it again to reverse the order. Sorting changes only the current view.
+A fresh Planner starts on Cookbooks with the Glass theme; Theme is a dedicated tab, while feature and layout editing remain available through the app shell.
 
 ## Install the package
 

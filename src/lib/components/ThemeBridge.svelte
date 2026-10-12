@@ -5,6 +5,11 @@ import {
 } from '@happyvertical/smrt-ui/themes';
 import { onMount } from 'svelte';
 import { cookbookStore } from '../cookbook/store.svelte.ts';
+import {
+  containCustomCss,
+  customCssApproved,
+  customCssDisabled,
+} from '../theme/custom-css.svelte.ts';
 import { resolveTheme } from '../theme/runtime.ts';
 import type { ColorSchemeSetting } from '../theme/theme.ts';
 
@@ -76,15 +81,19 @@ $effect(() => {
   }
 });
 
-// Each mounted Planner owns its own style element. textContent keeps CSS as
-// CSS text, without interpreting it as markup.
+// Each mounted Planner owns its own style element. Cookbook CSS is untrusted:
+// it applies only once approved, contained to the app shell without external
+// loads (see theme/custom-css), and `?styles=off` switches it off.
 $effect(() => {
   if (typeof document === 'undefined' || !cookbookStore.loaded) return;
   const css = cookbookStore.theme?.customCss;
-  if (!css) return;
+  if (!css || customCssDisabled(location.search) || !customCssApproved(css))
+    return;
+  const contained = containCustomCss(css);
+  if (!contained) return;
   const style = document.createElement('style');
   style.dataset.smrtPlannerCustom = '';
-  style.textContent = css;
+  style.textContent = contained;
   document.head.append(style);
   return () => style.remove();
 });

@@ -6,6 +6,7 @@ import {
   tryGetThemeContext,
 } from '@happyvertical/smrt-ui/themes';
 import { cookbookStore } from '../cookbook/store.svelte.ts';
+import { customCssApproved } from '../theme/custom-css.svelte.ts';
 import {
   type ColorSchemeSetting,
   normalizeHex,
@@ -72,6 +73,10 @@ function resetToPreset() {
     custom: undefined,
   });
 }
+const cssPending = $derived.by(() => {
+  const css = cookbookStore.theme?.customCss;
+  return Boolean(css) && !customCssApproved(css ?? '');
+});
 </script>
 
 <section class="theme" aria-label="Theme settings">
@@ -136,7 +141,7 @@ function resetToPreset() {
   {#if invalid}<p class="error" role="alert">Use a hex colour like #c2410c.</p>{/if}
   <a class="advanced" href={advancedStylesHref}>
     <span class="advanced-icon" aria-hidden="true">{'{}'}</span>
-    <span><strong>Advanced Styles</strong><small>Edit custom CSS for your app</small></span>
+    <span><strong>Advanced Styles</strong><small>{cssPending ? 'This cookbook has custom CSS waiting for your approval' : 'Edit custom CSS for your app'}</small></span>
     <span class="arrow" aria-hidden="true">→</span>
   </a>
 </section>

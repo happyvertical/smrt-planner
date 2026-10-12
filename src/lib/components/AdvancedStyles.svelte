@@ -2,6 +2,11 @@
 import { onDestroy } from 'svelte';
 import { cookbookStore } from '../cookbook/store.svelte.ts';
 import { highlightCss } from '../theme/css-highlight.ts';
+import {
+  approveCustomCss,
+  containCustomCss,
+  customCssApproved,
+} from '../theme/custom-css.svelte.ts';
 
 interface Props {
   backHref?: string;
@@ -12,6 +17,8 @@ let draftCss = $state('');
 let editing = $state(false);
 let timer: ReturnType<typeof setTimeout> | undefined;
 const tokens = $derived(highlightCss(draftCss));
+// CSS that arrived with a cookbook waits for the visitor's approval.
+const pending = $derived(Boolean(css) && !editing && !customCssApproved(css));
 let highlight = $state<HTMLElement | null>(null);
 let editor = $state<HTMLTextAreaElement | null>(null);
 
@@ -26,9 +33,11 @@ $effect(() => {
 // Keep the current keystrokes on screen while the host confirms the cookbook.
 $effect(() => {
   if (typeof document === 'undefined' || !editing || !draftCss) return;
+  const contained = containCustomCss(draftCss);
+  if (!contained) return;
   const style = document.createElement('style');
   style.dataset.smrtPlannerDraft = '';
-  style.textContent = draftCss;
+  style.textContent = contained;
   document.head.append(style);
   return () => style.remove();
 });
@@ -48,6 +57,8 @@ function setCss(value: string) {
 }
 
 function editCss(value: string) {
+  // What the visitor types here is theirs to apply.
+  approveCustomCss(value);
   draftCss = value;
   editing = true;
   clearTimeout(timer);
@@ -69,6 +80,12 @@ onDestroy(() => {
     </div>
     <span class="live"><span aria-hidden="true"></span>Live preview</span>
   </div>
+  {#if pending}
+    <div class="pending" role="status">
+      <p>This cookbook brings its own CSS. It is not applied until you review and approve it.</p>
+      <button type="button" onclick={() => approveCustomCss(css)}>Apply these styles</button>
+    </div>
+  {/if}
   <label for="advanced-css">Custom CSS</label>
   <div class="editor">
     <pre bind:this={highlight} aria-hidden="true"><code>{#each tokens as token}<span class:comment={token.kind === 'comment'} class:selector={token.kind === 'selector'} class:property={token.kind === 'property'} class:value={token.kind === 'value'} class:punctuation={token.kind === 'punctuation'}>{token.text}</span>{/each}</code></pre>
@@ -76,11 +93,13 @@ onDestroy(() => {
       onscroll={syncScroll} spellcheck="false" maxlength="65536" wrap="off"
       placeholder="/* Add your app styles here */" aria-describedby="advanced-css-help"></textarea>
   </div>
-  <p id="advanced-css-help" class="help">Ask your agent to write styles here, or start with a selector like <code>.smrt-admin-shell</code>. Clearing the editor removes your custom styles.</p>
+  <p id="advanced-css-help" class="help">Ask your agent to write styles here, or start with a selector like <code>.smrt-admin-shell</code>. Clearing the editor removes your custom styles. Styles apply only inside the app shell and cannot load files from other sites; add <code>?styles=off</code> to the address to turn them off.</p>
 </section>
 
 <style>
   .advanced-styles { display: grid; gap: 1rem; max-inline-size: 72rem; }
+  .pending { display: flex; flex-wrap: wrap; align-items: center; gap: var(--smrt-spacing-2); padding: var(--smrt-spacing-3); border: 1px solid var(--smrt-color-outline-variant); border-radius: var(--smrt-radius-medium); }
+  .pending p { margin: 0; }
   .back { color: var(--smrt-color-primary); font-weight: 700; text-decoration: none; }
   .back:hover { text-decoration: underline; }
   .heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }

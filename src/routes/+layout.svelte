@@ -84,8 +84,13 @@ plannerRuntime.openSection = (id) => {
 const nav: ShellNavItem[] = [];
 const shellProps = plannerShellProps();
 
-// The sidebar lists only these sections (`navMode="sections"`); each opens its
-// own page (`/s/<section>/`) listing the entries. Navigation sections belong to the app: a recipe only suggests one
+// The sidebar lists these sections (`navMode="sections"`); each opens its own
+// page (`/s/<section>/`) listing the entries. The mounted Planner goes through
+// `CookbookApp`, whose default is `sections-with-items` (entries beneath each
+// section when expanded, icons only in the collapsed rail); this standalone
+// shell adopts that value once the installed smrt-svelte carries it (#3847) --
+// a raw `AppShell` defaults to `items`, so the prop stays explicit.
+// Navigation sections belong to the app: a recipe only suggests one
 // (`recipe.section`, else its group, else itself), and the user overrides it in
 // the Layout tab. Recipes suggesting the same section share it, entries
 // de-duplicated in recipe declaration order. Each recipe's main (first) item

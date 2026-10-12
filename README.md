@@ -92,8 +92,8 @@ const controller = createPlannerController();
 
 Hosts that already own an `AppShell` can mount `PlannerControls` inside it.
 The controls are the reusable part; `Planner` remains the complete shell.
-Use the exported shell defaults to start navigation closed while retaining the
-native Menu control.
+Use the exported shell defaults to start navigation open, with inference controls
+above the user menu in its footer. The separate bottom panel starts hidden.
 ```svelte
 <script lang="ts">
   import { AppShell } from '@happyvertical/smrt-svelte/app';

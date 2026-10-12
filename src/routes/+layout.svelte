@@ -4,6 +4,7 @@ import {
   ShellDockTool,
   type ShellNavGroup,
   type ShellNavItem,
+  WorkspaceAccountMenu,
 } from '@happyvertical/smrt-svelte/workspace';
 import { afterNavigate, goto, replaceState } from '$app/navigation';
 import { base } from '$app/paths';
@@ -345,6 +346,10 @@ function flushOnHide() {
   <PlannerPalette />
 {/snippet}
 
+{#snippet userMenu()}
+  <WorkspaceAccountMenu userName="User menu" disabled />
+{/snippet}
+
 <div class="shell-host" inert={liveLocked}>
 <AppShell
   storageKey={SHELL_STORAGE_KEY}
@@ -363,6 +368,12 @@ function flushOnHide() {
       label: 'AI status',
       slot: 'leftSidebar.footer',
       render: aiStatus,
+    },
+    {
+      id: 'user-menu',
+      label: 'User menu',
+      slot: 'leftSidebar.footer',
+      render: userMenu,
     },
     {
       id: 'palette',
@@ -411,6 +422,16 @@ function flushOnHide() {
 
 <style>
   .shell-host { display: contents; }
+  :global(.smrt-admin-shell__slot--leftSidebar-footer) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--smrt-spacing-2);
+  }
+
+  :global(.smrt-admin-shell__slot--leftSidebar-footer > *) {
+    inline-size: 100%;
+  }
+
   .storage-notice {
     margin: 0;
     padding: var(--smrt-spacing-2) var(--smrt-spacing-6);

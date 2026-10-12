@@ -95,23 +95,25 @@ function commit() {
           aria-pressed={selectedId === cookbook.id}
           onclick={() => (selectedId = cookbook.id)}
         >
-          <svg
-            class="icon"
-            viewBox="0 0 24 24"
-            width="32"
-            height="32"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.75"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            {#each COOKBOOK_ICONS[cookbook.icon] ?? [] as d (d)}
-              <path {d} />
-            {/each}
-          </svg>
-          <span class="name">{cookbook.name}</span>
+          <span class="heading">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              width="28"
+              height="28"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              {#each COOKBOOK_ICONS[cookbook.icon] ?? [] as d (d)}
+                <path {d} />
+              {/each}
+            </svg>
+            <span class="name">{cookbook.name}</span>
+          </span>
           <span class="summary">{cookbook.summary}</span>
           {#if active}<span class="badge">In use</span>{/if}
         </button>
@@ -237,7 +239,16 @@ function commit() {
   }
 
   .icon {
+    flex: 0 0 auto;
     color: var(--smrt-color-primary);
+  }
+
+  .heading {
+    display: flex;
+    align-items: center;
+    gap: var(--smrt-spacing-2);
+    min-inline-size: 0;
+    padding-inline-end: 4rem;
   }
 
   .name {

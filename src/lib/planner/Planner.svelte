@@ -33,6 +33,7 @@ import { DEFAULT_PRESET } from '../theme/theme.ts';
 import PlannerControls from './PlannerControls.svelte';
 import PlannerLifecycle from './PlannerLifecycle.svelte';
 import { plannerShellProps } from './shell.ts';
+import { currentPlannerTitle } from './title.svelte.ts';
 import type { PlannerProps } from './types.ts';
 
 let {
@@ -78,6 +79,7 @@ const cookbook = $derived.by(() => {
     ? value
     : { ...value, theme: { ...value.theme, preset: DEFAULT_PRESET } };
 });
+const title = $derived(currentPlannerTitle());
 const shell = $derived(
   buildCookbookShell({
     cookbook: cookbook as ComponentProps<typeof CookbookApp>['cookbook'],
@@ -208,7 +210,7 @@ const slotItems = $derived<ShellSlotItem[]>([
 <CookbookApp
   cookbook={cookbook as ComponentProps<typeof CookbookApp>['cookbook']}
   catalog={shellCatalog}
-  title={cookbook.name || 'Planner'}
+  {title}
   href={(path) => `#${path}`}
   currentHref={`#${currentRoute}`}
   homeHref={`#${defaultRoute}`}

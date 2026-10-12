@@ -4,10 +4,13 @@ import { aiState } from '$lib/ai/instance.ts';
 import AiSetup from '$lib/components/AiSetup.svelte';
 import { appHref } from '$lib/planner/app.svelte.ts';
 import PlannerControls from '$lib/planner/PlannerControls.svelte';
+import { currentPlannerTitle } from '$lib/planner/title.svelte.ts';
+
+const title = $derived(currentPlannerTitle());
 </script>
 
 <svelte:head>
-  <title>Planner · smrt planner</title>
+  <title>{title} · smrt planner</title>
 </svelte:head>
 
 <main>

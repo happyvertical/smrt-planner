@@ -46,6 +46,7 @@ import { hasAppState, withTab } from '$lib/planner/query.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
 import { plannerShellProps } from '$lib/planner/shell.ts';
 import { plannerTab } from '$lib/planner/tab.svelte.ts';
+import { currentPlannerTitle } from '$lib/planner/title.svelte.ts';
 import { FEATURE_SECTION, featureNavItems } from '$lib/recipes/features.ts';
 import {
   buildNavSections,
@@ -63,6 +64,9 @@ let { children }: LayoutProps = $props();
 
 // Sample data follows the cookbook last applied (nothing in the SSR render).
 libraryState.load();
+
+// The app's name: the shell brand and the home page title follow it.
+const title = $derived(currentPlannerTitle());
 
 // The seam for live objects: swap createPlannerDataSource for a collection-backed DataSource.
 const dataSource = provideDataSource(createPlannerDataSource());
@@ -376,7 +380,7 @@ function flushOnHide() {
 <div class="shell-host" inert={liveLocked}>
 <AppShell
   storageKey={SHELL_STORAGE_KEY}
-  title="Planner"
+  {title}
   logoSrc={smrtMark}
   homeHref={appHref('/')}
   {nav}

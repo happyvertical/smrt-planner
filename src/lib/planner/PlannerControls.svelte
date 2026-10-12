@@ -24,6 +24,15 @@ import PlannerLifecycle from './PlannerLifecycle.svelte';
 import { plannerTab } from './tab.svelte.ts';
 import type { PlannerProps } from './types.ts';
 
+const DEFAULT_TABS: PlannerTabId[] = [
+  'cookbooks',
+  'recipes',
+  'theme',
+  'settings',
+  'export',
+];
+const UNLISTED_TABS: PlannerTabId[] = ['features', 'layout'];
+
 let {
   controller = plannerController,
   basePath,
@@ -31,7 +40,7 @@ let {
   layout = 'own',
   persistence = 'self',
   themeControls = false,
-  tabs = ['cookbooks', 'recipes', 'theme', 'settings', 'export'],
+  tabs = DEFAULT_TABS,
   onready,
   managedByParent = false,
 }: PlannerProps & { managedByParent?: boolean } = $props();
@@ -54,9 +63,14 @@ const labels: Record<PlannerTabId, string> = {
   export: 'Export',
 };
 const shown = $derived(tabs.filter((id) => PLANNER_TAB_IDS.includes(id)));
+// Features and Layout left the default tab strip but stay reachable from
+// their links, the command palette and focus commands.
+const reachable = $derived<readonly PlannerTabId[]>(
+  tabs === DEFAULT_TABS ? [...shown, ...UNLISTED_TABS] : shown,
+);
 const items = $derived(shown.map((id) => ({ id, label: labels[id] })));
 const active = $derived(
-  shown.includes(plannerTab.active)
+  reachable.includes(plannerTab.active)
     ? plannerTab.active
     : (shown[0] ?? 'recipes'),
 );
@@ -113,16 +127,16 @@ $effect(() => {
 {#snippet view()}
 <div class="planner">
   <Tabs tabs={items} {active} onchange={select} aria-label="Planner">
-    {#if shown.includes('cookbooks')}
+    {#if reachable.includes('cookbooks')}
       <div hidden={active !== 'cookbooks'}><CookbooksPanel /></div>
     {/if}
-    {#if shown.includes('recipes')}
+    {#if reachable.includes('recipes')}
       <div hidden={active !== 'recipes'}><RecipeCards /></div>
     {/if}
-    {#if shown.includes('features')}
+    {#if reachable.includes('features')}
       <div hidden={active !== 'features'}><FeaturesPanel /></div>
     {/if}
-    {#if shown.includes('layout')}
+    {#if reachable.includes('layout')}
       <div hidden={active !== 'layout'} class="pane">
         <p class="meta">
           Reorder, move or hide navigation entries and choose which panels show.
@@ -131,13 +145,13 @@ $effect(() => {
         <ShellLayoutEditor controller={ownLayout ?? shellLayout ?? undefined} />
       </div>
     {/if}
-    {#if shown.includes('theme')}
+    {#if reachable.includes('theme')}
       <div hidden={active !== 'theme'}><ThemeSection provider={themeControls} /></div>
     {/if}
-    {#if shown.includes('settings')}
+    {#if reachable.includes('settings')}
       <div hidden={active !== 'settings'}><SettingsPanel /></div>
     {/if}
-    {#if shown.includes('export')}
+    {#if reachable.includes('export')}
       <div hidden={active !== 'export'}><ExportPanel /></div>
     {/if}
   </Tabs>

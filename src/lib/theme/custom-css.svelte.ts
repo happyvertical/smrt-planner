@@ -17,29 +17,23 @@ const APPROVED_KEY = 'smrt-planner-approved-css-v2';
 const LEGACY_APPROVED_KEY = 'smrt-planner-approved-css';
 const MAX_APPROVED = 20;
 
-/** Value functions that load something: allowed only as `data:` URLs. */
-const LOADS = /\b(?:url|image-set|image|cross-fade|element|src)\s*\(/i;
-
-function onlyDataUrls(value: string): boolean {
-  if (!LOADS.test(value)) return true;
-  const calls = value.match(/\b[a-z-]+\s*\(/gi) ?? [];
-  if (calls.some((call) => !/^url\s*\(/i.test(call) && LOADS.test(call)))
-    return false;
-  const urls = [...value.matchAll(/url\(\s*(["']?)(.*?)\1\s*\)/gi)];
-  return (
-    urls.length > 0 && urls.every(([, , target]) => /^data:/i.test(target))
-  );
-}
+/** Value functions that load something: allowed only as literal `data:` URLs. */
+const LOADS = /\b(?:url|image-set|image|cross-fade|element|src)\s*\(/gi;
 
 /**
- * Whether a declaration may stay. Regular properties are serialized by the
- * browser, so escapes are already resolved. A custom property keeps its raw
- * tokens, so an escaped function name (`\75rl(`) would only become a load
- * when substituted through `var()`: any escape in one is refused.
+ * Whether a rule's whole declaration text is safe. The text is checked as
+ * written out, shorthands and `var()` fallbacks included, because the browser
+ * keeps a `var()` value (and a custom property) as raw author text: any escape
+ * is refused, and every load must be a literal `url("data:...")`.
  */
-function allowed(property: string, value: string): boolean {
-  if (property.startsWith('--') && value.includes('\\')) return false;
-  return onlyDataUrls(value);
+function safeDeclarations(text: string): boolean {
+  if (text.includes('\\')) return false;
+  for (const match of text.matchAll(LOADS)) {
+    if (!/^url/i.test(match[0])) return false;
+    const rest = text.slice((match.index ?? 0) + match[0].length).trimStart();
+    if (!/^(["']?)data:/i.test(rest)) return false;
+  }
+  return true;
 }
 
 /** Split a selector list on its top-level commas. */
@@ -74,31 +68,53 @@ function shellToScope(rule: CSSStyleRule): void {
   if (next !== rule.selectorText) rule.selectorText = next;
 }
 
-/** Drop declarations that could load anything, at every depth. */
-function strip(rules: CSSRuleList, nestedInStyle = false): void {
-  for (const rule of Array.from(rules)) {
-    const isStyle = 'selectorText' in rule;
-    if (isStyle && !nestedInStyle) shellToScope(rule as CSSStyleRule);
-    const style = (rule as Partial<CSSStyleRule>).style;
-    if (style) {
-      for (const property of Array.from(style)) {
-        if (!allowed(property, style.getPropertyValue(property)))
-          style.removeProperty(property);
-      }
-    }
-    const nested = (rule as Partial<CSSGroupingRule>).cssRules;
-    if (nested) strip(nested, nestedInStyle || isStyle);
-  }
-}
-
-/** Rules that reach outside the scope or register global syntax. */
-const refused = (rule: CSSRule) =>
-  ['CSSImportRule', 'CSSNamespaceRule', 'CSSPropertyRule'].some(
+/** Rule types that stay inside the scope; every other at-rule is global. */
+const KEPT = [
+  'CSSStyleRule',
+  'CSSMediaRule',
+  'CSSSupportsRule',
+  'CSSContainerRule',
+  'CSSNestedDeclarations',
+];
+const kept = (rule: CSSRule) =>
+  KEPT.some(
     (name) =>
       name in globalThis &&
       rule instanceof
         (globalThis as unknown as Record<string, typeof CSSRule>)[name],
   );
+
+/**
+ * Keep only scoped style rules, at every depth: `@import`, `@font-face`,
+ * `@keyframes`, `@property`, `@layer` and the like register global names that
+ * `@scope` does not confine. A rule whose declarations could load anything is
+ * dropped whole.
+ */
+function strip(
+  list: CSSRuleList,
+  remove: (index: number) => void,
+  nestedInStyle = false,
+): void {
+  for (let i = list.length - 1; i >= 0; i--) {
+    const rule = list[i];
+    const style = (rule as Partial<CSSStyleRule>).style;
+    if (!kept(rule) || (style && !safeDeclarations(style.cssText))) {
+      remove(i);
+      continue;
+    }
+    const isStyle = 'selectorText' in rule;
+    if (isStyle && !nestedInStyle) shellToScope(rule as CSSStyleRule);
+    const group = rule as Partial<CSSGroupingRule>;
+    if (group.cssRules && group.deleteRule) {
+      const owner = group as CSSGroupingRule;
+      strip(
+        owner.cssRules,
+        (at) => owner.deleteRule(at),
+        nestedInStyle || isStyle,
+      );
+    }
+  }
+}
 
 /**
  * The browser's own reading of `css`, without external loads, scoped to the
@@ -113,10 +129,8 @@ export function containCustomCss(css: string, scope: string): string {
   } catch {
     return '';
   }
-  strip(sheet.cssRules);
-  const rules = Array.from(sheet.cssRules)
-    .filter((rule) => !refused(rule))
-    .map((rule) => rule.cssText);
+  strip(sheet.cssRules, (at) => sheet.deleteRule(at));
+  const rules = Array.from(sheet.cssRules, (rule) => rule.cssText);
   return rules.length ? `@scope (${scope}) {\n${rules.join('\n')}\n}` : '';
 }
 

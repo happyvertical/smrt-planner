@@ -119,7 +119,7 @@ function resetToPreset() {
     <textarea id="theme-custom-css" aria-label="Custom CSS notes" rows="8" spellcheck="false"
       value={cookbookStore.theme?.customCss ?? ''}
       oninput={(event) => cookbookStore.setTheme({ ...cookbookStore.theme, customCss: event.currentTarget.value || undefined })}></textarea>
-    <span class="hint">Saved with the cookbook for your agent to refine.</span>
+    <span class="hint">Saved with your cookbook as notes for your agent to refine. This CSS is not applied to the app.</span>
   </div>
 </section>
 

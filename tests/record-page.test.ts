@@ -232,6 +232,9 @@ describe('the record page widgets', () => {
     ]);
     const amounts = page.lines.reduce((t, l) => t + Number(l.amount), 0);
     expect(data.summaries?.amount).toBe(amounts);
+    // Lines live inside the order: no row links, no "View all".
+    expect(data.rows.some((row) => row.href)).toBe(false);
+    expect(data.href).toBeUndefined();
     expect(data.totals?.subtotal).toBe(page.order.subtotal);
     expect(data.totals?.tax).toBe(page.order.taxAmount);
     expect(data.totals?.total).toBe(page.order.totalAmount);

@@ -49,6 +49,7 @@ import { recordLabel, relationLabels } from '../data/labels.ts';
 import type { DataSource, ModelRecord } from '../data/source.ts';
 import { filteredListPath, modelPath, recordPath } from '../planner/routes.ts';
 import { recipes } from '../recipes/index.ts';
+import { isPlumbing } from '../recipes/plumbing.ts';
 import { inScope } from '../recipes/scope.ts';
 import { screenDefinition } from '../screens/definition.ts';
 import type { SectionEntry } from '../sections/entries.ts';
@@ -389,18 +390,27 @@ async function loadRecords(
       }),
     );
   const summaries = recordSummaries(columns, rows);
+  // A line item, link row or the like lives inside its parent: no page of
+  // its own to link a row or "View all" to.
+  const linked = !isPlumbing(model);
   return {
     rows: await Promise.all(
       shown.map(async (row) => ({
         id: String(row.id),
         // On a record's page the parent is the page: leave its name out.
         title: await recordLabel(source, model, row, 0, parent?.field),
-        href: href(recordPath(found.packageId, model.name, String(row.id))),
+        ...(linked
+          ? {
+              href: href(
+                recordPath(found.packageId, model.name, String(row.id)),
+              ),
+            }
+          : {}),
         cells: cellsOf(row),
       })),
     ),
     total: rows.length,
-    href: listHref(href, found, parent),
+    ...(linked ? { href: listHref(href, found, parent) } : {}),
     columns,
     currency: currencyOf(model, rows),
     ...(Object.keys(summaries).length ? { summaries } : {}),

@@ -32,7 +32,7 @@ import {
   recordPath,
   splitRoute,
 } from '../src/lib/planner/routes.ts';
-import { recipesById } from '../src/lib/recipes/index.ts';
+import { hasNavKey, recipesById } from '../src/lib/recipes/index.ts';
 import {
   childLinks,
   forwardLinks,
@@ -60,6 +60,11 @@ const model = (id: string) => {
   if (!found) throw new Error(`${id} missing from catalog`);
   return found;
 };
+/** The value, or a failed test naming what was missing. */
+function must<T>(value: T | null | undefined, what = 'value'): T {
+  if (value === null || value === undefined) throw new Error(`${what} missing`);
+  return value;
+}
 const sales = recipesById.get('commerce.sales');
 if (!sales) throw new Error('commerce.sales missing');
 
@@ -113,6 +118,17 @@ describe('record routes', () => {
       parseModelRoute(['commerce', 'Order', 'abc', 'edit', 'more'], isKey),
     ).toBe(undefined);
     expect(parseModelRoute(['commerce'], isKey)).toBe(undefined);
+  });
+
+  it('tell a keyed nav entry from a record id with the real recipes', () => {
+    expect(hasNavKey('products', 'Product', 'ingredients')).toBe(true);
+    expect(hasNavKey('products', 'Product', 'abc')).toBe(false);
+    expect(
+      parseModelRoute(['products', 'Product', 'ingredients'], hasNavKey),
+    ).toMatchObject({ view: 'ingredients' });
+    expect(
+      parseModelRoute(['products', 'Product', 'abc', 'edit'], hasNavKey),
+    ).toMatchObject({ recordId: 'abc', mode: 'edit' });
   });
 
   it('split a fragment route and read the record filter from its query', () => {
@@ -218,10 +234,10 @@ describe('screen relations', () => {
       relatedCollection: model(CUSTOMER).collection,
     });
     const policy = screenPolicy(order, [
-      { ...order.fields[0]!, label: 'First', help: 'Why' },
+      { ...must(order.fields[0]), label: 'First', help: 'Why' },
     ]);
-    expect(Object.keys(policy.fields)).toEqual([order.fields[0]!.name]);
-    expect(policy.fields[order.fields[0]!.name]).toMatchObject({
+    expect(Object.keys(policy.fields)).toEqual([must(order.fields[0]).name]);
+    expect(policy.fields[must(order.fields[0]).name]).toMatchObject({
       visibility: 'basic',
       label: 'First',
       help: 'Why',
@@ -231,9 +247,9 @@ describe('screen relations', () => {
 
 describe('sample relations', () => {
   it('spread over every row of the target, deterministically', () => {
-    const customerId = model(ORDER).fields.find(
-      (f) => f.name === 'customerId',
-    )!;
+    const customerId = must(
+      model(ORDER).fields.find((f) => f.name === 'customerId'),
+    );
     const seen = new Set(
       Array.from({ length: 16 }, (_, index) =>
         relatedIndex(customerId, { modelId: ORDER, index }),
@@ -256,7 +272,7 @@ describe('sample relations', () => {
       orders.some((o) => o.customerId === c.id),
     );
     expect(withOrders.length).toBe(customers.length);
-    expect(fakeRecords(model(ORDER), 3)[1]!.customerId).toBe(
+    expect(must(fakeRecords(model(ORDER), 3)[1]).customerId).toBe(
       fakeId(`${CUSTOMER}:1`),
     );
   });
@@ -267,10 +283,11 @@ describe('sample relations', () => {
     const orders = await source.listWhere(
       model(ORDER),
       'customerId',
-      customer!.id,
+      must(customer).id,
     );
     expect(orders.length).toBeGreaterThan(0);
-    for (const order of orders) expect(order.customerId).toBe(customer!.id);
+    for (const order of orders)
+      expect(order.customerId).toBe(must(customer).id);
     expect(await source.listWhere(model(ORDER), 'customerId', 'nope')).toEqual(
       [],
     );
@@ -301,14 +318,14 @@ describe('detail overviews', () => {
   });
 
   it('default to a count and the newest records per relation, confined to the app', () => {
-    const full = detailOverview(id)!;
+    const full = must(detailOverview(id));
     const orders = full.defaults.filter((w) => w.options.model === ORDER);
     expect(orders.map((w) => w.type).sort()).toEqual(['metric', 'records']);
     expect(orders.find((w) => w.type === 'records')?.options).toMatchObject({
       filter: 'parent',
       field: 'customerId',
     });
-    const narrowed = detailOverviewFor(id, appModels([sales], []))!;
+    const narrowed = must(detailOverviewFor(id, appModels([sales], [])));
     expect(narrowed.defaults.length).toBeLessThan(full.defaults.length);
     for (const widget of narrowed.defaults) {
       expect(appModels([sales], []).has(String(widget.options.model))).toBe(
@@ -322,37 +339,43 @@ describe('detail overviews', () => {
   });
 
   it('load a relation panel for the record, linking rows and View all', async () => {
-    const definition = detailOverview(id)!;
+    const definition = must(detailOverview(id));
     const ctx = context('');
     const [customer] = await ctx.source.list(model(CUSTOMER));
-    const records = definition.defaults.find(
-      (w) => w.type === 'records' && w.options.model === ORDER,
-    )!;
+    const records = must(
+      definition.defaults.find(
+        (w) => w.type === 'records' && w.options.model === ORDER,
+      ),
+    );
     const data = (await loadSectionWidget(
       definition,
-      context(customer!.id),
+      context(must(customer).id),
       records,
     )) as {
       rows: { id: string; href?: string }[];
       href: string;
     };
     expect(data.rows.length).toBeGreaterThan(0);
-    expect(data.href).toBe(`#/m/commerce/Order/?customerId=${customer!.id}`);
+    expect(data.href).toBe(
+      `#/m/commerce/Order/?customerId=${must(customer).id}`,
+    );
     expect(data.rows[0]?.href).toBe(`#/m/commerce/Order/${data.rows[0]?.id}/`);
     const orders = await ctx.source.listWhere(
       model(ORDER),
       'customerId',
-      customer!.id,
+      must(customer).id,
     );
     for (const row of data.rows) {
       expect(orders.some((o) => o.id === row.id)).toBe(true);
     }
-    const metric = definition.defaults.find(
-      (w) => w.type === 'metric' && w.options.model === ORDER,
-    )!;
+    const metric = must(
+      definition.defaults.find(
+        (w) => w.type === 'metric' && w.options.model === ORDER,
+      ),
+    );
     const count = (await loadSectionWidget(
       definition,
-      context(customer!.id),
+      context(must(customer).id),
       metric,
     )) as {
       value: number;
@@ -366,7 +389,7 @@ describe('detail overviews', () => {
 
   it('keep a stored override through validation, export and import', () => {
     const store = new CookbookStore();
-    const definition = detailOverview(id)!;
+    const definition = must(detailOverview(id));
     const controller = createSectionOverview(definition, store);
     expect(controller.add('note', { body: 'Call before noon' }).ok).toBe(true);
     const override = store.overview(id);

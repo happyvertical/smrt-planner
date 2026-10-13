@@ -185,6 +185,25 @@ describe('sample records come with their line items', () => {
     expect(discounts).toBeLessThan(orders.length);
   });
 
+  it('leaves out a discount the app hides, and its totals agree', async () => {
+    const lineModel = model(`${C}ContractLineItem`);
+    const data = createMemoryDataSource({
+      defaults: (m) => (m.id === lineModel.id ? { discount: 0 } : {}),
+      children: {
+        models: catalog.packages.flatMap((p) => p.models),
+        links: (id) => childLinks(catalog, recipes, id),
+      },
+    });
+    const orders = await data.list(model(`${C}Order`));
+    const lines = await data.list(lineModel);
+    expect(lines.every((l) => l.discount === 0)).toBe(true);
+    orders.forEach((order, index) => {
+      if (index === MISMATCH_ROW) return;
+      const mine = rowsOf(lines, 'contractId', order.id);
+      expect(order.totalAmount).toBe(totalsOf(mine).totalAmount);
+    });
+  });
+
   it('seeds one order whose stored subtotal disagrees with its lines', async () => {
     const data = source();
     const orders = await data.list(model(`${C}Order`));

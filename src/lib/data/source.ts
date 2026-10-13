@@ -397,8 +397,16 @@ export function createMemoryDataSource(
     }
     if (!empty.has(model.id)) {
       for (const { parent, fk } of owned) {
+        // A child row takes the values a hidden field carries in this app
+        // (a line's discount the recipe options leave at 0), as one created
+        // through the form would, before its parent's totals are summed.
+        const carried = options.defaults?.(model) ?? {};
         table(parent).forEach((row, index) => {
-          const items = fakeChildrenOf(model, fk, row, seed);
+          const items = fakeChildrenOf(model, fk, row, seed).map((item) =>
+            isLineModel(model)
+              ? settleLine({ ...item, ...carried })
+              : { ...item, ...carried },
+          );
           made.push(...items);
           syncTotals(row, parent, items);
           if (isLineModel(model)) seedMismatch(row, parent, index);

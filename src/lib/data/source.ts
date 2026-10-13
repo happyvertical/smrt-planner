@@ -1,5 +1,10 @@
 import type { CatalogModel } from '../catalog/types.ts';
-import { type ChildOf, fakeChildrenOf, syncTotals } from './children.ts';
+import {
+  type ChildOf,
+  fakeChildrenOf,
+  seedMismatch,
+  syncTotals,
+} from './children.ts';
 import {
   allocationInvoiceField,
   allocationPaymentField,
@@ -388,11 +393,12 @@ export function createMemoryDataSource(
     }
     if (!empty.has(model.id)) {
       for (const { parent, fk } of owned) {
-        for (const row of table(parent)) {
+        table(parent).forEach((row, index) => {
           const items = fakeChildrenOf(model, fk, row, seed);
           made.push(...items);
           syncTotals(row, parent, items);
-        }
+          if (isLineModel(model)) seedMismatch(row, parent, index);
+        });
       }
     }
     return made;

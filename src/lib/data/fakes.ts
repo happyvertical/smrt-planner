@@ -148,6 +148,13 @@ const PERIODS = ['monthly', 'quarterly', 'annual'];
 /** Fractions a tax rate takes: 0%, 5%, 8.25%, 13% and 20%. */
 export const TAX_RATES = [0, 0.05, 0.0825, 0.13, 0.2] as const;
 
+/**
+ * The sample tax rate when neither the app's setting nor the pack names one:
+ * every line of every document is taxed at it, so a document's tax is one
+ * rate of its subtotal, as on a real invoice.
+ */
+export const DEFAULT_SAMPLE_TAX_RATE = 0.05;
+
 function fakeText(
   field: CatalogField,
   random: () => number,
@@ -348,9 +355,8 @@ export function fakeValue(
     }
     case 'decimal':
       if (/taxrate|vatrate/i.test(field.name)) {
-        // A cookbook's default rate (0: untaxed) beats a random one.
-        const rate = getSampleTaxRate();
-        return rate ?? pick(random, TAX_RATES);
+        // The app's setting, else the pack's (0: untaxed), else 5%.
+        return getSampleTaxRate() ?? DEFAULT_SAMPLE_TAX_RATE;
       }
       if (/discountrate/i.test(field.name)) return pick(random, [0, 0.05, 0.1]);
       if (/(quantity|qty)/i.test(field.name))

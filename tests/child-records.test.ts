@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { catalog, getModelByQualifiedName } from '../src/lib/catalog/index.ts';
+import {
+  discounted,
+  MISMATCH_AMOUNT,
+  MISMATCH_ROW,
+} from '../src/lib/data/children.ts';
 import { blankChild, rowsOf } from '../src/lib/data/columns.ts';
 import { totalsOf } from '../src/lib/data/derived.ts';
+import { DEFAULT_SAMPLE_TAX_RATE } from '../src/lib/data/fakes.ts';
 import { createMemoryDataSource } from '../src/lib/data/source.ts';
 import { recipes } from '../src/lib/recipes/index.ts';
 import {
@@ -140,15 +146,57 @@ describe('sample records come with their line items', () => {
     // Children first: the parent's totals must still match its lines.
     const first = await a.list(lines);
     expect(first).toEqual(await b.list(lines));
-    for (const record of await a.list(invoice)) {
+    const invoices = await a.list(invoice);
+    invoices.forEach((record, index) => {
       const mine = rowsOf(first, 'invoiceId', record.id);
       // Totals follow the commerce semantics: the amounts before tax, and the
-      // lines' own (taxed) amounts for the total.
+      // lines' own (taxed) amounts for the total. One invoice is seeded with
+      // a stale total, so the record page's mismatch flag can be seen.
+      const stale = index === MISMATCH_ROW ? MISMATCH_AMOUNT : 0;
       expect(record.subtotal).toBe(totalsOf(mine).subtotal);
       expect(record.totalAmount).toBe(
-        mine.reduce((total, r) => total + Number(r.amount), 0),
+        mine.reduce((total, r) => total + Number(r.amount), 0) + stale,
       );
+    });
+  });
+
+  it('taxes every line at one rate and discounts some documents', async () => {
+    const data = source();
+    const orders = await data.list(model(`${C}Order`));
+    const lines = await data.list(model(`${C}ContractLineItem`));
+    let discounts = 0;
+    for (const order of orders) {
+      const mine = rowsOf(lines, 'contractId', order.id);
+      for (const line of mine) {
+        expect(line.taxRate).toBe(DEFAULT_SAMPLE_TAX_RATE);
+        expect(Number.isInteger(line.amount)).toBe(true);
+      }
+      if (discounted(order)) {
+        discounts += 1;
+        expect(Number(mine[0]?.discount)).toBeGreaterThan(0);
+      }
+      expect(Number(order.taxAmount)).toBeGreaterThan(0);
     }
+    expect(discounts).toBeGreaterThan(0);
+    expect(discounts).toBeLessThan(orders.length);
+  });
+
+  it('seeds one order whose stored total disagrees with its lines', async () => {
+    const data = source();
+    const orders = await data.list(model(`${C}Order`));
+    const lines = await data.list(model(`${C}ContractLineItem`));
+    const off = orders.filter((order) => {
+      const mine = rowsOf(lines, 'contractId', order.id);
+      return order.totalAmount !== totalsOf(mine).totalAmount;
+    });
+    expect(off.map((o) => o.id)).toEqual([orders[MISMATCH_ROW]?.id]);
+    // Editing the order recomputes its totals from the lines.
+    const stale = off[0];
+    if (!stale) throw new Error('no stale order');
+    await data.update(model(`${C}Order`), stale.id, { notes: 'checked' });
+    const fixed = await data.get(model(`${C}Order`), stale.id);
+    const mine = rowsOf(lines, 'contractId', stale.id);
+    expect(fixed?.totalAmount).toBe(totalsOf(mine).totalAmount);
   });
 
   it('balances a journal', async () => {

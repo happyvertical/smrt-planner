@@ -52,11 +52,11 @@
   },
   "dependencies": {
     "@happyvertical/ai": "^0.103.1",
-    "@happyvertical/smrt-assets": "^0.55.18",
-    "@happyvertical/smrt-chat": "^0.55.18",
-    "@happyvertical/smrt-core": "^0.55.18",
-    "@happyvertical/smrt-svelte": "^0.55.18",
-    "@happyvertical/smrt-ui": "^0.55.18",
+    "@happyvertical/smrt-assets": "^0.55.21",
+    "@happyvertical/smrt-chat": "^0.55.21",
+    "@happyvertical/smrt-core": "^0.55.21",
+    "@happyvertical/smrt-svelte": "^0.55.21",
+    "@happyvertical/smrt-ui": "^0.55.21",
     "@happyvertical/speech": "^0.103.1",
     "@huggingface/transformers": "^4.3.0",
     "@mlc-ai/web-llm": "^0.2.85"
@@ -86,5 +86,5 @@
     "vite": "8.3.0",
     "vitest": "4.1.10"
   },
-  "//qa": "QA SESSION ONLY (2026-10 site refresh): `overrides` in pnpm-workspace.yaml links @happyvertical/smrt-svelte, @happyvertical/smrt-ui and @happyvertical/smrt-core to the unreleased smrt worktree under /Users/will/Work/_trees/smrt/site-refresh/packages (branch release/site-refresh-2, v0.55.19 merged: RecordScreen, recordOverview, the DataTable summaries types, the portable 0.55.19 cookbook engine schema). Remove this key and the overrides, then run `pnpm install`, so the released version is used before publishing."
+  "//qa": "QA SESSION ONLY (2026-10 site refresh): `overrides` in pnpm-workspace.yaml links @happyvertical/smrt-svelte, @happyvertical/smrt-ui and @happyvertical/smrt-core to the unreleased smrt worktree under /Users/will/Work/_trees/smrt/site-refresh/packages (branch release/site-refresh-2, v0.55.21 merged: RecordScreen, recordOverview, the DataTable summaries types, the portable 0.55.19 cookbook engine schema). Remove this key and the overrides, then run `pnpm install`, so the released version is used before publishing."
 }

@@ -295,27 +295,43 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   record page (`RecordView`), the collapsed "Connect other tools"
   list (`ConnectTools`), the Help view (`HelpView`), `BrowserAssistant` (the dock slot: consent, progress, then smrt-chat's `AssistantDock`).
 - Record pages (smrt#3718 record view): `/m/<pkg>/<Model>/<id>/` shows one sample row through
-  smrt-svelte's `RecordScreen` (fields read-only, then the record's own editable overview) and
-  `/<id>/edit/` is the same page in edit mode (the form beside the header on desktop, a sheet on
-  phones). Nothing is hand-written per model: `src/lib/screens/` turns a catalog model into the
-  framework's `ScreenCollectionDefinition` / `ScreenPolicy` (`definition.ts`) and its relations
-  (`relations.ts`: `reverseLinks` / `forwardLinks` from `recipes/plumbing.ts`; children confined
-  to the models in the app, references to every catalog target so `data/labels.ts` names them,
-  e.g. a customer's Profile, while `RecordView`'s `hrefFor` links only targets in the app); derived here rather than through `deriveScreenRelations` because the
-  catalog knows STI parents). The overview is `detail:<pkg>.<Model>` (`overviews/definitions.ts`
-  `detailOverview`: the framework's `recordOverview` over the whole catalog's relations, so widget
-  ids are stable whichever recipes are on; `detailOverviewFor` narrows the defaults to the app),
-  saved in the cookbook's `overviews` like a section's (the framework's own `recordOverviewId` key,
-  `detail:happyvertical.smrt-commerce.Customer`, is accepted for the same model). Its default is one `records`
-  panel per relation (`RecordScreen` heads it `Orders · 3` with the one View all); `records` / `metric` widgets carry
-  `filter: 'parent'` + `field`; the planner loaders read `ctx.record` and `DataSource.listWhere`.
+  smrt-svelte's `RecordScreen` (a header by field role: a document's kind and monospace identifier,
+  "Order GRA-3159", else the record's name; status badge, key facts, Edit with Delete in the overflow;
+  a details card; then the record's own editable overview) and `/<id>/edit/` is the same page in edit
+  mode (the form beside the header on desktop, a sheet on phones; `ChildRecords`, the line-items
+  editor, is RecordScreen's `items` snippet, so it is inside the sheet too). Nothing is hand-written
+  per model: `src/lib/screens/` turns a catalog model into the framework's `ScreenCollectionDefinition` /
+  `ScreenPolicy` (`definition.ts`: `enum`, `format` `money` by `isMoneyField` / `date` for business dates,
+  `display` on a named model's label field, `relationships[].role: 'items'` on a line's edge to its
+  document) and its relations (`relations.ts`: `reverseLinks` / `forwardLinks` from
+  `recipes/plumbing.ts`; `items` for `itemModels`, the priced children named after the model, else
+  `children`; each with the framework's role-chosen `columns`; children confined to the models in the
+  app, references to every catalog target so `data/labels.ts` names them, e.g. a customer's Profile,
+  while `RecordView`'s `hrefFor` links only targets in the app); derived here rather than through
+  `deriveScreenRelations` because the catalog knows STI parents. `totals.ts` is the record's own
+  subtotal / tax / total by role (plus its lines' discounts) for the line-items totals block. The
+  overview is `detail:<pkg>.<Model>` (`overviews/definitions.ts` `detailOverview`: the framework's
+  `recordOverview` over the whole catalog's relations, every relation's metric tiles, so widget ids
+  are stable whichever recipes are on; `detailOverviewFor` narrows the defaults to the app: the first
+  four tiles, `line-items`, the tabbed `related`), saved in the cookbook's `overviews` like a
+  section's (the framework's own `recordOverviewId` key, `detail:happyvertical.smrt-commerce.Customer`,
+  is accepted for the same model). `related` and `line-items` are registered once on
+  `overviewRegistry` and read `relations` / `totals` / `currency` / `viewAllHref` from the load
+  context; each tab is one `records` load with `filter: 'parent'` + `field` (a metric's
+  `parentField` when its `field` is measured) and a `columns` option, and `loadRecords` returns
+  `cells`, `columns` and `summaries` summed over every matching row. Record names (`data/display.ts`):
+  a document is its identifier (the framework's `identifier` role), a party its Profile name.
   "View all" is the list page with `?<fk>=<id>` (`planner/routes.ts`; the layout keeps that
   query, `ModelPage` / the mount's hash router turn it into the list's scope). The ids are sample
   data made in the browser, so the record routes are served by the static fallback
   (`[view]/+page.ts` treats a segment that is not a nav key as an id; `edit` is `prerender = false`).
   Sample foreign keys spread over every row of their target (`fakes.ts` `relatedIndex`), so each
   record has related rows; a customer-linked model (a FK to Customer) gets 3-6 rows per customer
-  (`customerSlots`, seeded by the customer's index), so related lists hold several records.
+  (`customerSlots`, seeded by the customer's index), so related lists hold several records. Sample
+  lines (`data/derived.ts`): `amount` = quantity x unit price; the document's subtotal is the lines'
+  amounts, total = subtotal - discount + tax, taxed at the app's setting, else the pack's, else 5%;
+  about a third of documents discount a line; the third Order and Invoice keep a stale subtotal and
+  total (`children.ts` `MISMATCH_*`) so the line-items mismatch flag shows.
 - `src/routes/`: `/` Planner with `?tab=cookbooks|recipes|features|layout|export` tabs (`planner/tab.svelte.ts`; a visitor with nothing built lands on Cookbooks; smrt-ui `Tabs`: Cookbooks cards + preview, Recipes cards with switches only, Features the browsable catalogue of every recipe with its demo label, providers and what it adds, Layout `ShellLayoutEditor`, Export / Import / Reset in `ExportPanel`), `/ai/` the AI models page (Set up your assistant), `/cookbook/` a client-side redirect to `/?tab=export`, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
   `/packages/` and `/packages/[id]/` the package browser, `/m/[package]/[model]/` (and `/[view]/`:
   a keyed nav entry, else a record's view page; `/[view]/edit/` its edit page).
@@ -342,7 +358,7 @@ Node 26, pnpm 11.25. Run, in order:
 pnpm install
 pnpm typecheck
 pnpm lint
-pnpm test
+pnpm test          # *.dom.test.ts run in the `dom` project (happy-dom)
 pnpm build
 pnpm package
 pnpm test:release-workflow

@@ -31,6 +31,7 @@ import { EPOCH, isMoneyField } from '../data/fakes.ts';
 import { recordCount } from '../data/format.ts';
 import { recordLabel } from '../data/labels.ts';
 import type { DataSource, ModelRecord } from '../data/source.ts';
+import { filteredListPath, modelPath, recordPath } from '../planner/routes.ts';
 import { recipes } from '../recipes/index.ts';
 import { inScope } from '../recipes/scope.ts';
 import type { SectionEntry } from '../sections/entries.ts';
@@ -45,6 +46,12 @@ export interface PlannerWidgetContext {
   entries: ReadonlyMap<string, SectionEntry>;
   /** An in-app path with the app query (`appHref`). */
   href: (path: string) => string;
+  /**
+   * The record a detail overview is rendered on (smrt#3718 record view): what
+   * a widget's `filter: 'parent'` confines its rows to. Absent on a section
+   * page.
+   */
+  record?: { model: string; id: string };
 }
 
 /** The registry every planner overview uses. */
@@ -74,6 +81,7 @@ function capabilities(ctx: WidgetLoadContext): PlannerWidgetContext {
 
 function modelOf(qualified: unknown): {
   model: CatalogModel;
+  packageId: string;
   path: string;
 } {
   const found =
@@ -83,15 +91,64 @@ function modelOf(qualified: unknown): {
   if (!found) throw new Error(`unknown model ${String(qualified)}`);
   return {
     model: found.model,
-    path: `/m/${found.pkg.id}/${found.model.name}/`,
+    packageId: found.pkg.id,
+    path: modelPath(found.pkg.id, found.model.name),
   };
 }
 
-/** The sample data has no named filters yet: naming one is an error tile. */
-function refuseFilter(filter: unknown): void {
-  if (typeof filter === 'string' && filter !== '') {
-    throw new Error(`unknown filter ${filter}`);
+const REF_TYPES = new Set(['foreignKey', 'crossPackageRef']);
+
+/**
+ * The one named filter the sample data knows: `parent`, with `field` the
+ * reference field on the widget's model that points at the record the
+ * overview is rendered on (`ctx.record`, a detail overview). Any other
+ * name is an error tile, as is `parent` outside a record view.
+ */
+function parentFilter(
+  options: Record<string, unknown>,
+  ctx: WidgetLoadContext,
+  model: CatalogModel,
+): { field: string; id: string } | undefined {
+  const filter = options.filter;
+  if (typeof filter !== 'string' || filter === '') return undefined;
+  if (filter !== 'parent') throw new Error(`unknown filter ${filter}`);
+  const { record } = ctx as WidgetLoadContext & Partial<PlannerWidgetContext>;
+  if (!record?.id) throw new Error('the parent filter needs a record');
+  const field = typeof options.field === 'string' ? options.field : '';
+  const target = model.fields.find((f) => f.name === field);
+  if (!target || !REF_TYPES.has(target.type)) {
+    throw new Error(`${model.name} has no reference field ${field}`);
   }
+  return { field, id: record.id };
+}
+
+/** The widget's rows: the model's, or those pointing at the record. */
+async function rowsOf(
+  source: DataSource,
+  model: CatalogModel,
+  parent: { field: string; id: string } | undefined,
+): Promise<ModelRecord[]> {
+  return parent
+    ? source.listWhere(model, parent.field, parent.id)
+    : source.list(model);
+}
+
+/** Where the widget's list link goes: the list, narrowed to the record's rows. */
+function listHref(
+  href: (path: string) => string,
+  found: { model: CatalogModel; packageId: string; path: string },
+  parent: { field: string; id: string } | undefined,
+): string {
+  return href(
+    parent
+      ? filteredListPath(
+          found.packageId,
+          found.model.name,
+          parent.field,
+          parent.id,
+        )
+      : found.path,
+  );
 }
 
 const numeric = (value: unknown): value is number =>
@@ -106,15 +163,17 @@ async function loadMetric(
   ctx: WidgetLoadContext,
 ): Promise<MetricWidgetData> {
   const { source, href } = dataCapabilities(ctx);
-  const { model, path } = modelOf(options.model);
-  refuseFilter(options.filter);
-  const rows = await source.list(model);
+  const found = modelOf(options.model);
+  const { model } = found;
+  const parent = parentFilter(options, ctx, model);
+  const rows = await rowsOf(source, model, parent);
+  const link = listHref(href, found, parent);
   const measure = typeof options.measure === 'string' ? options.measure : '';
   if (measure === 'count' || measure === '') {
     return {
       value: rows.length,
       format: 'integer',
-      href: href(path),
+      href: link,
     };
   }
   const field = model.fields.find((f) => f.name === options.field);
@@ -137,7 +196,7 @@ async function loadMetric(
     value: money ? Math.round(value) : value,
     format: money ? 'money' : field.type === 'integer' ? 'integer' : 'decimal',
     ...(money ? { currency: 'USD' } : {}),
-    href: href(path),
+    href: link,
   };
 }
 
@@ -146,22 +205,37 @@ function compare(a: unknown, b: unknown): number {
   return String(a ?? '').localeCompare(String(b ?? ''));
 }
 
-/** `records`: the first `limit` sample rows, optionally sorted by a field. */
+/** Framework timestamps the catalog and the samples do not carry. */
+const SYSTEM_DATES = new Set(['createdAt', 'updatedAt']);
+
+/**
+ * `records`: the first `limit` sample rows, optionally sorted by a field;
+ * each row links to its record page. A sort by a framework timestamp the
+ * samples do not carry (`createdAt`, the record view's default) falls back to
+ * the model's lead date, so "newest" still means newest.
+ */
 async function loadRecords(
   options: Record<string, unknown>,
   ctx: WidgetLoadContext,
 ): Promise<RecordListWidgetData> {
   const { source, href } = dataCapabilities(ctx);
-  const { model, path } = modelOf(options.model);
-  refuseFilter(options.filter);
-  let rows: ModelRecord[] = await source.list(model);
+  const found = modelOf(options.model);
+  const { model } = found;
+  const parent = parentFilter(options, ctx, model);
+  let rows: ModelRecord[] = await rowsOf(source, model, parent);
   if (typeof options.sort === 'string' && options.sort) {
-    const sort = options.sort;
-    if (!model.fields.some((f) => f.name === sort)) {
-      throw new Error(`${model.name} has no field ${sort}`);
+    const named = model.fields.find((f) => f.name === options.sort);
+    if (!named && !SYSTEM_DATES.has(options.sort)) {
+      throw new Error(`${model.name} has no field ${options.sort}`);
     }
-    const sign = options.direction === 'asc' ? 1 : -1;
-    rows = [...rows].sort((a, b) => sign * compare(a[sort], b[sort]));
+    const carried = rows.some(
+      (row) => row[options.sort as string] !== undefined,
+    );
+    const sort = carried ? options.sort : leadDateField(model)?.name;
+    if (sort) {
+      const sign = options.direction === 'asc' ? 1 : -1;
+      rows = [...rows].sort((a, b) => sign * compare(a[sort], b[sort]));
+    }
   }
   const limit = numeric(options.limit) ? options.limit : 5;
   const shown = rows.slice(0, limit);
@@ -170,10 +244,11 @@ async function loadRecords(
       shown.map(async (row) => ({
         id: String(row.id),
         title: await recordLabel(source, model, row),
+        href: href(recordPath(found.packageId, model.name, String(row.id))),
       })),
     ),
     ...(rows.length > shown.length ? { total: rows.length } : {}),
-    href: href(path),
+    href: listHref(href, found, parent),
   };
 }
 
@@ -263,8 +338,9 @@ async function loadChart(
   ctx: WidgetLoadContext,
 ): Promise<ChartWidgetData> {
   const { source, href } = dataCapabilities(ctx);
-  const { model, path } = modelOf(options.model);
-  refuseFilter(options.filter);
+  const found = modelOf(options.model);
+  const { model } = found;
+  const parent = parentFilter(options, ctx, model);
   const groupName = typeof options.groupBy === 'string' ? options.groupBy : '';
   const groupField = groupName
     ? model.fields.find((f) => f.name === groupName)
@@ -302,7 +378,7 @@ async function loadChart(
       ? EPOCH - days * DAY
       : Number.NEGATIVE_INFINITY;
 
-  let rows = await source.list(model);
+  let rows = await rowsOf(source, model, parent);
   if (windowField && since !== Number.NEGATIVE_INFINITY) {
     rows = rows.filter((row) => {
       const at = dateOf(row[windowField.name]);
@@ -386,7 +462,7 @@ async function loadChart(
           ? 'integer'
           : 'decimal',
     ...(money ? { currency: 'USD' } : {}),
-    href: href(path),
+    href: listHref(href, found, parent),
   };
 }
 

@@ -12,6 +12,7 @@ import {
   withTotals,
 } from './derived.ts';
 import {
+  DEFAULT_SAMPLE_ROWS,
   EPOCH,
   fakeId,
   fakeRecords,
@@ -83,6 +84,15 @@ export type RecordWrite =
 
 export interface DataSource {
   list(model: CatalogModel): Promise<ModelRecord[]>;
+  /**
+   * The rows whose `field` equals `value` (compared as strings): a record's
+   * related rows, by the foreign key that points at it.
+   */
+  listWhere(
+    model: CatalogModel,
+    field: string,
+    value: string,
+  ): Promise<ModelRecord[]>;
   get(model: CatalogModel, id: string): Promise<ModelRecord | undefined>;
   create(
     model: CatalogModel,
@@ -185,7 +195,7 @@ export function createMemoryDataSource(
   options: MemoryDataSourceOptions = {},
 ): DataSource {
   const seed = options.seed ?? 1;
-  const rows = options.rowsPerModel ?? 8;
+  const rows = options.rowsPerModel ?? DEFAULT_SAMPLE_ROWS;
   const empty = new Set(options.empty ?? []);
   const tables = new Map<string, ModelRecord[]>();
   const resetListeners = new Set<() => void>();
@@ -479,6 +489,11 @@ export function createMemoryDataSource(
   return {
     async list(model) {
       return table(model).map((r) => present(model, r));
+    },
+    async listWhere(model, field, value) {
+      return table(model)
+        .filter((r) => String(r[field] ?? '') === value)
+        .map((r) => present(model, r));
     },
     async get(model, id) {
       const found = table(model).find((r) => r.id === id);

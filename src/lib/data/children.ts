@@ -7,6 +7,7 @@ import {
   hashString,
   type ModelRecord,
   packLine,
+  relatedIndex,
 } from './fakes.ts';
 import { getSamplePack } from './packs.ts';
 
@@ -56,7 +57,13 @@ export function fakeChildrenOf(
       );
       const pack = getSamplePack();
       const { products } = pack;
-      const item = products[(index % 5) % products.length];
+      // The same row the line's `productId` was pointed at (`relatedIndex`).
+      const item = productField
+        ? products[
+            relatedIndex(productField, { modelId: child.id, index }) %
+              products.length
+          ]
+        : products[index % products.length];
       const described = packLine(index);
       if (described) {
         // Labour and fabrication are not products: no product to point at.

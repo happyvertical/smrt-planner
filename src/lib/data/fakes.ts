@@ -100,6 +100,8 @@ const SENTENCES = [
 
 /** Fixed clock so seeded timestamps never change between runs. */
 export const EPOCH = Date.UTC(2026, 0, 1);
+/** Sample rows per model unless a pack or {@link SAMPLE_ROW_COUNTS} says otherwise. */
+export const DEFAULT_SAMPLE_ROWS = 8;
 const YEAR = 365 * 24 * 60 * 60 * 1000;
 
 function pick<T>(random: () => number, list: readonly T[]): T {
@@ -230,9 +232,11 @@ export function sampleRowCount(modelId: string, fallback: number): number {
 
 /**
  * Which row of the target a sample relation points at. Rows are seeded with
- * ids from `(model, index)`, so pointing at index `n` points at a real row.
+ * ids from `(model, index)`, so pointing at index `n` points at a real row;
+ * spread over every row of the target, so each sample record has related
+ * records (a customer its orders, quotes and invoices), not just the first few.
  */
-function relatedIndex(
+export function relatedIndex(
   field: CatalogField,
   context: { modelId: string; index: number },
 ): number {
@@ -249,7 +253,13 @@ function relatedIndex(
       ? context.index
       : context.index % 8;
   }
-  return context.index % 5;
+  const target = field.related ?? '';
+  return (
+    context.index %
+    (target.includes(':')
+      ? sampleRowCount(target, DEFAULT_SAMPLE_ROWS)
+      : DEFAULT_SAMPLE_ROWS)
+  );
 }
 
 /** One fake value for a field. Money is an integer number of minor units. */

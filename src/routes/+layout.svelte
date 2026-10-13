@@ -10,7 +10,7 @@ import { base } from '$app/paths';
 import { page } from '$app/state';
 import { aiState } from '$lib/ai/instance.ts';
 import smrtMark from '$lib/assets/smrt-mark.svg';
-import { exposedModels, getPackage } from '$lib/catalog/index.ts';
+import { exposedModels, getModel, getPackage } from '$lib/catalog/index.ts';
 import AiStatusIcons from '$lib/components/AiStatusIcons.svelte';
 import BrowserAssistant from '$lib/components/BrowserAssistant.svelte';
 import PlannerEditBridge from '$lib/components/PlannerEditBridge.svelte';
@@ -41,6 +41,7 @@ import { createOnNavigateViewTransition } from '$lib/motion/view-transition.ts';
 import { appHref, appQuery, setBasePath } from '$lib/planner/app.svelte.ts';
 import { plannerRuntime } from '$lib/planner/instance.ts';
 import { hasAppState, withTab } from '$lib/planner/query.ts';
+import { recordFilter, recordFilterQuery } from '$lib/planner/routes.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
 import {
   PLANNER_ASSISTANT_TOGGLE,
@@ -236,13 +237,28 @@ let kitchenFragment: KitchenFragment = { present: false, hash: '' };
 
 const onPlanner = () => page.route.id === '/';
 
+/**
+ * A model list page keeps its `?<fk>=<id>` filter (a record's "View all")
+ * beside the app query; every other page drops any other parameter.
+ */
+function withListFilter(query: string): string {
+  const { package: packageId, model: modelName } = page.params;
+  const model =
+    packageId && modelName ? getModel(packageId, modelName) : undefined;
+  const filter = model
+    ? recordFilterQuery(recordFilter(location.search, model))
+    : '';
+  if (!filter) return query;
+  return query ? `${query}&${filter}` : `?${filter}`;
+}
+
 function syncUrl() {
   // A legacy link that could not be saved keeps its URL: it is the only copy.
   if (cookbookStore.keepLegacyUrl) return;
   // The tab belongs to the Planner page only; other pages drop it.
   const wanted = onPlanner()
     ? withTab(appQuery(), plannerTab.active)
-    : appQuery();
+    : withListFilter(appQuery());
   if (location.search !== wanted) {
     replaceState(`${location.pathname}${wanted}${location.hash}`, page.state);
   }

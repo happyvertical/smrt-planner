@@ -18,6 +18,7 @@ import AiModelsPage from '../components/AiModelsPage.svelte';
 import BrowserAssistant from '../components/BrowserAssistant.svelte';
 import ModelWorkspace from '../components/ModelWorkspace.svelte';
 import PackagePage from '../components/PackagePage.svelte';
+import RecordView from '../components/RecordView.svelte';
 import SectionView from '../components/SectionView.svelte';
 import ThemeBridge from '../components/ThemeBridge.svelte';
 import { cookbookStore, SHELL_STORAGE_KEY } from '../cookbook/store.svelte.ts';
@@ -27,13 +28,15 @@ import { createPlannerDataSource } from '../data/planner-source.ts';
 import { activeForms } from '../forms/active.ts';
 import { runViewTransition } from '../motion/view-transition.ts';
 import { plannerLoaders, resolveRecipeExport } from '../overviews/registry.ts';
-import { recipes } from '../recipes/index.ts';
+import { hasNavKey, recipeNav, recipes } from '../recipes/index.ts';
+import { pageScope, scopePreset } from '../recipes/scope.ts';
 import { recipeState } from '../recipes/state.svelte.ts';
 import { sectionIdFromSlug } from '../sections/path.ts';
 import { DEFAULT_PRESET } from '../theme/theme.ts';
 import { setBasePath } from './app.svelte.ts';
 import PlannerControls from './PlannerControls.svelte';
 import PlannerLifecycle from './PlannerLifecycle.svelte';
+import { parseModelRoute, recordFilter, splitRoute } from './routes.ts';
 import { PLANNER_ASSISTANT_TOGGLE, plannerShellProps } from './shell.ts';
 import { currentPlannerTitle } from './title.svelte.ts';
 import type { PlannerProps } from './types.ts';
@@ -137,18 +140,47 @@ onMount(() => {
 });
 
 const currentRoute = $derived(route || defaultRoute);
-const pathParts = $derived(currentRoute.split('/').filter(Boolean));
+// A fragment route may carry a query (`#/m/commerce/Order/?customerId=x`).
+const routeParts = $derived(splitRoute(currentRoute));
+const pathParts = $derived(routeParts.path.split('/').filter(Boolean));
 const sectionSlug = $derived(pathParts[0] === 's' ? pathParts[1] : undefined);
 const packageId = $derived(
   pathParts[0] === 'packages' ? pathParts[1] : undefined,
 );
+// `/m/<pkg>/<Model>/`, a keyed entry, a record's view or edit page.
+const modelRoute = $derived(
+  pathParts[0] === 'm'
+    ? parseModelRoute(pathParts.slice(1), hasNavKey)
+    : undefined,
+);
 const model = $derived(
-  pathParts[0] === 'm' ? getModel(pathParts[1], pathParts[2]) : undefined,
+  modelRoute ? getModel(modelRoute.packageId, modelRoute.modelName) : undefined,
 );
 const applied = $derived(model ? recipeState.apply(model) : undefined);
 const forms = $derived(
   model ? activeForms(recipeState.ids, recipes, model.id) : [],
 );
+// The slice a list page shows: a record's "View all" query, else the keyed
+// entry's filter (the plain entry gives those rows up).
+const scope = $derived.by(() => {
+  if (!model || !modelRoute) return undefined;
+  return (
+    recordFilter(routeParts.search, model) ??
+    pageScope(
+      model.id,
+      modelRoute.view,
+      recipeState.ids.flatMap((id) => {
+        const recipe = recipes.find((r) => r.id === id);
+        return recipe ? recipeNav(recipe) : [];
+      }),
+    )
+  );
+});
+const preset = $derived(scopePreset(scope));
+/** The mount's own way around: a fragment route. */
+const navigate = (path: string) => {
+  location.hash = path;
+};
 
 function updateCookbook(next: ComponentProps<typeof CookbookApp>['cookbook']) {
   cookbookStore.apply(next as Cookbook);
@@ -241,8 +273,19 @@ const dockToggles = $derived(assistant ? [PLANNER_ASSISTANT_TOGGLE] : []);
       <AdvancedStyles backHref="#/configure/" />
     {:else if pathParts[0] === 'ai'}
       <AiModelsPage backHref="#/configure/" />
+    {:else if applied && model && modelRoute?.recordId}
+      {#key `${model.id}:${modelRoute.recordId}`}
+        <RecordView
+          packageId={modelRoute.packageId}
+          modelName={modelRoute.modelName}
+          recordId={modelRoute.recordId}
+          mode={modelRoute.mode}
+          href={hashHref}
+          {navigate}
+        />
+      {/key}
     {:else if applied && model}
-      <ModelWorkspace model={applied.model} fields={applied.fields} {forms} />
+      <ModelWorkspace model={applied.model} fields={applied.fields} {forms} {scope} {preset} href={hashHref} />
     {:else}
       <PlannerControls {controller} {basePath} {inference} {persistence} {themeControls} {tabs} managedByParent layout="shell" advancedStylesHref="#/advanced-styles/" />
     {/if}

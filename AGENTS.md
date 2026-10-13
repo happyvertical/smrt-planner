@@ -291,11 +291,31 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
 - `src/lib/fields/`: `renderer.ts` picks the input per field (pure, tested);
   `FieldInput.svelte` renders it and `RelationField.svelte` the selectors.
   `data/labels.ts` (with `data/display.ts`) labels related records (Customer/Vendor via their Profile).
-- `src/lib/components/`: generated list/form (`ModelWorkspace`), the collapsed "Connect other tools"
+- `src/lib/components/`: generated list/form (`ModelWorkspace`; a row opens its record page), the
+  record page (`RecordView`), the collapsed "Connect other tools"
   list (`ConnectTools`), the Help view (`HelpView`), `BrowserAssistant` (the dock slot: consent, progress, then smrt-chat's `AssistantDock`).
+- Record pages (smrt#3718 record view): `/m/<pkg>/<Model>/<id>/` shows one sample row through
+  smrt-svelte's `RecordScreen` (fields read-only, then the record's own editable overview) and
+  `/<id>/edit/` is the same page in edit mode (the form beside the header on desktop, a sheet on
+  phones). Nothing is hand-written per model: `src/lib/screens/` turns a catalog model into the
+  framework's `ScreenCollectionDefinition` / `ScreenPolicy` (`definition.ts`) and its relations
+  (`relations.ts`: `reverseLinks` / `forwardLinks` from `recipes/plumbing.ts`, confined to the
+  models in the app; derived here rather than through `deriveScreenRelations` because the
+  catalog knows STI parents). The overview is `detail:<pkg>.<Model>` (`overviews/definitions.ts`
+  `detailOverview`: the framework's `recordOverview` over the whole catalog's relations, so widget
+  ids are stable whichever recipes are on; `detailOverviewFor` narrows the defaults to the app),
+  saved in the cookbook's `overviews` like a section's. Its `records` / `metric` widgets carry
+  `filter: 'parent'` + `field`; the planner loaders read `ctx.record` and `DataSource.listWhere`.
+  "View all" is the list page with `?<fk>=<id>` (`planner/routes.ts`; the layout keeps that
+  query, `ModelPage` / the mount's hash router turn it into the list's scope). The ids are sample
+  data made in the browser, so the record routes are served by the static fallback
+  (`[view]/+page.ts` treats a segment that is not a nav key as an id; `edit` is `prerender = false`).
+  Sample foreign keys spread over every row of their target (`fakes.ts` `relatedIndex`), so each
+  record has related rows.
 - `src/routes/`: `/` Planner with `?tab=cookbooks|recipes|features|layout|export` tabs (`planner/tab.svelte.ts`; a visitor with nothing built lands on Cookbooks; smrt-ui `Tabs`: Cookbooks cards + preview, Recipes cards with switches only, Features the browsable catalogue of every recipe with its demo label, providers and what it adds, Layout `ShellLayoutEditor`, Export / Import / Reset in `ExportPanel`), `/ai/` the AI models page (Set up your assistant), `/cookbook/` a client-side redirect to `/?tab=export`, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
-  `/packages/` and `/packages/[id]/` the package browser, `/m/[package]/[model]/`.
-  All prerendered; `entries()` come from the catalog.
+  `/packages/` and `/packages/[id]/` the package browser, `/m/[package]/[model]/` (and `/[view]/`:
+  a keyed nav entry, else a record's view page; `/[view]/edit/` its edit page).
+  All prerendered but the record pages; `entries()` come from the catalog.
 
 ## Invariants
 

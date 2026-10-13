@@ -2,11 +2,12 @@
 // A record's page (smrt#3718 record view): the framework's `RecordScreen`
 // over one sample row. Its fields read-only at the top, then the record's
 // own editable overview (`detail:<pkg>.<Model>`, saved in the cookbook with
-// the section pages') whose default panels list the newest related records
-// per model whose rows point at it, headed with their count and "View all"
-// to the list narrowed to this record. Edit is the `/edit/` route of the
-// same page: the form opens beside the header on desktop and as a sheet on
-// phones. Everything is generic, from the catalog's foreign keys.
+// the section pages'): a summary strip, the line items with the record's
+// totals, and the related records as tabs, each with its "View all" to the
+// list narrowed to this record. Edit is the `/edit/` route of the same page:
+// the form (with the line-items editor under it) opens beside the header on
+// desktop and as a sheet on phones. Everything is generic, from the
+// catalog's foreign keys and the framework's field roles.
 //
 // No `$app` import: the static route and the mounted `Planner` both render
 // it, giving it their own `href` and `navigate`.
@@ -27,6 +28,7 @@ import {
   isAllocationModel,
   isLineModel,
 } from '../data/derived.ts';
+import { recordHeading } from '../data/display.ts';
 import type { ModelRecord } from '../data/fakes.ts';
 import { humanize, labelKey, pluralize } from '../data/format.ts';
 import { recordLabel, relationLabels } from '../data/labels.ts';
@@ -47,6 +49,7 @@ import { childLinks, childTitle, lineageNames } from '../recipes/plumbing.ts';
 import { recipeState } from '../recipes/state.svelte.ts';
 import { screenDefinition, screenPolicy } from '../screens/definition.ts';
 import { appModels, screenRelations } from '../screens/relations.ts';
+import { documentTotals } from '../screens/totals.ts';
 import ChildRecords from './ChildRecords.svelte';
 
 interface RecordViewProps {
@@ -124,8 +127,15 @@ const calculated = $derived(
 );
 
 let record = $state<ModelRecord | undefined>(undefined);
+/** The record's line items (its `items` relation), for the totals block. */
+let lines = $state<ModelRecord[]>([]);
 let loaded = $state(false);
-let title = $state('');
+/**
+ * The header's title for a record with a name (a customer's Profile name);
+ * a document gets none, so the header leads with its kind and identifier
+ * ("Order GRA-3159", the identifier monospace).
+ */
+let title = $state<string | undefined>(undefined);
 /** Labels of the records this one points at, by `labelKey`. */
 let labelMap = $state(new Map<string, string>());
 let submitting = $state(false);
@@ -140,12 +150,25 @@ async function load() {
   const found = await source.get(catalogModel, recordId);
   record = found;
   if (found) {
-    [title, labelMap] = await Promise.all([
+    let name: string;
+    [name, labelMap, lines] = await Promise.all([
       recordLabel(source, catalogModel, found),
       relationLabels(source, catalogModel.fields, [found]),
+      loadLines(),
     ]);
+    title =
+      recordHeading(catalogModel, found, name, humanize(modelName)) === name
+        ? name
+        : undefined;
   }
   loaded = true;
+}
+
+/** The rows of the record's line items, when it has them. */
+async function loadLines(): Promise<ModelRecord[]> {
+  const items = relations.find((r) => r.kind === 'items');
+  const target = items && getModelByQualifiedName(items.model)?.model;
+  return items && target ? source.listWhere(target, items.field, recordId) : [];
 }
 
 $effect(() => {
@@ -241,24 +264,50 @@ async function remove() {
 /** A line item changed: the record's calculated totals moved. */
 async function refreshDerived() {
   if (!catalogModel) return;
-  const fresh = await source.get(catalogModel, recordId);
+  const [fresh, freshLines] = await Promise.all([
+    source.get(catalogModel, recordId),
+    loadLines(),
+  ]);
+  lines = freshLines;
   if (fresh) record = fresh;
 }
+
+/**
+ * What the record page's own widgets read (the planner widget context):
+ * the app's relations for the related tabs and the line items, the
+ * record's totals and currency for the totals block.
+ */
+const widgetContext = $derived({
+  source,
+  href,
+  relations,
+  viewAllHref,
+  totals: () =>
+    catalogModel && record
+      ? documentTotals(catalogModel, record, lines)
+      : undefined,
+  currency: () =>
+    typeof record?.currency === 'string' && record.currency
+      ? record.currency
+      : undefined,
+});
 </script>
 
-{#snippet extras()}
-  {#if mode === 'edit'}
-    {#each childTables as child (child.model.id)}
-      <ChildRecords
-        model={child.model}
-        fields={child.fields}
-        fk={child.fk}
-        title={child.title}
-        parentId={recordId}
-        onchanged={refreshDerived}
-      />
-    {/each}
-  {/if}
+<!-- Line items and other dependent records are edited with the record:
+     RecordScreen renders this under the edit form, in the edit column on
+     desktop and inside the edit sheet on phones. In view mode the overview's
+     line-items widget shows them, so there is no second panel. -->
+{#snippet items()}
+  {#each childTables as child (child.model.id)}
+    <ChildRecords
+      model={child.model}
+      fields={child.fields}
+      fk={child.fk}
+      title={child.title}
+      parentId={recordId}
+      onchanged={refreshDerived}
+    />
+  {/each}
 {/snippet}
 
 {#if !loaded}
@@ -281,7 +330,7 @@ async function refreshDerived() {
         {relations}
         {mode}
         registry={overviewRegistry}
-        widgetContext={{ source, href }}
+        {widgetContext}
         {overview}
         override={cookbookStore.overview(overviewId)}
         onoverviewchange={(override) =>
@@ -299,9 +348,9 @@ async function refreshDerived() {
         oncancel={() => navigate(recordPath(packageId, modelName, recordId))}
         onsave={save}
         ondelete={remove}
-      >
-        {@render extras()}
-      </RecordScreen>
+        derivedFields={[...calculated]}
+        items={childTables.length ? items : undefined}
+      />
     </div>
   {/key}
 {/if}

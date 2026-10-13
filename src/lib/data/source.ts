@@ -124,8 +124,12 @@ export interface DataSource {
   onReset?(listener: () => void): () => void;
 }
 
-/** Prefix of the localStorage keys rows are kept under, one per model. */
-export const DATA_STORAGE_PREFIX = 'smrt-planner:data:v3:';
+/**
+ * Prefix of the localStorage keys rows are kept under, one per model. v4:
+ * a line's `amount` is its pre-tax price (`derived.ts`); rows kept under v3
+ * hold tax-inclusive amounts, so they are left behind for fresh samples.
+ */
+export const DATA_STORAGE_PREFIX = 'smrt-planner:data:v4:';
 const CREATED_KEY = `${DATA_STORAGE_PREFIX}_created`;
 
 /** Remove every stored row. Never throws. */

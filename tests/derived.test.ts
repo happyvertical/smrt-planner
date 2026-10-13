@@ -135,7 +135,7 @@ describe('labels and titles', () => {
     expect(recordCount(8)).toBe('8 records');
   });
 
-  it('titles a record by its related record and reference', () => {
+  it('titles a document by its reference alone', () => {
     const view = recipeState.apply(agreement).fields;
     const customer = view.find((f) => f.name === 'customerId');
     const labels = new Map([[`${customer?.related}:c1`, 'Ada Nguyen']]);
@@ -146,7 +146,7 @@ describe('labels and titles', () => {
         { customerId: 'c1', reference: 'PO-7' },
         labels,
       ),
-    ).toBe('Ada Nguyen · PO-7');
+    ).toBe('PO-7');
   });
 });
 

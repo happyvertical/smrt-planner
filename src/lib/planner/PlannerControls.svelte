@@ -188,9 +188,10 @@ $effect(() => {
 
   /* The strip persists across configure-page route changes; the panel below
      crossfades with the content. smrt-ui's Tabs owns the classes (`tabs-nav`
-     for button tabs, `tabs-links` for link tabs; one strip per Tabs). */
-  .planner :global(.tabs-nav),
-  .planner :global(.tabs-links) {
+     for button tabs, `tabs-links` for link tabs; one strip per Tabs). Named
+     only while a transition runs, as in Planner.svelte. */
+  :global([data-smrt-view-transition]) .planner :global(.tabs-nav),
+  :global([data-smrt-view-transition]) .planner :global(.tabs-links) {
     view-transition-name: planner-tabs;
   }
 

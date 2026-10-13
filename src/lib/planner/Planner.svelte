@@ -297,12 +297,19 @@ const dockToggles = $derived(assistant ? [PLANNER_ASSISTANT_TOGGLE] : []);
 @layer smrt.theme {
   /* `view-transition-name`s: one per surface per screen (a duplicate aborts
      the transition). AppShell names its brand, nav and dock (`smrt-shell-*`,
-     reserved); these are the planner's own. */
-  .content { width: min(100%, 72rem); margin-inline: auto; padding: var(--smrt-spacing-6); view-transition-name: planner-content; }
-  .customize { display: inline-grid; place-items: center; inline-size: 2rem; block-size: 2rem; color: inherit; border-radius: var(--smrt-radius-medium, 0.5rem); view-transition-name: planner-customize; }
+     reserved); these are the planner's own. Like the shell's, they apply only
+     while a transition runs (`html[data-smrt-view-transition]`, set by
+     `runViewTransition`): a name makes a stacking context, and a permanent
+     one on `.content` trapped the record page's phone edit sheet under the
+     shell's top bar. */
+  .content { width: min(100%, 72rem); margin-inline: auto; padding: var(--smrt-spacing-6); }
+  :global([data-smrt-view-transition]) .content { view-transition-name: planner-content; }
+  :global([data-smrt-view-transition]) .customize { view-transition-name: planner-customize; }
+  :global([data-smrt-view-transition]) .back { view-transition-name: planner-back; }
+  .customize { display: inline-grid; place-items: center; inline-size: 2rem; block-size: 2rem; color: inherit; border-radius: var(--smrt-radius-medium, 0.5rem); }
   .customize:hover { background: color-mix(in srgb, currentColor calc(var(--smrt-state-hover) * 100%), transparent); }
   .customize:focus-visible { outline: var(--smrt-focus-ring-width) solid var(--smrt-focus-ring-color); outline-offset: var(--smrt-focus-ring-offset); }
-  .back { display: inline-flex; align-items: center; gap: var(--smrt-spacing-1); block-size: 2rem; padding-inline: var(--smrt-spacing-2); color: var(--smrt-color-on-surface-variant); font-size: var(--smrt-typography-body-small-size, 0.8125rem); text-decoration: none; white-space: nowrap; border-radius: var(--smrt-radius-medium, 0.5rem); view-transition-name: planner-back; }
+  .back { display: inline-flex; align-items: center; gap: var(--smrt-spacing-1); block-size: 2rem; padding-inline: var(--smrt-spacing-2); color: var(--smrt-color-on-surface-variant); font-size: var(--smrt-typography-body-small-size, 0.8125rem); text-decoration: none; white-space: nowrap; border-radius: var(--smrt-radius-medium, 0.5rem); }
   .back:hover { background: color-mix(in srgb, currentColor calc(var(--smrt-state-hover) * 100%), transparent); color: var(--smrt-color-on-surface); }
   .back:focus-visible { outline: var(--smrt-focus-ring-width) solid var(--smrt-focus-ring-color); outline-offset: var(--smrt-focus-ring-offset); }
 }

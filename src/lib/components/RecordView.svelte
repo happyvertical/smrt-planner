@@ -151,10 +151,9 @@ async function load() {
   record = found;
   if (found) {
     let name: string;
-    [name, labelMap, lines] = await Promise.all([
+    [name, labelMap] = await Promise.all([
       recordLabel(source, catalogModel, found),
       relationLabels(source, catalogModel.fields, [found]),
-      loadLines(),
     ]);
     title =
       recordHeading(catalogModel, found, name, humanize(modelName)) === name
@@ -179,7 +178,14 @@ $effect(() => {
   void load();
 });
 // A reset (a cookbook applied, the app reset) swaps the rows underneath.
-$effect(() => source.onReset?.(() => void load()));
+$effect(() =>
+  source.onReset?.(() => {
+    void load();
+    void loadLines().then((found) => {
+      lines = found;
+    });
+  }),
+);
 
 const listPath = $derived(modelPath(packageId, modelName));
 const backLabel = $derived(pluralize(humanize(modelName)));

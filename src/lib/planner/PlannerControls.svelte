@@ -24,6 +24,20 @@ import PlannerLifecycle from './PlannerLifecycle.svelte';
 import { plannerTab } from './tab.svelte.ts';
 import type { PlannerProps } from './types.ts';
 
+/**
+ * The planner's customization controls alone (Cookbooks, Recipes, Theme,
+ * Settings, Export as tabs), for a host that owns the surrounding shell; the
+ * complete `Planner` mounts the same inside its own shell.
+ */
+interface PlannerControlsProps extends PlannerProps {
+  /**
+   * `true` when the complete `Planner` renders these: its own lifecycle
+   * already configured the controller, persistence and inference, so the
+   * controls do not mount a second one.
+   */
+  managedByParent?: boolean;
+}
+
 const DEFAULT_TABS: PlannerTabId[] = [
   'cookbooks',
   'recipes',
@@ -44,7 +58,7 @@ let {
   tabs = DEFAULT_TABS,
   onready,
   managedByParent = false,
-}: PlannerProps & { managedByParent?: boolean } = $props();
+}: PlannerControlsProps = $props();
 
 // Generated views and the Cookbooks tab read sample records from a data
 // source: use the host's, else make the planner's own.

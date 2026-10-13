@@ -8,15 +8,21 @@ import {
   type HostSession,
 } from './session.svelte.ts';
 
-let {
-  callTool,
-  initial,
-  onready,
-}: {
+/**
+ * The planner inside a Kitchen host (an MCP app or widget): the complete
+ * `Planner` over a host session that reads and writes the plan through the
+ * host's tools, reconnecting while the page is visible.
+ */
+interface HostPlannerProps {
+  /** Calls one of the host's Kitchen tools by name with its arguments. */
   callTool: CallKitchenTool;
+  /** A plan the host already holds, received before the first connection. */
   initial?: HostPlan;
+  /** Called once the session is mounted, with the session to drive it. */
   onready?: (session: HostSession) => void;
-} = $props();
+}
+
+let { callTool, initial, onready }: HostPlannerProps = $props();
 const session = createHostSession((name, args) => callTool(name, args));
 onMount(() => {
   const stop = session.mount();

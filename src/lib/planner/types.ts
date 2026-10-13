@@ -54,6 +54,11 @@ export interface PlannerProps {
    * default. The complete `Planner` only.
    */
   backLink?: PlannerBackLink;
+  /**
+   * Called once the planner is mounted, with its controller and (when
+   * `inference` was given) the assistant transport, for a host that drives
+   * the plan itself.
+   */
   onready?: (handle: PlannerHandle) => void;
 }
 

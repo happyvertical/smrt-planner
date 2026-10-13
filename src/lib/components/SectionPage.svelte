@@ -75,7 +75,7 @@ function startNew(entry: ShellSectionMenuEntry) {
 @layer smrt.theme {
   .new {
     padding: var(--smrt-spacing-1) var(--smrt-spacing-3);
-    border: 1px solid var(--smrt-color-outline-variant);
+    border: var(--smrt-hairline);
     border-radius: var(--smrt-radius-full, 999px);
     color: var(--smrt-color-primary);
     text-decoration: none;
@@ -84,7 +84,7 @@ function startNew(entry: ShellSectionMenuEntry) {
 
   .new:hover,
   .new:focus-visible {
-    background: var(--smrt-color-surface-container-high);
+    background: color-mix(in srgb, currentColor calc(var(--smrt-state-hover) * 100%), transparent);
   }
 }
 </style>

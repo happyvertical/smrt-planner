@@ -74,13 +74,13 @@ const helpHref = $derived(
   }
 
   a:hover {
-    background: var(--smrt-color-surface-container-high, rgb(0 0 0 / 8%));
+    background: color-mix(in srgb, currentColor calc(var(--smrt-state-hover) * 100%), transparent);
     color: var(--smrt-color-on-surface);
   }
 
   a:focus-visible {
-    outline: 2px solid var(--smrt-color-primary);
-    outline-offset: 2px;
+    outline: var(--smrt-focus-ring-width) solid var(--smrt-focus-ring-color);
+    outline-offset: var(--smrt-focus-ring-offset);
   }
 
   a[aria-current='page'] {

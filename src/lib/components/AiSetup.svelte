@@ -425,9 +425,9 @@ const handsFreeAvailable = $derived(voice.status === 'ready');
     padding: var(--smrt-spacing-4);
     min-width: 0;
     overflow-wrap: anywhere;
-    border: 1px solid var(--smrt-color-outline-variant);
+    border: var(--smrt-hairline);
     border-radius: var(--smrt-radius-lg, 12px);
-    background: var(--smrt-color-surface-container-low, transparent);
+    background: var(--smrt-surface-panel, transparent);
   }
 
   header {
@@ -443,7 +443,7 @@ const handsFreeAvailable = $derived(voice.status === 'ready');
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 50%;
-    border: 1px solid var(--smrt-color-outline-variant);
+    border: var(--smrt-hairline);
   }
 
   .card[data-state='ready'] .badge {
@@ -453,13 +453,13 @@ const handsFreeAvailable = $derived(voice.status === 'ready');
   }
 
   .card[data-state='available'] .badge {
-    border: 1px dashed var(--smrt-color-outline);
+    border: 1px dashed var(--smrt-hairline-strong-color);
     color: var(--smrt-color-on-surface-variant);
   }
 
   .card[data-state='off'] .badge {
     position: relative;
-    border: 1px dashed var(--smrt-color-outline-variant);
+    border: 1px dashed var(--smrt-hairline-color);
     opacity: 0.5;
   }
 
@@ -509,7 +509,7 @@ const handsFreeAvailable = $derived(voice.status === 'ready');
   .notice {
     margin: 0 0 var(--smrt-spacing-3);
     padding: var(--smrt-spacing-3);
-    border: 1px solid var(--smrt-color-outline-variant);
+    border: var(--smrt-hairline);
     border-radius: var(--smrt-radius-md, 8px);
   }
 

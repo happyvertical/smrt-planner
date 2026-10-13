@@ -150,7 +150,7 @@ const requiredHref = (id: string) => {
   }
 
   button.secondary {
-    border: 1px solid var(--smrt-color-outline);
+    border: var(--smrt-control-border);
     background: transparent;
     color: var(--smrt-color-on-surface);
   }

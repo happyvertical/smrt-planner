@@ -180,7 +180,7 @@ function toggle(id: string) {
     align-content: start;
     gap: var(--smrt-spacing-2);
     padding: var(--smrt-spacing-4);
-    border: 1px solid var(--smrt-color-outline-variant);
+    border: var(--smrt-hairline);
     border-radius: var(--smrt-radius-large);
   }
 
@@ -204,16 +204,16 @@ function toggle(id: string) {
   .search input {
     width: min(100%, 28rem);
     padding: var(--smrt-spacing-2) var(--smrt-spacing-3);
-    border: 1px solid var(--smrt-color-outline);
+    border: var(--smrt-control-border);
     border-radius: var(--smrt-radius-medium);
-    background: var(--smrt-color-surface);
+    background: var(--smrt-surface-control);
     color: var(--smrt-color-on-surface);
     font: inherit;
   }
 
   button.secondary {
     padding: var(--smrt-spacing-1) var(--smrt-spacing-3);
-    border: 1px solid var(--smrt-color-outline);
+    border: var(--smrt-control-border);
     border-radius: var(--smrt-radius-medium);
     background: transparent;
     color: var(--smrt-color-on-surface);

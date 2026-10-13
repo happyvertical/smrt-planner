@@ -200,7 +200,8 @@ $effect(() => source.onReset?.(() => void loadCounts()));
 
   .entries h2 {
     margin: 0;
-    font-size: 1rem;
+    font: var(--smrt-typography-title-medium-font);
+    letter-spacing: var(--smrt-typography-title-medium-tracking);
   }
 }
 </style>

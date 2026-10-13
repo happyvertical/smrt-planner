@@ -251,16 +251,16 @@ async function save(event: SubmitEvent) {
   th,
   td {
     padding: var(--smrt-spacing-1) var(--smrt-spacing-2);
-    border: 1px solid var(--smrt-color-outline-variant);
+    border: var(--smrt-hairline);
     text-align: left;
   }
 
   td input {
     width: 6rem;
     padding: var(--smrt-spacing-1) var(--smrt-spacing-2);
-    border: 1px solid var(--smrt-color-outline);
+    border: var(--smrt-control-border);
     border-radius: var(--smrt-radius-medium);
-    background: var(--smrt-color-surface);
+    background: var(--smrt-surface-control);
     color: var(--smrt-color-on-surface);
     font: inherit;
   }
@@ -289,7 +289,7 @@ async function save(event: SubmitEvent) {
   }
 
   button.secondary {
-    border: 1px solid var(--smrt-color-outline);
+    border: var(--smrt-control-border);
     background: transparent;
     color: var(--smrt-color-on-surface);
   }

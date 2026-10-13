@@ -50,12 +50,12 @@ const icons: Record<CapabilityId, string> = {
   }
 
   .cap:hover {
-    background: var(--smrt-color-surface-container-high, transparent);
+    background: color-mix(in srgb, currentColor calc(var(--smrt-state-hover) * 100%), transparent);
   }
 
   .cap:focus-visible {
-    outline: 2px solid var(--smrt-color-primary);
-    outline-offset: 2px;
+    outline: var(--smrt-focus-ring-width) solid var(--smrt-focus-ring-color);
+    outline-offset: var(--smrt-focus-ring-offset);
   }
 
   .cap[data-state='ready'] {
@@ -65,14 +65,14 @@ const icons: Record<CapabilityId, string> = {
 
   /* Set up elsewhere but not on: dashed and muted. */
   .cap[data-state='available'] {
-    border: 1px dashed var(--smrt-color-outline);
+    border: 1px dashed var(--smrt-hairline-strong-color);
     color: var(--smrt-color-on-surface-variant);
   }
 
   /* Not possible here: dashed, faded and struck through. */
   .cap[data-state='off'] {
     position: relative;
-    border: 1px dashed var(--smrt-color-outline-variant);
+    border: 1px dashed var(--smrt-hairline-color);
     color: var(--smrt-color-on-surface-variant);
     opacity: 0.5;
   }

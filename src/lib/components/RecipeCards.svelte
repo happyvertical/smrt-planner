@@ -132,7 +132,7 @@ const mainOn = (card: PlannerCard) => cardIsOn(card, recipeState.ids);
     align-content: start;
     gap: var(--smrt-spacing-2);
     padding: var(--smrt-spacing-4);
-    border: 1px solid var(--smrt-color-outline-variant);
+    border: var(--smrt-hairline);
     border-radius: var(--smrt-radius-large);
   }
 

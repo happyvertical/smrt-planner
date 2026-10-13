@@ -165,9 +165,9 @@ function picked(id: string) {
     max-height: 90vh;
     padding: var(--smrt-spacing-2);
     overflow: auto;
-    border: 1px solid var(--smrt-color-outline-variant);
+    border: var(--smrt-hairline);
     border-radius: var(--smrt-radius-large);
-    background: var(--smrt-color-surface);
+    background: var(--smrt-surface-raised);
     color: var(--smrt-color-on-surface);
   }
 

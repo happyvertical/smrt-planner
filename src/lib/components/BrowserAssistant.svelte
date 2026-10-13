@@ -271,12 +271,12 @@ $effect(() => {
   }
 
   .model-link:hover {
-    background: var(--smrt-color-surface-container);
+    background: color-mix(in srgb, currentColor calc(var(--smrt-state-hover) * 100%), transparent);
   }
 
   .model-link:focus-visible {
-    outline: 2px solid var(--smrt-color-primary);
-    outline-offset: 1px;
+    outline: var(--smrt-focus-ring-width) solid var(--smrt-focus-ring-color);
+    outline-offset: var(--smrt-focus-ring-offset);
   }
 
   .offer {

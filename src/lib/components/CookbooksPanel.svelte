@@ -202,7 +202,7 @@ function commit() {
 
   h3,
   h4 {
-    font-size: 1rem;
+    font: var(--smrt-typography-title-medium-font); letter-spacing: var(--smrt-typography-title-medium-tracking);
   }
 
   .meta,
@@ -227,9 +227,9 @@ function commit() {
     width: 100%;
     height: 100%;
     padding: var(--smrt-spacing-4);
-    border: 1px solid var(--smrt-color-outline-variant);
+    border: var(--smrt-hairline);
     border-radius: var(--smrt-radius-lg, 0.75rem);
-    background: var(--smrt-color-surface);
+    background: var(--smrt-surface-panel);
     color: inherit;
     font: inherit;
     text-align: start;
@@ -255,7 +255,7 @@ function commit() {
   }
 
   .name {
-    font-weight: 600;
+    font-weight: var(--smrt-typography-weight-semibold);
   }
 
   .badge {
@@ -273,7 +273,7 @@ function commit() {
     display: grid;
     gap: var(--smrt-spacing-4);
     padding: var(--smrt-spacing-4);
-    border: 1px solid var(--smrt-color-outline-variant);
+    border: var(--smrt-hairline);
     border-radius: var(--smrt-radius-lg, 0.75rem);
   }
 

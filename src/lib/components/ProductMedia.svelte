@@ -90,6 +90,6 @@ const nameOf = (product: ModelRecord) =>
   h3, p { margin: 0; }
   p, .count { color: var(--smrt-color-on-surface-variant); }
   .products { display: grid; gap: var(--smrt-spacing-3); margin: 0; padding: 0; list-style: none; }
-  li { padding: var(--smrt-spacing-2); border: 1px solid var(--smrt-color-outline-variant); border-radius: var(--smrt-radius-medium); }
+  li { padding: var(--smrt-spacing-2); border: var(--smrt-hairline); border-radius: var(--smrt-radius-medium); }
 }
 </style>

@@ -133,7 +133,7 @@ function toggle(id: string, on: boolean) {
   }
 
   .count {
-    font-size: var(--smrt-font-size-body-medium, 0.875rem);
+    font-size: var(--smrt-typography-body-medium-size);
   }
 
   .notice:empty {

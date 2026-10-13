@@ -105,20 +105,20 @@ onDestroy(() => {
 @layer smrt.reset, smrt.structure, smrt.theme;
 @layer smrt.theme {
   .advanced-styles { display: grid; gap: 1rem; max-inline-size: 72rem; }
-  .pending { display: flex; flex-wrap: wrap; align-items: center; gap: var(--smrt-spacing-2); padding: var(--smrt-spacing-3); border: 1px solid var(--smrt-color-outline-variant); border-radius: var(--smrt-radius-medium); }
+  .pending { display: flex; flex-wrap: wrap; align-items: center; gap: var(--smrt-spacing-2); padding: var(--smrt-spacing-3); border: var(--smrt-hairline); border-radius: var(--smrt-radius-medium); }
   .pending p { margin: 0; }
   .back { color: var(--smrt-color-primary); font-weight: 700; text-decoration: none; }
   .back:hover { text-decoration: underline; }
   .heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
   h1, p { margin: 0; }
-  h1 { font-size: clamp(1.5rem, 3vw, 2rem); }
+  h1 { font: var(--smrt-typography-headline-large-font); letter-spacing: var(--smrt-typography-headline-large-tracking); }
   .heading p, .help { color: var(--smrt-color-on-surface-variant); }
   .heading p { margin-top: .35rem; }
   .live { display: inline-flex; align-items: center; gap: .4rem; flex: none; padding: .4rem .65rem; border-radius: 2rem; background: var(--smrt-color-primary-container); color: var(--smrt-color-on-primary-container); font-size: .8rem; font-weight: 700; }
   .live span { inline-size: .5rem; block-size: .5rem; border-radius: 50%; background: var(--smrt-color-primary); }
   label { font-weight: 700; }
-  .editor { position: relative; min-block-size: 24rem; border: 1px solid var(--smrt-color-outline); border-radius: var(--smrt-radius-large, .75rem); background: var(--smrt-color-surface-container-lowest); overflow: hidden; }
-  .editor:focus-within { outline: 2px solid var(--smrt-color-primary); outline-offset: 2px; }
+  .editor { position: relative; min-block-size: 24rem; border: var(--smrt-control-border); border-radius: var(--smrt-radius-large, .75rem); background: var(--smrt-surface-control); overflow: hidden; }
+  .editor:focus-within { outline: var(--smrt-focus-ring-width) solid var(--smrt-focus-ring-color); outline-offset: var(--smrt-focus-ring-offset); }
   pre, textarea { box-sizing: border-box; position: absolute; inset: 0; inline-size: 100%; block-size: 100%; margin: 0; padding: 1rem; overflow: auto; white-space: pre; tab-size: 2; font: 500 .9rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: normal; }
   pre { pointer-events: none; color: var(--smrt-color-on-surface); }
   textarea { z-index: 1; border: 0; resize: none; background: transparent; color: transparent; caret-color: var(--smrt-color-on-surface); -webkit-text-fill-color: transparent; }

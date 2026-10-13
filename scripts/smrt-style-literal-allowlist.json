@@ -2,7 +2,6 @@
   "$comment": "Per-file counts of bare colour literals and raw px lengths in component <style> blocks (smrt's scripts/check-smrt-token-vocabulary.mjs ratchet, smrt#3826, run against this repo's src as a package root). Regenerate with that script's --write-allowlist; shrink it when a literal is converted.",
   "hex": {
     "src/lib/components/ThemeSection.svelte": {
-      "#0005": 1,
       "#00f": 1,
       "#0f0": 1,
       "#0ff": 1,
@@ -15,15 +14,11 @@
     }
   },
   "px": {
-    "src/lib/components/AdvancedStyles.svelte": 2,
     "src/lib/components/AiSetup.svelte": 3,
-    "src/lib/components/AiStatusIcons.svelte": 3,
-    "src/lib/components/BrowserAssistant.svelte": 4,
+    "src/lib/components/AiStatusIcons.svelte": 1,
+    "src/lib/components/BrowserAssistant.svelte": 3,
     "src/lib/components/CookbooksPanel.svelte": 3,
-    "src/lib/components/SectionActions.svelte": 2,
-    "src/lib/components/SectionIcons.svelte": 2,
     "src/lib/components/SectionPage.svelte": 1,
-    "src/lib/components/ThemeSection.svelte": 6,
-    "src/lib/planner/Planner.svelte": 4
+    "src/lib/components/ThemeSection.svelte": 3
   }
 }

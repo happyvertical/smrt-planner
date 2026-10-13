@@ -306,7 +306,8 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `detailOverview`: the framework's `recordOverview` over the whole catalog's relations, so widget
   ids are stable whichever recipes are on; `detailOverviewFor` narrows the defaults to the app),
   saved in the cookbook's `overviews` like a section's (the framework's own `recordOverviewId` key,
-  `detail:happyvertical.smrt-commerce.Customer`, is accepted for the same model). Its `records` / `metric` widgets carry
+  `detail:happyvertical.smrt-commerce.Customer`, is accepted for the same model). Its default is one `records`
+  panel per relation (`RecordScreen` heads it `Orders · 3` with the one View all); `records` / `metric` widgets carry
   `filter: 'parent'` + `field`; the planner loaders read `ctx.record` and `DataSource.listWhere`.
   "View all" is the list page with `?<fk>=<id>` (`planner/routes.ts`; the layout keeps that
   query, `ModelPage` / the mount's hash router turn it into the list's scope). The ids are sample

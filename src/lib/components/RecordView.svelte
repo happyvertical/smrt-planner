@@ -3,8 +3,8 @@
 // over one sample row. Its fields read-only at the top, then the record's
 // own editable overview (`detail:<pkg>.<Model>`, saved in the cookbook with
 // the section pages') whose default panels list the newest related records
-// per model whose rows point at it, each with "View all" to the list
-// narrowed to this record, and a count. Edit is the `/edit/` route of the
+// per model whose rows point at it, headed with their count and "View all"
+// to the list narrowed to this record. Edit is the `/edit/` route of the
 // same page: the form opens beside the header on desktop and as a sheet on
 // phones. Everything is generic, from the catalog's foreign keys.
 //

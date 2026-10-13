@@ -345,18 +345,17 @@ describe('detail overviews', () => {
     const framework = 'detail:happyvertical.smrt-commerce.Customer';
     expect(detailOverviewModel(framework)?.model.id).toBe(CUSTOMER);
     expect(isOverviewId(framework)).toBe(true);
-    expect(
-      checkStoredOverride(framework, { version: 1, removed: ['w1'] }).override,
-    ).toEqual({ version: 1, removed: ['w1'] });
+    const removed = { version: 1, removed: ['records-Order-customerId'] };
+    expect(checkStoredOverride(framework, removed).override).toEqual(removed);
     expect(isOverviewId('detail:commerce')).toBe(false);
     expect(detailOverview('detail:commerce.Nope')).toBeUndefined();
     expect(overviewDefinition(id)?.id).toBe(id);
   });
 
-  it('default to a count and the newest records per relation, confined to the app', () => {
+  it('default to one newest-records panel per relation, confined to the app', () => {
     const full = must(detailOverview(id));
     const orders = full.defaults.filter((w) => w.options.model === ORDER);
-    expect(orders.map((w) => w.type).sort()).toEqual(['metric', 'records']);
+    expect(orders.map((w) => w.type)).toEqual(['records']);
     expect(orders.find((w) => w.type === 'records')?.options).toMatchObject({
       filter: 'parent',
       field: 'customerId',
@@ -408,11 +407,19 @@ describe('detail overviews', () => {
       expect(row.title).not.toContain(name);
       expect(row.title.length).toBeGreaterThan(0);
     }
-    const metric = must(
-      definition.defaults.find(
-        (w) => w.type === 'metric' && w.options.model === ORDER,
-      ),
-    );
+    // A count a visitor adds (or a host's `metrics: true` default).
+    const metric = {
+      id: 'count',
+      type: 'metric',
+      span: 1,
+      options: {
+        title: 'Orders',
+        model: ORDER,
+        measure: 'count',
+        field: 'customerId',
+        filter: 'parent',
+      },
+    };
     const count = (await loadSectionWidget(
       definition,
       context(must(customer).id),
@@ -451,6 +458,22 @@ describe('detail overviews', () => {
       'detail:commerce.Nope',
     );
     expect(imported.dropped?.join(' ')).toMatch(/detail:commerce.Nope/);
+  });
+
+  it('keep a widget added on the narrowed page through validation', () => {
+    // The page renders the app's defaults only; validation reads the whole
+    // catalog's. An added widget's id must not be one of the hidden defaults.
+    const store = new CookbookStore();
+    const narrowed = must(detailOverviewFor(id, appModels([sales], [])));
+    const controller = createSectionOverview(narrowed, store);
+    expect(controller.add('note', { body: 'Call before noon' }).ok).toBe(true);
+    const override = store.overview(id);
+    expect(override?.added).toHaveLength(1);
+    const full = must(detailOverview(id));
+    expect(full.defaults.map((w) => w.id)).not.toContain(
+      override?.added?.[0]?.id,
+    );
+    expect(checkStoredOverride(id, override).override).toEqual(override);
   });
 
   it('getModel agrees with the detail id', () => {

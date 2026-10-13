@@ -163,8 +163,9 @@ const detailCache = new Map<string, OverviewDefinition>();
 
 /**
  * The overview a record's view page renders (smrt#3718): the framework's
- * `recordOverview` over the model's definition and its relations, a `records`
- * panel and a count per model whose rows point at it. Static per model kind
+ * `recordOverview` over the model's definition and its relations, one
+ * `records` panel per model whose rows point at it (its widget ids come from
+ * the relation, so they are the same in the narrowed page). Static per model kind
  * over the whole catalog, so a stored override always resolves against the
  * same widget ids whichever recipes are on; {@link detailOverviewFor} is the
  * same definition narrowed to the models in the visitor's app.

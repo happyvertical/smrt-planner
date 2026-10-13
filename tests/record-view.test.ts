@@ -312,6 +312,13 @@ describe('detail overviews', () => {
     expect(detailOverviewModel(id)?.model.id).toBe(CUSTOMER);
     expect(isOverviewId(id)).toBe(true);
     expect(isOverviewId('detail:commerce.Nope')).toBe(false);
+    // The framework's own key for the same model (`recordOverviewId`).
+    const framework = 'detail:happyvertical.smrt-commerce.Customer';
+    expect(detailOverviewModel(framework)?.model.id).toBe(CUSTOMER);
+    expect(isOverviewId(framework)).toBe(true);
+    expect(
+      checkStoredOverride(framework, { version: 1, removed: ['w1'] }).override,
+    ).toEqual({ version: 1, removed: ['w1'] });
     expect(isOverviewId('detail:commerce')).toBe(false);
     expect(detailOverview('detail:commerce.Nope')).toBeUndefined();
     expect(overviewDefinition(id)?.id).toBe(id);

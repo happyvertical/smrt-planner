@@ -15,6 +15,7 @@ import {
   type OverviewDefinition,
   type OverviewWidget,
   recordOverview,
+  recordOverviewId,
 } from '@happyvertical/smrt-svelte/overview';
 import type { ShellLayout } from '@happyvertical/smrt-svelte/workspace/layout';
 import { catalog, getModel } from '../catalog/index.ts';
@@ -120,16 +121,35 @@ export function detailOverviewId(packageId: string, modelName: string): string {
   return `detail:${packageId}.${modelName}`;
 }
 
-/** The catalog model a `detail:<pkg>.<Model>` id names, if any. */
+/**
+ * Exposed models by the framework's own record overview id
+ * (`recordOverviewId(objectRef)`: `detail:happyvertical.smrt-commerce.Customer`),
+ * so an override keyed the way a generated app keys it is a known page here too.
+ */
+const BY_FRAMEWORK_ID = new Map(
+  catalog.packages.flatMap((pkg) =>
+    pkg.models
+      .filter((model) => model.exposed)
+      .map((model) => [
+        recordOverviewId(model.id),
+        { packageId: pkg.id, model },
+      ]),
+  ),
+);
+
+/**
+ * The catalog model a record overview id names, if any: the planner's
+ * `detail:<pkg>.<Model>`, or the framework's `recordOverviewId` form.
+ */
 export function detailOverviewModel(
   id: string,
 ): { packageId: string; model: CatalogModel } | undefined {
   const match = /^detail:([A-Za-z0-9_-]+)\.([A-Za-z0-9_]+)$/.exec(id);
-  if (!match) return undefined;
-  const [, packageId, modelName] = match;
+  const [, packageId, modelName] = match ?? [];
   const model =
     packageId && modelName ? getModel(packageId, modelName) : undefined;
-  return model?.exposed ? { packageId, model } : undefined;
+  if (packageId && model?.exposed) return { packageId, model };
+  return BY_FRAMEWORK_ID.get(id);
 }
 
 /** Every exposed model: the relations a detail overview's defaults cover. */

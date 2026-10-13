@@ -312,7 +312,8 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   data made in the browser, so the record routes are served by the static fallback
   (`[view]/+page.ts` treats a segment that is not a nav key as an id; `edit` is `prerender = false`).
   Sample foreign keys spread over every row of their target (`fakes.ts` `relatedIndex`), so each
-  record has related rows.
+  record has related rows; a customer-linked model (a FK to Customer) gets 3-6 rows per customer
+  (`customerSlots`, seeded by the customer's index), so related lists hold several records.
 - `src/routes/`: `/` Planner with `?tab=cookbooks|recipes|features|layout|export` tabs (`planner/tab.svelte.ts`; a visitor with nothing built lands on Cookbooks; smrt-ui `Tabs`: Cookbooks cards + preview, Recipes cards with switches only, Features the browsable catalogue of every recipe with its demo label, providers and what it adds, Layout `ShellLayoutEditor`, Export / Import / Reset in `ExportPanel`), `/ai/` the AI models page (Set up your assistant), `/cookbook/` a client-side redirect to `/?tab=export`, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
   `/packages/` and `/packages/[id]/` the package browser, `/m/[package]/[model]/` (and `/[view]/`:
   a keyed nav entry, else a record's view page; `/[view]/edit/` its edit page).

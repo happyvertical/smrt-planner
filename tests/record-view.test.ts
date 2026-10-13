@@ -261,6 +261,25 @@ describe('sample relations', () => {
     );
   });
 
+  it('give each sample customer several orders, 3 to 6, unevenly', async () => {
+    const source = createMemoryDataSource();
+    const customers = await source.list(model(CUSTOMER));
+    const orders = await source.list(model(ORDER));
+    const counts = customers.map(
+      (c) => orders.filter((o) => o.customerId === c.id).length,
+    );
+    for (const count of counts) {
+      expect(count).toBeGreaterThanOrEqual(3);
+      expect(count).toBeLessThanOrEqual(6);
+    }
+    expect(new Set(counts).size).toBeGreaterThan(1);
+    expect(orders.length).toBe(sampleRowCount(ORDER, DEFAULT_SAMPLE_ROWS));
+    // Every customer has invoices too.
+    const invoices = await source.list(model(INVOICE));
+    const invoiced = new Set(invoices.map((i) => String(i.customerId)));
+    expect(invoiced.size).toBe(customers.length);
+  });
+
   it('give every sample customer orders, pointing at real rows', async () => {
     const source = createMemoryDataSource();
     const customers = await source.list(model(CUSTOMER));

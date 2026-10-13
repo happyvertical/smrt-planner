@@ -1,3 +1,4 @@
+import { getModelByQualifiedName } from '../catalog/index.ts';
 import type { CatalogField, CatalogModel } from '../catalog/types.ts';
 import { isLineModel } from './derived.ts';
 import {
@@ -213,7 +214,50 @@ export const SAMPLE_ROW_COUNTS: Readonly<Record<string, number>> = {
   '@happyvertical/smrt-commerce:Vendor': 5,
 };
 
-/** Sample rows for a model: the pack's count, else the shared one, else `fallback`. */
+const CUSTOMER_MODEL = '@happyvertical/smrt-commerce:Customer';
+
+/**
+ * How many rows of each customer-linked model (orders, quotes, invoices,
+ * payments: any model with a FK to a Customer) point at each sample customer:
+ * 3 to 6, uneven, seeded by the customer's index so it never changes. The
+ * slots interleave (every customer once, then again...), so a list's first
+ * rows still show different customers and row `n < customers` points at
+ * customer `n`.
+ */
+export function customerSlots(customers: number): readonly number[] {
+  const cached = slotCache.get(customers);
+  if (cached) return cached;
+  const counts = Array.from(
+    { length: customers },
+    (_, k) => 3 + (hashString(`customer-rows:${k}`) % 4),
+  );
+  const slots: number[] = [];
+  for (let round = 0; round < 6; round++) {
+    counts.forEach((count, k) => {
+      if (count > round) slots.push(k);
+    });
+  }
+  slotCache.set(customers, slots);
+  return slots;
+}
+const slotCache = new Map<number, readonly number[]>();
+
+/** Does the model's rows belong to a customer (a FK to Customer, not its Profile)? */
+function isCustomerLinked(modelId: string): boolean {
+  const model = getModelByQualifiedName(modelId)?.model;
+  return (
+    model?.fields.some(
+      (f) =>
+        (f.type === 'foreignKey' || f.type === 'crossPackageRef') &&
+        f.related === CUSTOMER_MODEL,
+    ) ?? false
+  );
+}
+
+/**
+ * Sample rows for a model: the pack's count, else the shared one, else, for a
+ * customer-linked model, one per {@link customerSlots} slot, else `fallback`.
+ */
 export function sampleRowCount(modelId: string, fallback: number): number {
   // Profiles: customers, then vendors, then the pack's instructors.
   if (modelId === PROFILE_MODEL) {
@@ -226,7 +270,10 @@ export function sampleRowCount(modelId: string, fallback: number): number {
   return (
     getSamplePack().rowCounts?.[modelId] ??
     SAMPLE_ROW_COUNTS[modelId] ??
-    fallback
+    (isCustomerLinked(modelId)
+      ? customerSlots(sampleRowCount(CUSTOMER_MODEL, DEFAULT_SAMPLE_ROWS))
+          .length
+      : fallback)
   );
 }
 
@@ -234,7 +281,8 @@ export function sampleRowCount(modelId: string, fallback: number): number {
  * Which row of the target a sample relation points at. Rows are seeded with
  * ids from `(model, index)`, so pointing at index `n` points at a real row;
  * spread over every row of the target, so each sample record has related
- * records (a customer its orders, quotes and invoices), not just the first few.
+ * records (a customer several orders, quotes and invoices), not just the
+ * first few.
  */
 export function relatedIndex(
   field: CatalogField,
@@ -254,6 +302,13 @@ export function relatedIndex(
       : context.index % 8;
   }
   const target = field.related ?? '';
+  if (target === CUSTOMER_MODEL) {
+    // Several rows per customer, 3 to 6 each (see `customerSlots`).
+    const slots = customerSlots(
+      sampleRowCount(CUSTOMER_MODEL, DEFAULT_SAMPLE_ROWS),
+    );
+    return slots[context.index % slots.length] ?? 0;
+  }
   return (
     context.index %
     (target.includes(':')

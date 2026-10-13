@@ -52,6 +52,7 @@ import { recipes } from '../recipes/index.ts';
 import { isPlumbing } from '../recipes/plumbing.ts';
 import { inScope } from '../recipes/scope.ts';
 import { screenDefinition } from '../screens/definition.ts';
+import { documentTotals } from '../screens/totals.ts';
 import type { SectionEntry } from '../sections/entries.ts';
 
 /** The capabilities a section page hands its widgets' loaders. */
@@ -77,10 +78,6 @@ export interface PlannerWidgetContext {
   relations?: readonly ScreenRelation[];
   /** A related tab's "View all" link. */
   viewAllHref?: (relation: ScreenRelation) => string | undefined;
-  /** The record's own subtotal / discount / tax / total (`documentTotals`). */
-  totals?: () => LineItemsTotals | undefined;
-  /** The record's currency code. */
-  currency?: () => string | undefined;
 }
 
 /** The registry every planner overview uses. */
@@ -690,15 +687,47 @@ registerCoreWidgets(overviewRegistry, {
  * The record page's own widgets (smrt#3718), registered once on the shared
  * registry so a cookbook's stored record overview validates like a
  * section's. The framework builds them from one record view's relations;
- * the planner hands those over in the load context (`relations`, `totals`,
- * `currency`, `viewAllHref`), and every tab or line list is one call of
+ * the planner hands those over in the load context (`relations`,
+ * `viewAllHref`), and every tab or line list is one call of
  * {@link loadRecords} with the parent filter.
  */
 function recordWidgetOptions(ctx: WidgetLoadContext) {
-  const { relations, viewAllHref, totals, currency } =
-    ctx as WidgetLoadContext & Partial<PlannerWidgetContext>;
+  const { relations, viewAllHref } = ctx as WidgetLoadContext &
+    Partial<PlannerWidgetContext>;
   if (!relations) throw new Error('the record page context is missing');
-  return { relations, records: loadRecords, viewAllHref, totals, currency };
+  return { relations, records: loadRecords, viewAllHref };
+}
+
+/**
+ * The page's record, read fresh at load time: its totals
+ * (`documentTotals`: its own fields by role, plus its lines' discounts) and
+ * its currency code, for the line-items totals block.
+ */
+async function recordFigures(
+  ctx: WidgetLoadContext,
+  relations: readonly ScreenRelation[],
+): Promise<{ totals?: LineItemsTotals; currency?: string }> {
+  const { source } = dataCapabilities(ctx);
+  const ref = ctx.record;
+  if (!ref?.id) throw new Error('line items need a record');
+  const { model } = modelOf(ref.model);
+  const record = await source.get(model, ref.id);
+  if (!record) return {};
+  const items = relations.find((r) => r.kind === 'items');
+  const lineModel = items
+    ? getModelByQualifiedName(items.model)?.model
+    : undefined;
+  const lines =
+    items && lineModel
+      ? await source.listWhere(lineModel, items.field, ref.id)
+      : [];
+  const totals = documentTotals(model, record, lines);
+  const code = currencyCodeField(screenDefinition(model));
+  const currency = code ? record[code] : undefined;
+  return {
+    ...(totals ? { totals } : {}),
+    ...(typeof currency === 'string' && currency ? { currency } : {}),
+  };
 }
 
 overviewRegistry.register(
@@ -707,9 +736,15 @@ overviewRegistry.register(
   ),
 );
 overviewRegistry.register(
-  createLineItemsWidget((options, ctx) =>
-    createLineItemsLoader(recordWidgetOptions(ctx))(options, ctx),
-  ),
+  createLineItemsWidget(async (options, ctx) => {
+    const base = recordWidgetOptions(ctx);
+    const { totals, currency } = await recordFigures(ctx, base.relations);
+    return createLineItemsLoader({
+      ...base,
+      totals: () => totals,
+      currency: () => currency,
+    })(options, ctx);
+  }),
 );
 
 /** The core widget types a section overview offers. */

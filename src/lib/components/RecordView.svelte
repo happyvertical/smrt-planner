@@ -49,7 +49,6 @@ import { childLinks, childTitle, lineageNames } from '../recipes/plumbing.ts';
 import { recipeState } from '../recipes/state.svelte.ts';
 import { screenDefinition, screenPolicy } from '../screens/definition.ts';
 import { appModels, screenRelations } from '../screens/relations.ts';
-import { documentTotals } from '../screens/totals.ts';
 import ChildRecords from './ChildRecords.svelte';
 
 interface RecordViewProps {
@@ -127,8 +126,6 @@ const calculated = $derived(
 );
 
 let record = $state<ModelRecord | undefined>(undefined);
-/** The record's line items (its `items` relation), for the totals block. */
-let lines = $state<ModelRecord[]>([]);
 let loaded = $state(false);
 /**
  * The header's title for a record with a name (a customer's Profile name);
@@ -163,13 +160,6 @@ async function load() {
   loaded = true;
 }
 
-/** The rows of the record's line items, when it has them. */
-async function loadLines(): Promise<ModelRecord[]> {
-  const items = relations.find((r) => r.kind === 'items');
-  const target = items && getModelByQualifiedName(items.model)?.model;
-  return items && target ? source.listWhere(target, items.field, recordId) : [];
-}
-
 $effect(() => {
   // Reload when the record (or the model) changes.
   recordId;
@@ -178,14 +168,7 @@ $effect(() => {
   void load();
 });
 // A reset (a cookbook applied, the app reset) swaps the rows underneath.
-$effect(() =>
-  source.onReset?.(() => {
-    void load();
-    void loadLines().then((found) => {
-      lines = found;
-    });
-  }),
-);
+$effect(() => source.onReset?.(() => void load()));
 
 const listPath = $derived(modelPath(packageId, modelName));
 const backLabel = $derived(pluralize(humanize(modelName)));
@@ -270,33 +253,16 @@ async function remove() {
 /** A line item changed: the record's calculated totals moved. */
 async function refreshDerived() {
   if (!catalogModel) return;
-  const [fresh, freshLines] = await Promise.all([
-    source.get(catalogModel, recordId),
-    loadLines(),
-  ]);
-  lines = freshLines;
+  const fresh = await source.get(catalogModel, recordId);
   if (fresh) record = fresh;
 }
 
 /**
  * What the record page's own widgets read (the planner widget context):
- * the app's relations for the related tabs and the line items, the
- * record's totals and currency for the totals block.
+ * the app's relations for the related tabs and the line items. The
+ * line-items loader reads the record's totals itself, fresh at load time.
  */
-const widgetContext = $derived({
-  source,
-  href,
-  relations,
-  viewAllHref,
-  totals: () =>
-    catalogModel && record
-      ? documentTotals(catalogModel, record, lines)
-      : undefined,
-  currency: () =>
-    typeof record?.currency === 'string' && record.currency
-      ? record.currency
-      : undefined,
-});
+const widgetContext = $derived({ source, href, relations, viewAllHref });
 </script>
 
 <!-- Line items and other dependent records are edited with the record:

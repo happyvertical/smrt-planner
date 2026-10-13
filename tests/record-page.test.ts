@@ -11,7 +11,11 @@ import {
 import { relationKey } from '@happyvertical/smrt-svelte/screens';
 import { describe, expect, it } from 'vitest';
 import { catalog } from '../src/lib/catalog/index.ts';
-import { MISMATCH_AMOUNT, MISMATCH_ROW } from '../src/lib/data/children.ts';
+import {
+  discounted,
+  MISMATCH_AMOUNT,
+  MISMATCH_ROW,
+} from '../src/lib/data/children.ts';
 import {
   identifierField,
   recordHeading,
@@ -204,8 +208,6 @@ describe('the record page widgets', () => {
       href,
       record: { model: ORDER, id: order.id },
       relations,
-      totals: () => documentTotals(model(ORDER), order, lines),
-      currency: () => 'USD',
     };
     const widget = (type: string) =>
       must(
@@ -254,6 +256,29 @@ describe('the record page widgets', () => {
       recorded: Number(page.order.subtotal),
       lines: Number(page.order.subtotal) - MISMATCH_AMOUNT,
     });
+  });
+
+  it('reads a discounted order discount from its lines at load time', async () => {
+    const first = await orderPage(0);
+    const orders = await first.source.list(model(ORDER));
+    const index = orders.findIndex(
+      (o, i) => i !== MISMATCH_ROW && discounted(o),
+    );
+    const page = await orderPage(index);
+    const data = (await loadSectionWidget(
+      page.definition,
+      page.ctx,
+      page.widget('line-items'),
+    )) as LineItemsWidgetData;
+    const discount = page.lines.reduce((t, l) => t + Number(l.discount), 0);
+    expect(discount).toBeGreaterThan(0);
+    expect(data.totals?.discount).toBe(discount);
+    expect(data.totals?.total).toBe(
+      Number(page.order.subtotal) - discount + Number(page.order.taxAmount),
+    );
+    expect(
+      lineItemTotals(data.totals, data.summaries?.amount ?? null).mismatch,
+    ).toBeNull();
   });
 
   it('shows a discount from the lines when the document has no field for it', () => {

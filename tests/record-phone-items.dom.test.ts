@@ -13,8 +13,6 @@ import { recipes } from '../src/lib/recipes/index.ts';
 import { childLinks } from '../src/lib/recipes/plumbing.ts';
 import { recipeState } from '../src/lib/recipes/state.svelte.ts';
 
-const ORDER = '@happyvertical/smrt-commerce:Order';
-
 /** A viewport `width` px wide, as `matchMedia` reports it. */
 function viewport(width: number): void {
   window.matchMedia = ((query: string) => {
@@ -58,26 +56,24 @@ describe('the record page on a phone', () => {
     document.body.innerHTML = '';
   });
 
-  async function render(mode: 'view' | 'edit') {
+  async function render(mode: 'view' | 'edit', modelName = 'Order') {
     const source = createMemoryDataSource({
       children: {
         models: catalog.packages.flatMap((p) => p.models),
         links: (id) => childLinks(catalog, recipes, id),
       },
     });
-    const order = (
-      await source.list(
-        catalog.packages
-          .flatMap((p) => p.models)
-          .find((m) => m.id === ORDER) as never,
-      )
-    )[0];
+    const shown = catalog.packages
+      .flatMap((p) => p.models)
+      .find((m) => m.id === `@happyvertical/smrt-commerce:${modelName}`);
+    if (!shown) throw new Error(`${modelName} missing from the catalog`);
+    const [row] = await source.list(shown);
     app = mount(RecordView, {
       target,
       props: {
         packageId: 'commerce',
-        modelName: 'Order',
-        recordId: String(order?.id),
+        modelName,
+        recordId: String(row?.id),
         mode,
         href: (path: string) => `#${path}`,
         navigate: () => {},
@@ -113,5 +109,22 @@ describe('the record page on a phone', () => {
     target.innerHTML = '';
     await render('view');
     expect(document.querySelector('.smrt-record-screen__items')).toBeNull();
+  });
+
+  it('heads a document with its kind and identifier, a party with its name once', async () => {
+    viewport(1280);
+    await render('view');
+    const heading = document.querySelector('h1')?.textContent ?? '';
+    expect(heading).toMatch(/^\s*Order [A-Z]{3}-\d{4}\s*$/);
+    if (app) unmount(app);
+    app = undefined;
+    target.innerHTML = '';
+    await render('view', 'Customer');
+    const name = document.querySelector('h1')?.textContent?.trim() ?? '';
+    expect(name.length).toBeGreaterThan(0);
+    const screen = document.querySelector('.smrt-record-screen__main');
+    const text = screen?.textContent ?? '';
+    // The Profile name is the title, not also a fact or a details cell.
+    expect(text.split(name).length - 1).toBe(1);
   });
 });

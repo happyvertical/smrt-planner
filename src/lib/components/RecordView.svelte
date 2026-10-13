@@ -31,7 +31,11 @@ import {
 import { recordHeading } from '../data/display.ts';
 import type { ModelRecord } from '../data/fakes.ts';
 import { humanize, labelKey, pluralize } from '../data/format.ts';
-import { recordLabel, relationLabels } from '../data/labels.ts';
+import {
+  isProfileLabelled,
+  recordLabel,
+  relationLabels,
+} from '../data/labels.ts';
 import {
   detailOverviewFor,
   detailOverviewId,
@@ -83,9 +87,17 @@ const applied = $derived(
 const definition = $derived(
   catalogModel ? screenDefinition(catalogModel) : undefined,
 );
+// A customer or vendor is named by its Profile: in view mode that field is
+// the page title, so the header and the details card leave it out. The
+// edit form keeps it (it is how the name is changed).
 const policy = $derived(
   catalogModel && applied
-    ? screenPolicy(catalogModel, applied.fields)
+    ? screenPolicy(
+        catalogModel,
+        mode === 'view' && isProfileLabelled(catalogModel)
+          ? applied.fields.filter((f) => f.name !== 'profileId')
+          : applied.fields,
+      )
     : undefined,
 );
 const added = $derived(

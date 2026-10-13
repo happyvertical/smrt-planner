@@ -34,6 +34,8 @@ const title = $derived(currentPlannerTitle());
 </main>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   main {
     width: min(100%, 72rem);
     margin-inline: auto;
@@ -55,4 +57,5 @@ const title = $derived(currentPlannerTitle());
     flex-wrap: wrap;
     gap: var(--smrt-spacing-2);
   }
+}
 </style>

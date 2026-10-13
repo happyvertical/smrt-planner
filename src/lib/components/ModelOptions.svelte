@@ -167,6 +167,8 @@ function setOrder(name: string, raw: string) {
 </form>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .options {
     display: grid;
     gap: var(--smrt-spacing-3);
@@ -236,4 +238,5 @@ function setOrder(name: string, raw: string) {
     background: transparent;
     color: var(--smrt-color-on-surface);
   }
+}
 </style>

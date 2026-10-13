@@ -105,6 +105,8 @@ const requiredHref = (id: string) => {
 </section>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .recipe,
   header,
   .adds,
@@ -157,4 +159,5 @@ const requiredHref = (id: string) => {
     cursor: not-allowed;
     opacity: 0.6;
   }
+}
 </style>

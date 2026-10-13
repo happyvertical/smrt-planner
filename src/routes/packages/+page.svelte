@@ -116,6 +116,8 @@ function toggle(id: string) {
 </main>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   main {
     display: grid;
     gap: var(--smrt-spacing-6);
@@ -226,4 +228,5 @@ function toggle(id: string) {
     overflow: hidden;
     clip-path: inset(50%);
   }
+}
 </style>

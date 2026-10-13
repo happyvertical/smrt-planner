@@ -30,6 +30,8 @@ const icons: Record<CapabilityId, string> = {
 </div>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .ai-status {
     display: flex;
     gap: var(--smrt-spacing-2);
@@ -83,4 +85,5 @@ const icons: Record<CapabilityId, string> = {
     border-top: 2px solid currentColor;
     transform: rotate(-45deg);
   }
+}
 </style>

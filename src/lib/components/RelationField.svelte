@@ -153,6 +153,8 @@ function picked(id: string) {
 {/if}
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .plain {
     display: grid;
     gap: var(--smrt-spacing-1);
@@ -172,4 +174,5 @@ function picked(id: string) {
   .create::backdrop {
     background: rgb(0 0 0 / 0.5);
   }
+}
 </style>

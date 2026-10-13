@@ -88,10 +88,10 @@ const cssPending = $derived.by(() => {
           class:selected={!custom && (cookbookStore.theme?.preset ?? 'glass') === preset.id}
           aria-pressed={!custom && (cookbookStore.theme?.preset ?? 'glass') === preset.id}
           onclick={() => context?.setPreset(preset.id)}
-          style:--preview-bg={palette.background}
-          style:--preview-surface={palette.surface}
-          style:--preview-primary={palette.primary}
-          style:--preview-ink={palette.onSurface}>
+          style:--smrt-planner-preview-bg={palette.background}
+          style:--smrt-planner-preview-surface={palette.surface}
+          style:--smrt-planner-preview-primary={palette.primary}
+          style:--smrt-planner-preview-ink={palette.onSurface}>
           <span class="choice-name"><span class="choice-icon" aria-hidden="true">{icons[preset.id]}</span>{preset.label}</span>
           <span class="preview" aria-hidden="true">
             <span class="preview-sidebar"><span></span><span></span><span></span></span>
@@ -116,7 +116,7 @@ const cssPending = $derived.by(() => {
     <div class="field">
       <FieldLabel for="theme-brand-colour" label="Brand colour" />
       <div class="pick">
-        <span class="wheel" style:--picked-color={custom?.primary ?? '#e68a00'}>
+        <span class="wheel" style:--smrt-planner-picked-color={custom?.primary ?? '#e68a00'}>
           <input id="theme-brand-colour" type="color" aria-label="Choose brand colour"
             value={custom?.primary ?? '#e68a00'}
             oninput={(event) => setBrand(event.currentTarget.value)} />
@@ -147,6 +147,8 @@ const cssPending = $derived.by(() => {
 </section>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .theme { display: grid; gap: 1.25rem; max-inline-size: 72rem; }
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(10rem, 100%), 1fr)); gap: .75rem; }
   .choice { display: grid; align-content: start; gap: .8rem; min-block-size: 8.5rem; padding: .85rem; border: 1px solid var(--smrt-color-outline-variant); border-radius: var(--smrt-radius-large, .75rem); background: var(--smrt-color-surface-container-low); color: var(--smrt-color-on-surface); text-align: start; cursor: pointer; transition: border-color var(--smrt-duration-short3, 150ms) var(--smrt-easing-standard, ease), background var(--smrt-duration-short3, 150ms) var(--smrt-easing-standard, ease), transform var(--smrt-duration-short3, 150ms) var(--smrt-easing-standard, ease); }
@@ -155,13 +157,13 @@ const cssPending = $derived.by(() => {
   .choice:focus-visible, .advanced:focus-visible, .wheel:focus-within, select:focus-visible { outline: 2px solid var(--smrt-color-primary); outline-offset: 2px; }
   .choice-name { display: inline-flex; align-items: center; gap: .55rem; font-size: 1rem; font-weight: 700; line-height: 1.2; }
   .choice-icon { display: inline-grid; place-items: center; flex: none; inline-size: 1.5rem; block-size: 1.5rem; font-size: 1.35rem; color: var(--smrt-color-primary); }
-  .preview { display: flex; overflow: hidden; inline-size: 100%; block-size: 4.5rem; border-radius: .4rem; border: 1px solid color-mix(in srgb, var(--preview-ink) 20%, transparent); background: var(--preview-bg); }
-  .preview-sidebar { display: grid; align-content: start; gap: .35rem; inline-size: 23%; padding: .5rem .3rem; background: var(--preview-primary); }
-  .preview-sidebar span { block-size: .22rem; border-radius: 1rem; background: var(--preview-surface); opacity: .8; }
+  .preview { display: flex; overflow: hidden; inline-size: 100%; block-size: 4.5rem; border-radius: .4rem; border: 1px solid color-mix(in srgb, var(--smrt-planner-preview-ink) 20%, transparent); background: var(--smrt-planner-preview-bg); }
+  .preview-sidebar { display: grid; align-content: start; gap: .35rem; inline-size: 23%; padding: .5rem .3rem; background: var(--smrt-planner-preview-primary); }
+  .preview-sidebar span { block-size: .22rem; border-radius: 1rem; background: var(--smrt-planner-preview-surface); opacity: .8; }
   .preview-main { display: grid; align-content: start; gap: .4rem; flex: 1; padding: .6rem; }
-  .preview-title { inline-size: 55%; block-size: .32rem; border-radius: 1rem; background: var(--preview-ink); opacity: .7; }
-  .preview-body { display: grid; gap: .25rem; padding: .35rem; border-radius: .2rem; background: var(--preview-surface); }
-  .preview-body span { block-size: .2rem; border-radius: 1rem; background: var(--preview-primary); opacity: .7; }
+  .preview-title { inline-size: 55%; block-size: .32rem; border-radius: 1rem; background: var(--smrt-planner-preview-ink); opacity: .7; }
+  .preview-body { display: grid; gap: .25rem; padding: .35rem; border-radius: .2rem; background: var(--smrt-planner-preview-surface); }
+  .preview-body span { block-size: .2rem; border-radius: 1rem; background: var(--smrt-planner-preview-primary); opacity: .7; }
   .preview-body span:last-child { inline-size: 70%; opacity: .35; }
   .scheme { min-block-size: 8.5rem; }
   .choice-hint { font-size: .85rem; color: var(--smrt-color-on-surface-variant); }
@@ -169,7 +171,7 @@ const cssPending = $derived.by(() => {
   .field { display: grid; gap: .4rem; }
   .pick { display: flex; gap: .65rem; align-items: center; }
   .wheel { position: relative; display: inline-grid; place-items: center; flex: none; inline-size: 3rem; block-size: 3rem; border-radius: 50%; background: conic-gradient(red, #ff0, #0f0, #0ff, #00f, #f0f, red); box-shadow: 0 0 0 1px var(--smrt-color-outline-variant); cursor: pointer; }
-  .wheel::after { content: ''; inline-size: 1.7rem; block-size: 1.7rem; border: 2px solid white; border-radius: 50%; background: var(--picked-color); box-shadow: 0 1px 3px #0005; pointer-events: none; }
+  .wheel::after { content: ''; inline-size: 1.7rem; block-size: 1.7rem; border: 2px solid white; border-radius: 50%; background: var(--smrt-planner-picked-color); box-shadow: 0 1px 3px #0005; pointer-events: none; }
   .wheel input { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; opacity: 0; cursor: pointer; }
   .font-field { min-inline-size: min(14rem, 100%); }
   select { min-block-size: 3rem; padding: .6rem 2rem .6rem .8rem; border: 1px solid var(--smrt-color-outline); border-radius: var(--smrt-radius-medium, .5rem); background: var(--smrt-color-surface); color: var(--smrt-color-on-surface); font: inherit; cursor: pointer; }
@@ -180,4 +182,5 @@ const cssPending = $derived.by(() => {
   .advanced strong, .advanced small { display: block; }
   .advanced small { margin-top: .15rem; color: var(--smrt-color-on-surface-variant); }
   .arrow { margin-inline-start: auto; font-size: 1.3rem; }
+}
 </style>

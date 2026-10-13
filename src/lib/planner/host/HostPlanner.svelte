@@ -56,4 +56,9 @@ onMount(() => {
     <Planner persistence="host" themeControls={true} />
   </fieldset>
 {:else}<p role="status">Waiting for a Kitchen plan…</p>{/if}
-<style>fieldset { border: 0; padding: 0; min-width: 0; } textarea { width: 100%; min-height: 12rem; }</style>
+<style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
+fieldset { border: 0; padding: 0; min-width: 0; } textarea { width: 100%; min-height: 12rem; }
+}
+</style>

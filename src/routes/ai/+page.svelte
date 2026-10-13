@@ -12,9 +12,12 @@ import { appHref } from '$lib/planner/app.svelte.ts';
 </main>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   main {
     width: min(100%, 72rem);
     margin-inline: auto;
     padding: var(--smrt-spacing-6);
   }
+}
 </style>

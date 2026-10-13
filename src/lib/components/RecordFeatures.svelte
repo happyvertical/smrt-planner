@@ -134,6 +134,8 @@ function toggle(entry: FeatureEntry, on: boolean) {
 </div>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .features {
     display: grid;
     gap: var(--smrt-spacing-3);
@@ -239,4 +241,5 @@ function toggle(entry: FeatureEntry, on: boolean) {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+}
 </style>

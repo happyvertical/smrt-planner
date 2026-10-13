@@ -271,6 +271,8 @@ async function addImage(row: ModelRecord, file: File) {
 </section>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   section {
     display: grid;
     gap: var(--smrt-spacing-4);
@@ -339,4 +341,5 @@ async function addImage(row: ModelRecord, file: File) {
     overflow: hidden;
     clip-path: inset(50%);
   }
+}
 </style>

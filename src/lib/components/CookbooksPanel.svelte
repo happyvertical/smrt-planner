@@ -186,6 +186,8 @@ function commit() {
 />
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .cookbooks {
     display: grid;
     gap: var(--smrt-spacing-4);
@@ -317,4 +319,5 @@ function commit() {
     align-items: center;
     gap: var(--smrt-spacing-3);
   }
+}
 </style>

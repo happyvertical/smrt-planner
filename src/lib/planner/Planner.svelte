@@ -214,6 +214,8 @@ const dockToggles = $derived(assistant ? [PLANNER_ASSISTANT_TOGGLE] : []);
 </CookbookApp>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   /* `view-transition-name`s: one per surface per screen (a duplicate aborts
      the transition). AppShell names its brand, nav and dock (`smrt-shell-*`,
      reserved); these are the planner's own. */
@@ -224,4 +226,5 @@ const dockToggles = $derived(assistant ? [PLANNER_ASSISTANT_TOGGLE] : []);
   .back { display: inline-flex; align-items: center; gap: var(--smrt-spacing-1); block-size: 2rem; padding-inline: var(--smrt-spacing-2); color: var(--smrt-color-on-surface-variant); font-size: var(--smrt-typography-body-small-size, 0.8125rem); text-decoration: none; white-space: nowrap; border-radius: var(--smrt-radius-medium, 0.5rem); view-transition-name: planner-back; }
   .back:hover { background: var(--smrt-color-surface-container-high); color: var(--smrt-color-on-surface); }
   .back:focus-visible { outline: 2px solid var(--smrt-color-primary); outline-offset: 2px; }
+}
 </style>

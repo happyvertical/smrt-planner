@@ -428,6 +428,8 @@ function flushOnHide() {
 </div>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .shell-host { display: contents; }
   /* The shell lays a footer slot out as one row; the planner's `ai-status`
      item shares it with the shell's `item:account`, so stack them (checked
@@ -448,4 +450,5 @@ function flushOnHide() {
     background: var(--smrt-color-surface-container);
     color: var(--smrt-color-on-surface-variant);
   }
+}
 </style>

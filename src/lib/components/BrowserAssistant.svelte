@@ -210,6 +210,8 @@ $effect(() => {
 </div>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .assistant {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -318,4 +320,5 @@ $effect(() => {
   p {
     color: var(--smrt-color-on-surface-variant);
   }
+}
 </style>

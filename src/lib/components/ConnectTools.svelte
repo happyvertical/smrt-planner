@@ -78,6 +78,8 @@ const exposed = $derived(models.filter((m) => m.exposed));
 </section>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .panel {
     display: grid;
     gap: var(--smrt-spacing-4);
@@ -142,4 +144,5 @@ const exposed = $derived(models.filter((m) => m.exposed));
     color: var(--smrt-color-on-tertiary-container);
     font-size: 0.75rem;
   }
+}
 </style>

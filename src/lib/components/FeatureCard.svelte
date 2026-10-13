@@ -111,6 +111,8 @@ const id = $derived(`feature-${card.id}`);
 </li>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   h3,
   h4,
   p {
@@ -194,4 +196,5 @@ const id = $derived(`feature-${card.id}`);
   .summary {
     font-size: var(--smrt-font-size-body-medium, 0.875rem);
   }
+}
 </style>

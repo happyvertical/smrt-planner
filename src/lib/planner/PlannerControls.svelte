@@ -166,6 +166,8 @@ $effect(() => {
 {/if}
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .planner :global(.tab-panel) {
     padding-top: var(--smrt-spacing-4);
   }
@@ -192,4 +194,5 @@ $effect(() => {
     margin: 0;
     color: var(--smrt-color-on-surface-variant);
   }
+}
 </style>

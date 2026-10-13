@@ -409,6 +409,8 @@ const handsFreeAvailable = $derived(voice.status === 'ready');
 </div>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
@@ -525,4 +527,5 @@ const handsFreeAvailable = $derived(voice.status === 'ready');
     cursor: pointer;
     font: inherit;
   }
+}
 </style>

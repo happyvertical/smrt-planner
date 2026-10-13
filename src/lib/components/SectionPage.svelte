@@ -165,6 +165,8 @@ function startNew(entry: ShellSectionMenuEntry) {
 {/if}
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   main {
     display: grid;
     gap: var(--smrt-spacing-6);
@@ -227,4 +229,5 @@ function startNew(entry: ShellSectionMenuEntry) {
   .new:focus-visible {
     background: var(--smrt-color-surface-container-high);
   }
+}
 </style>

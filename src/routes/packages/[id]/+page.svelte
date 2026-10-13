@@ -48,6 +48,8 @@ const pkg = $derived(getPackage(data.id));
 {/if}
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   main {
     display: grid;
     gap: var(--smrt-spacing-6);
@@ -79,5 +81,5 @@ const pkg = $derived(getPackage(data.id));
     margin: 0;
     padding-left: var(--smrt-spacing-5);
   }
-
+}
 </style>

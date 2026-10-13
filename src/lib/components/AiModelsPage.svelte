@@ -20,6 +20,8 @@ let { backHref }: AiModelsPageProps = $props();
 </div>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .ai-page {
     display: grid;
     gap: var(--smrt-spacing-4);
@@ -34,4 +36,5 @@ let { backHref }: AiModelsPageProps = $props();
   .privacy {
     color: var(--smrt-color-on-surface-variant);
   }
+}
 </style>

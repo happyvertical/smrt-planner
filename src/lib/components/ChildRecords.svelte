@@ -258,6 +258,8 @@ async function remove(row: ModelRecord) {
 </section>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .children {
     display: grid;
     gap: var(--smrt-spacing-3);
@@ -350,4 +352,5 @@ async function remove(row: ModelRecord) {
     overflow: hidden;
     clip-path: inset(50%);
   }
+}
 </style>

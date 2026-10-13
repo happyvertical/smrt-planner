@@ -56,6 +56,8 @@ const helpHref = $derived(
 </div>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .icons {
     display: flex;
     gap: var(--smrt-spacing-1);
@@ -95,4 +97,5 @@ const helpHref = $derived(
     width: 1.75rem;
     height: 1.75rem;
   }
+}
 </style>

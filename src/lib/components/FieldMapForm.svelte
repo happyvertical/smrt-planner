@@ -134,6 +134,8 @@ async function save(event: SubmitEvent) {
 {/if}
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   h3 {
     margin: 0;
   }
@@ -163,4 +165,5 @@ async function save(event: SubmitEvent) {
     background: transparent;
     color: var(--smrt-color-on-surface);
   }
+}
 </style>

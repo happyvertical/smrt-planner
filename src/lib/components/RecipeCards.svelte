@@ -101,6 +101,8 @@ const mainOn = (card: PlannerCard) => cardIsOn(card, recipeState.ids);
   <p class="notice" role="status" aria-live="polite">{notice}</p>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   h2,
   p {
     margin: 0;
@@ -142,4 +144,5 @@ const mainOn = (card: PlannerCard) => cardIsOn(card, recipeState.ids);
     display: grid;
     gap: var(--smrt-spacing-1);
   }
+}
 </style>

@@ -60,6 +60,8 @@ onMount(() => {
 {/if}
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .bridge-error { margin: 0; padding: var(--smrt-spacing-2, .5rem) var(--smrt-spacing-4, 1rem); color: var(--smrt-color-on-error-container, #b91c1c); background: var(--smrt-color-error-container, #fef2f2); }
   .bridge-backdrop { position: fixed; inset: 0; z-index: 9998; background: rgb(0 0 0 / .45); }
   .bridge-recovery { position: fixed; z-index: 9999; inset-inline: max(1rem, calc((100vw - 32rem) / 2)); top: 15vh; display: grid; gap: .75rem; padding: 1.5rem; border-radius: var(--smrt-radius-large, .75rem); background: var(--smrt-color-surface, white); color: var(--smrt-color-on-surface, black); box-shadow: 0 1rem 3rem rgb(0 0 0 / .25); }
@@ -67,4 +69,5 @@ onMount(() => {
   .bridge-preserved { padding: var(--smrt-spacing-2, .5rem) var(--smrt-spacing-4, 1rem); color: var(--smrt-color-on-error-container, #b91c1c); background: var(--smrt-color-error-container, #fef2f2); }
   .bridge-preserved textarea { width: 100%; min-height: 8rem; }
   .bridge-recovery textarea { min-height: 10rem; max-height: 35vh; width: 100%; }
+}
 </style>

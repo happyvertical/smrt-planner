@@ -102,6 +102,8 @@ onDestroy(() => {
 </section>
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .advanced-styles { display: grid; gap: 1rem; max-inline-size: 72rem; }
   .pending { display: flex; flex-wrap: wrap; align-items: center; gap: var(--smrt-spacing-2); padding: var(--smrt-spacing-3); border: 1px solid var(--smrt-color-outline-variant); border-radius: var(--smrt-radius-medium); }
   .pending p { margin: 0; }
@@ -132,4 +134,5 @@ onDestroy(() => {
   .punctuation { color: var(--smrt-color-on-surface-variant); }
   .help { font-size: .9rem; }
   @media (max-width: 42rem) { .heading { display: grid; } .live { justify-self: start; } }
+}
 </style>

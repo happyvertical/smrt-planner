@@ -220,6 +220,8 @@ async function save(event: SubmitEvent) {
 {/if}
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   h3,
   h4,
   p {
@@ -299,4 +301,5 @@ async function save(event: SubmitEvent) {
     overflow: hidden;
     clip-path: inset(50%);
   }
+}
 </style>

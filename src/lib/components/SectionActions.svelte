@@ -38,6 +38,8 @@ let { label, groups }: SectionActionsProps = $props();
 {/if}
 
 <style>
+@layer smrt.reset, smrt.structure, smrt.theme;
+@layer smrt.theme {
   .menu {
     position: relative;
   }
@@ -88,4 +90,5 @@ let { label, groups }: SectionActionsProps = $props();
   a:focus-visible {
     background: var(--smrt-color-surface-container-highest, var(--smrt-color-surface-variant));
   }
+}
 </style>

@@ -37,7 +37,7 @@ import {
 } from '$lib/kitchen/live.ts';
 import { kitchenState } from '$lib/kitchen/state.svelte.ts';
 import { libraryState } from '$lib/library/state.svelte.ts';
-import { runViewTransition } from '$lib/motion/view-transition.ts';
+import { createOnNavigateViewTransition } from '$lib/motion/view-transition.ts';
 import { appHref, appQuery, setBasePath } from '$lib/planner/app.svelte.ts';
 import { plannerRuntime } from '$lib/planner/instance.ts';
 import { hasAppState, withTab } from '$lib/planner/query.ts';
@@ -319,19 +319,12 @@ afterNavigate((navigation) => {
   else sync();
 });
 
-// Route changes morph instead of cutting: the standard SvelteKit pairing of
-// `onNavigate` with `document.startViewTransition`, through the planner's
-// helper so reduced motion and unsupporting browsers fall back to a plain
-// navigation. The navigation waits for the transition to capture the old
-// page, then completes inside its update callback.
-onNavigate((navigation) => {
-  return new Promise<void>((resolve) => {
-    void runViewTransition(async () => {
-      resolve();
-      await navigation.complete;
-    });
-  });
-});
+// Route changes morph instead of cutting: the shell's `onNavigate` adapter
+// pairs SvelteKit's navigation with `document.startViewTransition`, falling
+// back to a plain navigation under reduced motion or without the API. The
+// shell names its brand, nav and dock for the duration; the planner's own
+// names (`planner-*`) crossfade the rest.
+onNavigate(createOnNavigateViewTransition());
 
 // Keep the address bar in step with the selection as it changes.
 $effect(() => {
@@ -436,6 +429,9 @@ function flushOnHide() {
 
 <style>
   .shell-host { display: contents; }
+  /* The shell lays a footer slot out as one row; the planner's `ai-status`
+     item shares it with the shell's `item:account`, so stack them (checked
+     against 0.55.17: without this the account squashes beside the icons). */
   :global(.smrt-admin-shell__slot--leftSidebar-footer) {
     flex-direction: column;
     align-items: stretch;

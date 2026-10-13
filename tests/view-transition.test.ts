@@ -9,7 +9,15 @@ const originalWindow = globalThis.window;
 
 function install(options: { reduced?: boolean; supported?: boolean }) {
   const calls: Array<() => void | Promise<void>> = [];
-  const doc: Record<string, unknown> = {};
+  const attributes = new Map<string, string>();
+  // The shell marks `<html data-smrt-view-transition>` while one runs.
+  const doc: Record<string, unknown> = {
+    documentElement: {
+      setAttribute: (name: string, value: string) =>
+        attributes.set(name, value),
+      removeAttribute: (name: string) => attributes.delete(name),
+    },
+  };
   if (options.supported) {
     doc.startViewTransition = (update: () => void | Promise<void>) => {
       calls.push(update);

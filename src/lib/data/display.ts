@@ -3,6 +3,11 @@
  * manifest's `displayLabelField` (happyvertical/smrt#3611); a model that
  * declares none falls back to the first of `name`, `title`, `label`, `code`.
  */
+import {
+  deriveFieldRoles,
+  fieldWithRole,
+  type ScreenFieldType,
+} from '@happyvertical/smrt-svelte/screens';
 import type { CatalogField, CatalogModel } from '../catalog/types.ts';
 import { formatMoney } from './format.ts';
 
@@ -60,30 +65,45 @@ const PARTY_ORDER = [
 
 /** A document's own number, e.g. `invoiceNumber` or `number`. */
 const NUMBER_NAME = /(^|[a-z])Number$|^number$/;
-/** What else identifies a document when it has no number. */
-const IDENTIFIER_NAMES = ['reference', 'code'] as const;
-
-const ownText = (model: CatalogModel, name: string) =>
-  model.fields.find((f) => f.name === name && !f.system && f.type === 'text');
 
 /**
  * The field that identifies a document to a person (`invoiceNumber`, an
- * order's `reference`), best first: a `...Number` text field, else
- * `reference`, else `code`. `undefined` for a model with a name of its own:
- * a product's `code` is a detail, its `name` is what it is called.
+ * order's `reference`): the first field the framework's field roles
+ * (`deriveFieldRoles`, smrt#3718) give the `identifier` role. `undefined`
+ * for a model with a name of its own: a product's `code` is a detail, its
+ * `name` is what it is called.
  */
 export function identifierField(model: CatalogModel): CatalogField | undefined {
-  const numbered = model.fields.find(
-    (f) => !f.system && f.type === 'text' && NUMBER_NAME.test(f.name),
-  );
-  if (numbered) return numbered;
   if (labelFields(model).some((name) => name !== 'code')) return undefined;
-  for (const name of IDENTIFIER_NAMES) {
-    const found = ownText(model, name);
-    if (found) return found;
-  }
-  return undefined;
+  const own = model.fields.filter((f) => !f.system);
+  const roles = deriveFieldRoles({
+    objectRef: model.id,
+    className: model.name,
+    fields: Object.fromEntries(
+      own.map((f) => [
+        f.name,
+        {
+          type: SCREEN_TYPES.has(f.type) ? (f.type as ScreenFieldType) : 'text',
+          ...(f.enum?.length ? { enum: f.enum } : {}),
+          ...(f.ui ? { ui: { ...f.ui } } : {}),
+        },
+      ]),
+    ),
+  });
+  const name = fieldWithRole(roles, 'identifier');
+  return name ? own.find((f) => f.name === name) : undefined;
 }
+
+const SCREEN_TYPES = new Set([
+  'text',
+  'integer',
+  'decimal',
+  'boolean',
+  'datetime',
+  'json',
+  'foreignKey',
+  'crossPackageRef',
+]);
 
 /** A document's identifier value, e.g. `WIL-1133`; `undefined` when empty. */
 export function identifierOf(

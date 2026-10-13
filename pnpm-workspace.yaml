@@ -41,3 +41,7 @@ minimumReleaseAgeExclude:
   - '@happyvertical/speech@0.102.5 || 0.103.1'
   - '@happyvertical/images@0.103.1'
   - '@happyvertical/smrt-images@0.55.11 || 0.55.12 || 0.55.17 || 0.55.18'
+# QA SESSION ONLY (2026-10 site refresh; see `//qa` in package.json): link
+# smrt-svelte to the unreleased smrt worktree. Remove before publishing.
+overrides:
+  '@happyvertical/smrt-svelte': link:../../smrt/site-refresh/packages/smrt-svelte

@@ -275,3 +275,22 @@ export function lineageNames(catalog: Catalog, modelId: string): string[] {
     return m ? [m.name] : [];
   });
 }
+
+/**
+ * The priced child records that make up a model's own record (its line
+ * items): the {@link childModels} whose name starts with the model's or an
+ * STI ancestor's (`ContractLineItem` under every Contract, `InvoiceLineItem`
+ * under Invoice), so a Product, which line items also point at, has none.
+ * `isLine` says what a line is (the planner's `isLineModel`).
+ */
+export function itemModels(
+  catalog: Catalog,
+  modelId: string,
+  isLine: (model: CatalogModel) => boolean,
+): CatalogModel[] {
+  const names = lineageNames(catalog, modelId);
+  return childModels(catalog, modelId).filter(
+    (child) =>
+      isLine(child) && names.some((name) => child.name.startsWith(name)),
+  );
+}

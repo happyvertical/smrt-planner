@@ -1,3 +1,9 @@
+import {
+  deriveFieldRoles,
+  fieldWithRole,
+  hasLineItemRoles,
+  isDocumentLike,
+} from '@happyvertical/smrt-svelte/screens';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { catalog, getModel } from '../src/lib/catalog/index.ts';
 import { CookbookStore } from '../src/lib/cookbook/store.svelte.ts';
@@ -216,10 +222,13 @@ describe('screen relations', () => {
       catalog.packages.flatMap((p) => p.models.map((m) => m.id)),
     );
     const relations = screenRelations(catalog, ORDER, all);
-    const lines = relations.find(
-      (r) => r.kind === 'children' && r.model.endsWith(':ContractLineItem'),
-    );
-    expect(lines).toMatchObject({ field: 'contractId', label: 'Line items' });
+    const lines = relations.find((r) => r.model.endsWith(':ContractLineItem'));
+    // Line items are the order's own items, not a related tab.
+    expect(lines).toMatchObject({
+      field: 'contractId',
+      label: 'Line items',
+      kind: 'items',
+    });
     expect(relations).toContainEqual({
       model: CUSTOMER,
       field: 'customerId',
@@ -243,6 +252,41 @@ describe('screen relations', () => {
       kind: 'foreignKey',
       relatedCollection: model(CUSTOMER).collection,
     });
+    // The catalog's facts travel as the field roles' hints.
+    expect(definition.fields.status).toMatchObject({
+      enum: must(order.fields.find((f) => f.name === 'status')).enum,
+    });
+    expect(definition.fields.totalAmount).toMatchObject({ format: 'money' });
+    expect(definition.fields.issueDate).toMatchObject({ format: 'date' });
+    expect(definition.fields.currency?.format).toBeUndefined();
+    // An order has no name of its own: no display field; its reference is
+    // the identifier the roles find.
+    expect(
+      Object.values(definition.fields).some((f) => f.display === true),
+    ).toBe(false);
+    const roles = deriveFieldRoles(definition);
+    expect(fieldWithRole(roles, 'identifier')).toBe('reference');
+    expect(fieldWithRole(roles, 'status')).toBe('status');
+    expect(fieldWithRole(roles, 'total')).toBe('totalAmount');
+    expect(fieldWithRole(roles, 'subtotal')).toBe('subtotal');
+    expect(fieldWithRole(roles, 'tax')).toBe('taxAmount');
+    expect(isDocumentLike(roles)).toBe(true);
+    // A named model marks its label field.
+    const location = screenDefinition(
+      model('@happyvertical/smrt-inventory:InventoryLocation'),
+    );
+    expect(location.fields.name?.display).toBe(true);
+    // Line items point at their document as its items.
+    const lineDefinition = screenDefinition(
+      model('@happyvertical/smrt-commerce:ContractLineItem'),
+    );
+    expect(lineDefinition.relationships).toContainEqual(
+      expect.objectContaining({ field: 'contractId', role: 'items' }),
+    );
+    expect(
+      lineDefinition.relationships?.find((e) => e.field === 'productId')?.role,
+    ).toBeUndefined();
+    expect(hasLineItemRoles(deriveFieldRoles(lineDefinition))).toBe(true);
     const policy = screenPolicy(order, [
       { ...must(order.fields[0]), label: 'First', help: 'Why' },
     ]);

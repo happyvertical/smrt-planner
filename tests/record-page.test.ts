@@ -66,6 +66,7 @@ describe('document labels', () => {
 });
 
 describe('the records loader as a table', () => {
+  const records = must(plannerLoaders.records, 'records loader');
   const href = (path: string) => `#${path}`;
 
   it('fills cells by role and totals every matching row, in minor units', async () => {
@@ -83,7 +84,7 @@ describe('the records loader as a table', () => {
       field: 'customerId',
       limit: 2,
     };
-    const data = await plannerLoaders.records(options, ctx as never);
+    const data = await records(options, ctx as never);
     const all = await source.listWhere(
       model(ORDER),
       'customerId',
@@ -107,7 +108,7 @@ describe('the records loader as a table', () => {
     expect(String(row.cells?.vendorId)).not.toBe(String(source0.vendorId));
 
     // Money columns sum over all matching rows, not the page.
-    const money = await plannerLoaders.records(
+    const money = await records(
       { ...options, columns: 'reference,totalAmount,subtotal' },
       ctx as never,
     );
@@ -127,7 +128,7 @@ describe('the records loader as a table', () => {
       all.find((o) => o.id === money.rows[0]?.id)?.totalAmount,
     );
     await expect(
-      plannerLoaders.records({ ...options, columns: 'nope' }, ctx as never),
+      records({ ...options, columns: 'nope' }, ctx as never),
     ).rejects.toThrow(/no field nope/);
   });
 });

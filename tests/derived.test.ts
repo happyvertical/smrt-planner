@@ -41,7 +41,7 @@ const source = () =>
   });
 
 describe('line and parent amounts', () => {
-  it('prices a line as quantity x unit price, less discount, plus tax', () => {
+  it('prices a line as quantity x unit price; discount and tax apart', () => {
     expect(lineAmounts({ quantity: 3, unitPrice: 1000 }).amount).toBe(3000);
     expect(
       lineAmounts({
@@ -50,16 +50,21 @@ describe('line and parent amounts', () => {
         discount: 500,
         taxRate: 0.1,
       }),
-    ).toEqual({ subtotal: 1500, tax: 150, amount: 1650 });
+    ).toEqual({ amount: 2000, discount: 500, tax: 150 });
   });
 
-  it('sums lines into subtotal, tax and total', () => {
+  it('sums lines into subtotal, discount, tax and total', () => {
     expect(
       totalsOf([
-        { quantity: 1, unitPrice: 1000, taxRate: 0.05 },
+        { quantity: 1, unitPrice: 1000, taxRate: 0.05, discount: 200 },
         { quantity: 2, unitPrice: 500, taxRate: 0 },
       ]),
-    ).toEqual({ subtotal: 2000, taxAmount: 50, totalAmount: 2050 });
+    ).toEqual({
+      subtotal: 2000,
+      discount: 200,
+      taxAmount: 40,
+      totalAmount: 1840,
+    });
   });
 
   it('marks line amounts and a parent with lines as calculated', () => {
@@ -85,7 +90,8 @@ describe('line and parent amounts', () => {
       unitPrice: 500,
       taxRate: 0.2,
     });
-    expect(b.amount).toBe(600);
+    // The line's amount is its price; the tax goes to the document's total.
+    expect(b.amount).toBe(500);
     expect((await data.get(agreement, parent.id))?.totalAmount).toBe(3600);
     await data.update(lineItem, a.id, { quantity: 1 });
     expect((await data.get(agreement, parent.id))?.totalAmount).toBe(1600);

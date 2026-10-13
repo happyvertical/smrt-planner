@@ -149,13 +149,17 @@ describe('sample records come with their line items', () => {
     const invoices = await a.list(invoice);
     invoices.forEach((record, index) => {
       const mine = rowsOf(first, 'invoiceId', record.id);
-      // Totals follow the commerce semantics: the amounts before tax, and the
-      // lines' own (taxed) amounts for the total. One invoice is seeded with
-      // a stale total, so the record page's mismatch flag can be seen.
+      // The subtotal is the lines' amounts; the total takes off their
+      // discounts and adds their tax. One invoice is seeded with stale
+      // totals, so the record page's mismatch flag can be seen.
       const stale = index === MISMATCH_ROW ? MISMATCH_AMOUNT : 0;
-      expect(record.subtotal).toBe(totalsOf(mine).subtotal);
-      expect(record.totalAmount).toBe(
+      const totals = totalsOf(mine);
+      expect(record.subtotal).toBe(
         mine.reduce((total, r) => total + Number(r.amount), 0) + stale,
+      );
+      expect(record.totalAmount).toBe(totals.totalAmount + stale);
+      expect(record.totalAmount).toBe(
+        Number(record.subtotal) - totals.discount + Number(record.taxAmount),
       );
     });
   });
@@ -181,13 +185,13 @@ describe('sample records come with their line items', () => {
     expect(discounts).toBeLessThan(orders.length);
   });
 
-  it('seeds one order whose stored total disagrees with its lines', async () => {
+  it('seeds one order whose stored subtotal disagrees with its lines', async () => {
     const data = source();
     const orders = await data.list(model(`${C}Order`));
     const lines = await data.list(model(`${C}ContractLineItem`));
     const off = orders.filter((order) => {
       const mine = rowsOf(lines, 'contractId', order.id);
-      return order.totalAmount !== totalsOf(mine).totalAmount;
+      return order.subtotal !== totalsOf(mine).subtotal;
     });
     expect(off.map((o) => o.id)).toEqual([orders[MISMATCH_ROW]?.id]);
     // Editing the order recomputes its totals from the lines.

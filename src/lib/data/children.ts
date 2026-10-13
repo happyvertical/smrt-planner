@@ -26,8 +26,8 @@ const hasField = (model: CatalogModel, name: string) =>
  * Sample child rows for one parent record: one to four (journals, an even
  * number of balanced entries), each pointing at the parent through `fk`. Ids
  * and values are seeded from the parent's id, so the same parent always gets
- * the same children. A line item's `amount` is `quantity * unitPrice` so it
- * reads right next to the parent's totals.
+ * the same children. A line item's `amount` is `quantity * unitPrice`
+ * (`lineAmounts`), its discount and tax counted in the parent's totals.
  */
 export function fakeChildrenOf(
   child: CatalogModel,
@@ -114,8 +114,8 @@ function lineDiscount(quantity: number, unitPrice: number): number {
 /**
  * The sample documents whose stored totals deliberately disagree with their
  * lines, so the record page's mismatch flag has something to show: the third
- * Order and the third Invoice (row index 2), whose total was left stale by an
- * edit made elsewhere. Their own fields stay authoritative; the page only
+ * Order and the third Invoice (row index 2), whose subtotal and total were
+ * left stale by an edit made elsewhere. Their own fields stay authoritative; the page only
  * flags the difference. Editing a line recomputes the totals and clears it.
  */
 export const MISMATCH_MODELS: readonly string[] = [
@@ -135,10 +135,13 @@ export function seedMismatch(
   if (
     index !== MISMATCH_ROW ||
     !MISMATCH_MODELS.includes(parentModel.id) ||
+    typeof parent.subtotal !== 'number' ||
     typeof parent.totalAmount !== 'number'
   ) {
     return;
   }
+  // Stale but self-consistent: subtotal and total moved together.
+  parent.subtotal += MISMATCH_AMOUNT;
   parent.totalAmount += MISMATCH_AMOUNT;
 }
 

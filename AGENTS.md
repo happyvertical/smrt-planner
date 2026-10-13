@@ -330,7 +330,8 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   (`customerSlots`, seeded by the customer's index), so related lists hold several records. Sample
   lines (`data/derived.ts`): `amount` = quantity x unit price; the document's subtotal is the lines'
   amounts, total = subtotal - discount + tax, taxed at the app's setting, else the pack's, else 5%;
-  about a third of documents discount a line; the third Order and Invoice keep a stale subtotal and
+  about a third of documents discount a line (only where the app shows the line's discount: generated
+  lines take the hidden fields' background values first); the third Order and Invoice keep a stale subtotal and
   total (`children.ts` `MISMATCH_*`) so the line-items mismatch flag shows.
 - `src/routes/`: `/` Planner with `?tab=cookbooks|recipes|features|layout|export` tabs (`planner/tab.svelte.ts`; a visitor with nothing built lands on Cookbooks; smrt-ui `Tabs`: Cookbooks cards + preview, Recipes cards with switches only, Features the browsable catalogue of every recipe with its demo label, providers and what it adds, Layout `ShellLayoutEditor`, Export / Import / Reset in `ExportPanel`), `/ai/` the AI models page (Set up your assistant), `/cookbook/` a client-side redirect to `/?tab=export`, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
   `/packages/` and `/packages/[id]/` the package browser, `/m/[package]/[model]/` (and `/[view]/`:

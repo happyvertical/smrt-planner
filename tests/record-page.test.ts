@@ -127,6 +127,26 @@ describe('the records loader as a table', () => {
     expect(money.rows[0]?.cells?.totalAmount).toBe(
       all.find((o) => o.id === money.rows[0]?.id)?.totalAmount,
     );
+    // A line table: the unit price is shown, never summed.
+    const [order] = all;
+    const lines = await records(
+      {
+        model: `${C}ContractLineItem`,
+        filter: 'parent',
+        field: 'contractId',
+        columns: 'description,quantity,unitPrice,amount',
+        limit: 50,
+      },
+      { ...ctx, record: { model: ORDER, id: must(order).id } } as never,
+    );
+    expect(lines.columns?.find((c) => c.key === 'unitPrice')).toMatchObject({
+      role: 'money',
+      summarize: false,
+    });
+    expect(Object.keys(lines.summaries ?? {}).sort()).toEqual([
+      'amount',
+      'quantity',
+    ]);
     await expect(
       records({ ...options, columns: 'nope' }, ctx as never),
     ).rejects.toThrow(/no field nope/);

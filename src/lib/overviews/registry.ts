@@ -14,6 +14,7 @@ import {
   type ChartWidgetData,
   type CoreWidgetLoaders,
   createWidgetRegistry,
+  lineItemColumns,
   type MetricWidgetData,
   parseColumnsOption,
   type RecipeExportResolver,
@@ -245,15 +246,21 @@ function recordColumns(
   option: unknown,
   parentField: string | undefined,
 ): RecordListColumn[] {
+  const definition = screenDefinition(model);
+  const exclude = parentField ? [parentField] : [];
   const keys = parseColumnsOption(option);
-  if (keys.length === 0) {
-    return relatedColumns(screenDefinition(model), roles, {
-      exclude: parentField ? [parentField] : [],
-    });
-  }
+  if (keys.length === 0) return relatedColumns(definition, roles, { exclude });
+  // The framework's own column for a key where it has one (a line's unit
+  // price is not summed), else one by the field's roles.
+  const known = [
+    ...lineItemColumns(definition, roles, { exclude }),
+    ...relatedColumns(definition, roles, { exclude, max: keys.length + 8 }),
+  ];
   return keys.map((key) => {
     const field = model.fields.find((f) => f.name === key);
     if (!field) throw new Error(`${model.name} has no field ${key}`);
+    const framework = known.find((column) => column.key === key);
+    if (framework) return framework;
     const role = cellRole(roles[key]);
     return {
       key,
@@ -273,7 +280,8 @@ const SUMMED: ReadonlySet<FieldRole | undefined> = new Set([
 
 /**
  * Footer sums over EVERY matching row, not only the page shown: the money
- * (integer minor units) and quantity columns.
+ * (integer minor units) and quantity columns, never one marked
+ * `summarize: false` (a unit price).
  */
 export function recordSummaries(
   columns: readonly RecordListColumn[],
@@ -281,7 +289,7 @@ export function recordSummaries(
 ): Record<string, number> {
   const out: Record<string, number> = {};
   for (const column of columns) {
-    if (!SUMMED.has(column.role)) continue;
+    if (!(column.summarize ?? SUMMED.has(column.role))) continue;
     out[column.key] = rows.reduce((total, row) => {
       const value = row[column.key];
       return numeric(value) ? total + value : total;

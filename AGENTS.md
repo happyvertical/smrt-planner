@@ -125,8 +125,9 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   icon, title (the layout's rename wins), description (`info.ts`: recipe `section.icon/description`,
   `FEATURE_SECTION`, cookbook `sectionDescriptions`), Help/Options icons (`entries.ts` `optionGroups`),
   and the section's editable overview (`SectionOverview.svelte`, see `src/lib/overviews/`; its
-  `shortcuts` widget replaces the menu cards); in edit mode the entries follow as smrt-svelte's
-  `ShellSectionMenu` list. A section id outside the overview id pattern keeps the `ShellSectionMenu`
+  `shortcuts` widget replaces the menu cards; the grid is `presentation="plain"`, page sections rather
+  than cards in a card); in edit mode the entries follow as smrt-svelte's `ShellSectionMenu` list.
+  `SectionView.svelte` is the `$app`-free body the route page and the mounted `Planner` share. A section id outside the overview id pattern keeps the `ShellSectionMenu`
   cards with "N records" (`entryIndex` + the entry's own scope) and "New <noun>". New asks the entry page to open its create form through `planner/create.ts` (a
   one-shot, page-named, expiring request; the URL carries only the shareable state). In edit mode the
   rows get the grip/rename/hide chrome, so `PlannerEditBridge` does not leave a section page. Every
@@ -139,8 +140,11 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   loads plus recipe `widget` surfaces, `models` = the catalog. `isOverviewId` is what a cookbook may
   key: recipe sections, More, and the document's own `layout.customSections`. `registry.ts`: the one
   registry, core widgets with loaders over the in-browser `DataSource` (capabilities in the load
-  context, never in options; a named `filter` is an error tile, the sample data has none) and
-  `registerRecipeWidgets` with a static, currently empty, module map. `validate.ts`: the cookbook's
+  context, never in options; a named `filter` is an error tile, the sample data has none; `chart`
+  groups the sample rows itself, the in-browser stand-in for a runtime report), `plannerLoaders`
+  (metric, records, chart) for the mounted `Planner`'s `CookbookApp`, and
+  `registerRecipeWidgets` with a static, currently empty, module map. `models.ts`: the option
+  editor's model choices, shared by the page and the mount. `validate.ts`: the cookbook's
   `overviews` field; every override goes through `checkOverviewOverride` on load and import, bad
   widgets and unknown ids are dropped and reported (`CookbookResult.dropped`), only canonical
   non-empty overrides are kept. `page.ts`: the controller wiring (`override` reads
@@ -171,7 +175,10 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   reset and section navigation. `Planner.svelte` is the mountable component (props in `types.ts`; `backLink`
   is a host's way out, a `header.start` slot item; `inference` switches the assistant on, see
   `src/lib/ai/`); the static app's Planner page renders the same one (`layout="shell"`,
-  `persistence="host"`).
+  `persistence="host"`). The mount is a `CookbookApp` with `layoutEditing`, `plannerLoaders`,
+  `widgetContext` and `resolveExport`, routed by URL fragment (`setBasePath(base, 'hash')` makes
+  `appHref` write `#/...`); it renders the planner's own `SectionView` and `PackagePage` because
+  0.55.17's `CookbookSectionPage` forwards no `presentation` and takes no shortcuts loader.
   `assistant.ts` builds a chat transport over any controller. The stores (`cookbookStore`,
   `recipeState`) are still module singletons: one planner per page. Still planner-side and NOT yet
   deleted because the UI uses them directly (follow-up: route the UI through commands):

@@ -4,20 +4,21 @@ import {
   applyCookbookTheme,
   buildCookbookShell,
   CookbookApp,
-  CookbookSectionPage,
 } from '@happyvertical/smrt-svelte/cookbook';
 import {
   ShellDockTool,
   ShellSectionIcon,
 } from '@happyvertical/smrt-svelte/workspace';
 import type { DataSurfaceRegistry } from '@happyvertical/smrt-ui/data-surface';
-import { type ComponentProps, onMount, tick } from 'svelte';
+import { type ComponentProps, onMount, tick, untrack } from 'svelte';
 import smrtMark from '../assets/smrt-mark.svg';
 import { catalog, getModel } from '../catalog/index.ts';
 import AdvancedStyles from '../components/AdvancedStyles.svelte';
 import AiModelsPage from '../components/AiModelsPage.svelte';
 import BrowserAssistant from '../components/BrowserAssistant.svelte';
 import ModelWorkspace from '../components/ModelWorkspace.svelte';
+import PackagePage from '../components/PackagePage.svelte';
+import SectionView from '../components/SectionView.svelte';
 import ThemeBridge from '../components/ThemeBridge.svelte';
 import { cookbookStore, SHELL_STORAGE_KEY } from '../cookbook/store.svelte.ts';
 import type { Cookbook } from '../cookbook/types.ts';
@@ -25,9 +26,12 @@ import { provideDataSource, tryUseDataSource } from '../data/context.ts';
 import { createPlannerDataSource } from '../data/planner-source.ts';
 import { activeForms } from '../forms/active.ts';
 import { runViewTransition } from '../motion/view-transition.ts';
+import { plannerLoaders, resolveRecipeExport } from '../overviews/registry.ts';
 import { recipes } from '../recipes/index.ts';
 import { recipeState } from '../recipes/state.svelte.ts';
+import { sectionIdFromSlug } from '../sections/path.ts';
 import { DEFAULT_PRESET } from '../theme/theme.ts';
+import { setBasePath } from './app.svelte.ts';
 import PlannerControls from './PlannerControls.svelte';
 import PlannerLifecycle from './PlannerLifecycle.svelte';
 import { PLANNER_ASSISTANT_TOGGLE, plannerShellProps } from './shell.ts';
@@ -45,8 +49,13 @@ let {
   onready,
 }: PlannerProps = $props();
 
+/** The mount's links: its pages are fragment routes, so no host router. */
+const hashHref = (path: string) => `#${path}`;
+// Before anything below renders a link: the planner-wide `appHref` writes
+// fragments too (`PlannerLifecycle` follows `basePath` when it changes).
+setBasePath(untrack(() => basePath) ?? '', 'hash');
 /** The AI models page inside the mount; the dock links here. */
-const AI_HREF = '#/ai/';
+const AI_HREF = hashHref('/ai/');
 /** The assistant exists only when the host gave the planner a model. */
 const assistant = $derived(inference !== undefined);
 
@@ -93,7 +102,12 @@ const defaultRoute = $derived.by(() => {
   const firstId = orderedId ?? shell.sections[0]?.id;
   return firstId ? shell.sectionPath(firstId) : '/configure/';
 });
-if (!tryUseDataSource()) provideDataSource(createPlannerDataSource());
+const source =
+  tryUseDataSource() ?? provideDataSource(createPlannerDataSource());
+// What the overview widgets' loaders read when they run in this browser: the
+// sample source and the mount's links. The shell adds the resolved sections
+// and entries for its shortcuts.
+const widgetContext = () => ({ source, href: hashHref });
 let route = $state('');
 // The mount's own hash router. Each change morphs through a view transition
 // (the chrome named below stays put, the content crossfades); the first read
@@ -125,6 +139,9 @@ onMount(() => {
 const currentRoute = $derived(route || defaultRoute);
 const pathParts = $derived(currentRoute.split('/').filter(Boolean));
 const sectionSlug = $derived(pathParts[0] === 's' ? pathParts[1] : undefined);
+const packageId = $derived(
+  pathParts[0] === 'packages' ? pathParts[1] : undefined,
+);
 const model = $derived(
   pathParts[0] === 'm' ? getModel(pathParts[1], pathParts[2]) : undefined,
 );
@@ -181,11 +198,22 @@ const dockToggles = $derived(assistant ? [PLANNER_ASSISTANT_TOGGLE] : []);
   </a>
 {/snippet}
 
+<!--
+  The shell's pencil (`layoutEditing`, start of the header) edits the menu
+  and every section overview in place; each edit comes back through
+  `oncookbookchange` and lands in the cookbook's `layout` / `overviews`, so it
+  is saved, exported and imported with the rest of the plan. `loaders`,
+  `widgetContext` and `resolveExport` wire the framework's own section pages
+  (`CookbookSectionPage`) to the sample data; the mount renders the planner's
+  `SectionView` instead because 0.55.17's `CookbookSectionPage` forwards no
+  `presentation` (its overview is framed cards in a card) and takes no
+  shortcuts loader (no record counts).
+-->
 <CookbookApp
   cookbook={cookbook as ComponentProps<typeof CookbookApp>['cookbook']}
   catalog={shellCatalog}
   {title}
-  href={(path) => `#${path}`}
+  href={hashHref}
   currentHref={`#${currentRoute}`}
   homeHref={`#${defaultRoute}`}
   storageKey={SHELL_STORAGE_KEY}
@@ -193,14 +221,22 @@ const dockToggles = $derived(assistant ? [PLANNER_ASSISTANT_TOGGLE] : []);
   {slotItems}
   {dockToggles}
   dock={assistant ? assistantDock : undefined}
+  loaders={plannerLoaders}
+  {widgetContext}
+  resolveExport={resolveRecipeExport}
+  layoutEditing={{ slot: 'header.start' }}
   oncookbookchange={updateCookbook}
   {...plannerShellProps()}
 >
   <ThemeBridge deferInitial={persistence === 'host'} presetOverride={applyCookbookTheme(shell.theme)} />
-  <PlannerLifecycle {controller} {basePath} {inference} {persistence} {onready} />
+  <PlannerLifecycle {controller} {basePath} {inference} {persistence} {onready} links="hash" />
   <main class="content">
     {#if sectionSlug}
-      <CookbookSectionPage slug={sectionSlug} />
+      {#key sectionSlug}
+        <SectionView sectionId={sectionIdFromSlug(sectionSlug)} href={hashHref} />
+      {/key}
+    {:else if packageId}
+      <PackagePage id={packageId} backHref="#/configure/" />
     {:else if pathParts[0] === 'advanced-styles'}
       <AdvancedStyles backHref="#/configure/" />
     {:else if pathParts[0] === 'ai'}

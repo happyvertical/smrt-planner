@@ -8,7 +8,7 @@ import { createPlannerDataSource } from '../data/planner-source.ts';
 import { configFromProp } from '../inference/config.ts';
 import { libraryState } from '../library/state.svelte.ts';
 import { recipeState } from '../recipes/state.svelte.ts';
-import { setBasePath } from './app.svelte.ts';
+import { type LinkMode, setBasePath } from './app.svelte.ts';
 import { createPlannerAssistant } from './assistant.ts';
 import { plannerController, plannerRuntime } from './instance.ts';
 import type { PlannerProps } from './types.ts';
@@ -19,16 +19,22 @@ let {
   inference,
   persistence = 'self',
   onready,
+  links = 'path',
 }: Pick<
   PlannerProps,
   'controller' | 'basePath' | 'inference' | 'persistence' | 'onready'
-> = $props();
+> & {
+  /** `'hash'` in the complete `Planner`, whose pages are fragment routes. */
+  links?: LinkMode;
+} = $props();
 
 const dataSource =
   tryUseDataSource() ?? provideDataSource(createPlannerDataSource());
 
 $effect.pre(() => {
-  if (basePath !== undefined) setBasePath(basePath);
+  if (basePath !== undefined || links !== 'path') {
+    setBasePath(basePath ?? '', links);
+  }
 });
 
 onMount(() => {

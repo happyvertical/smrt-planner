@@ -101,6 +101,18 @@ const controller = createPlannerController();
 served from), `persistence` (`'self'` reads and saves the cookbook in this
 browser, `'host'` leaves both to you), `themeControls`, `tabs`, `onready`, and:
 
+The mounted planner is the framework's cookbook-driven app shell with its
+customizable overviews switched on: the pencil at the start of the header
+edits the menu and every section page in place (add, move, resize, configure
+and remove widgets), and each edit lands in the cookbook's `layout` and
+`overviews`, so it is saved, exported and imported with the rest of the plan.
+The `metric`, `records` and `chart` widgets read the in-browser sample data;
+the chart groups the seeded rows itself (by a field, or a date field bucketed
+over the widget's period) as the stand-in for the runtime report a generated
+app's chart loader would compile. Its pages are fragment routes (`#/s/...`,
+`#/m/...`, `#/packages/...`), so the mount needs nothing from the host's
+router and every in-planner link stays inside it.
+
 - `backLink: { href, label }` renders a link out of the planner at the start
   of its header, beside the brand (a docs site's "Back to documentation").
 - `inference` gives the planner's assistant a model and switches the assistant

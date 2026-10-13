@@ -9,8 +9,19 @@ import { selection } from './selection.svelte.ts';
  */
 let basePath = '';
 
-export function setBasePath(path: string): void {
+/**
+ * How in-app links are written. The static app serves `/m/...` pages under
+ * `basePath`; the mounted `Planner` routes by URL fragment (`#/m/...`) and
+ * serves nothing from the host's paths, so its links are hashes and carry no
+ * query (the mount keeps its selection in memory).
+ */
+export type LinkMode = 'path' | 'hash';
+
+let linkMode: LinkMode = 'path';
+
+export function setBasePath(path: string, links: LinkMode = 'path'): void {
   basePath = path.replace(/\/+$/, '');
+  linkMode = links;
 }
 
 export function getBasePath(): string {
@@ -22,7 +33,11 @@ export function appQuery(): string {
   return composeQuery({ packages: selection.ids });
 }
 
-/** An in-app path (`/m/commerce/Order/`) carrying the current app state. */
+/**
+ * An in-app path (`/m/commerce/Order/`) as a link: under the base path with
+ * the current app state, or, in a mounted `Planner`, as its fragment route.
+ */
 export function appHref(path: string): string {
+  if (linkMode === 'hash') return `#${path}`;
   return `${basePath}${path}${appQuery()}`;
 }

@@ -1,5 +1,12 @@
 import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
+import PackagePage from '../src/lib/components/PackagePage.svelte';
+import {
+  CookbookStore,
+  cookbookStore,
+} from '../src/lib/cookbook/store.svelte.ts';
+import { COOKBOOK_SCHEMA } from '../src/lib/cookbook/types.ts';
+import { plannerLoaders } from '../src/lib/overviews/registry.ts';
 import {
   appHref,
   getBasePath,
@@ -65,6 +72,71 @@ describe('Planner component', () => {
     expect(appHref('/recipes/sales/')).toBe('/kitchen/recipes/sales/');
     setBasePath('');
     expect(appHref('/ai/')).toBe('/ai/');
+  });
+
+  it('writes fragment links in the mount, so a feature or package link stays inside it', () => {
+    // The complete Planner routes by URL fragment and serves nothing from the
+    // host's paths: `/planner/packages/reports/` would be the host's 404.
+    setBasePath('/planner', 'hash');
+    expect(appHref('/packages/reports/')).toBe('#/packages/reports/');
+    expect(appHref('/m/commerce/Order/')).toBe('#/m/commerce/Order/');
+    setBasePath('/planner');
+    expect(appHref('/packages/reports/')).toBe('/planner/packages/reports/');
+    const { body } = render(Planner, { props: { basePath: '/planner' } });
+    expect(body).not.toContain('href="/planner/');
+    setBasePath('');
+  });
+
+  it('serves the package page at #/packages/<id>/ with fragment links', () => {
+    // The mount routes by `location.hash`, absent on the server, so the page
+    // is rendered directly: the same component the static route renders.
+    setBasePath('/planner', 'hash');
+    try {
+      const { body } = render(PackagePage, { props: { id: 'commerce' } });
+      expect(body).toContain('href="#/m/commerce/Order/"');
+      expect(body).not.toContain('href="/planner/');
+      const unknown = render(PackagePage, {
+        props: { id: 'nope', backHref: '#/configure/' },
+      }).body;
+      expect(unknown).toContain('Unknown package');
+      expect(unknown).toContain('href="#/configure/"');
+    } finally {
+      setBasePath('');
+    }
+  });
+
+  it('mounts the editable overviews over the sample data: the pencil, plain sections, every loader', () => {
+    const previous = new CookbookStore();
+    previous.apply(cookbookStore.snapshot());
+    try {
+      cookbookStore.apply({
+        $schema: COOKBOOK_SCHEMA,
+        version: 1,
+        recipes: ['commerce.sales'],
+        features: [],
+        policies: [],
+      });
+      cookbookStore.loaded = true;
+      const { body } = render(Planner, { props: { basePath: '/planner' } });
+      // The shell's layout pencil (`layoutEditing`, start of the header).
+      expect(body).toContain('Edit layout');
+      // The first section page is the default route: its overview is drawn as
+      // page sections, not a card holding cards.
+      expect(body).toMatch(
+        /data-presentation="plain"[^>]*data-smrt-component="OverviewGrid"/,
+      );
+      expect(body).toContain('class="section-view');
+      // The loaders the mount hands `CookbookApp`: every data widget.
+      expect(Object.keys(plannerLoaders).sort()).toEqual([
+        'chart',
+        'metric',
+        'records',
+      ]);
+    } finally {
+      cookbookStore.apply(previous.snapshot());
+      cookbookStore.loaded = false;
+      setBasePath('');
+    }
   });
 
   it('keeps Features and Layout reachable after they left the tab strip', () => {

@@ -15,25 +15,35 @@ import {
   type CoreWidgetLoaders,
   createWidgetRegistry,
   type MetricWidgetData,
+  parseColumnsOption,
   type RecipeExportResolver,
   type RecipeWidgetSource,
+  type RecordListColumn,
   type RecordListWidgetData,
   registerCoreWidgets,
   registerRecipeWidgets,
+  relatedColumns,
   type ShortcutNavSection,
   type ShortcutsWidgetData,
   shortcutsFromNav,
   type WidgetLoadContext,
 } from '@happyvertical/smrt-svelte/overview';
+import {
+  currencyCodeField,
+  deriveFieldRoles,
+  type FieldRole,
+  type ScreenFieldRoles,
+} from '@happyvertical/smrt-svelte/screens';
 import { getModelByQualifiedName } from '../catalog/index.ts';
 import type { CatalogModel } from '../catalog/types.ts';
 import { EPOCH, isMoneyField } from '../data/fakes.ts';
-import { recordCount } from '../data/format.ts';
-import { recordLabel } from '../data/labels.ts';
+import { humanize, labelKey, recordCount } from '../data/format.ts';
+import { recordLabel, relationLabels } from '../data/labels.ts';
 import type { DataSource, ModelRecord } from '../data/source.ts';
 import { filteredListPath, modelPath, recordPath } from '../planner/routes.ts';
 import { recipes } from '../recipes/index.ts';
 import { inScope } from '../recipes/scope.ts';
+import { screenDefinition } from '../screens/definition.ts';
 import type { SectionEntry } from '../sections/entries.ts';
 
 /** The capabilities a section page hands its widgets' loaders. */
@@ -208,11 +218,99 @@ function compare(a: unknown, b: unknown): number {
 /** Framework timestamps the catalog and the samples do not carry. */
 const SYSTEM_DATES = new Set(['createdAt', 'updatedAt']);
 
+/** How a table cell renders, by the first of the field's roles a table draws. */
+const CELL_ROLES: readonly FieldRole[] = [
+  'identifier',
+  'status',
+  'date',
+  'money',
+  'quantity',
+  'party',
+  'title',
+];
+
+function cellRole(roles: readonly FieldRole[] = []): FieldRole | undefined {
+  return CELL_ROLES.find((role) => roles.includes(role));
+}
+
+/**
+ * The columns a `records` table shows: the `columns` option's field names
+ * when given (unknown names are an error tile), else the framework's
+ * `relatedColumns` by role (identifier, status, lead date, a party, the
+ * amount), leaving out the field pointing at the page's record.
+ */
+function recordColumns(
+  model: CatalogModel,
+  roles: ScreenFieldRoles,
+  option: unknown,
+  parentField: string | undefined,
+): RecordListColumn[] {
+  const keys = parseColumnsOption(option);
+  if (keys.length === 0) {
+    return relatedColumns(screenDefinition(model), roles, {
+      exclude: parentField ? [parentField] : [],
+    });
+  }
+  return keys.map((key) => {
+    const field = model.fields.find((f) => f.name === key);
+    if (!field) throw new Error(`${model.name} has no field ${key}`);
+    const role = cellRole(roles[key]);
+    return {
+      key,
+      label: REF_TYPES.has(field.type)
+        ? humanize(key.replace(/Id$/, ''))
+        : humanize(key),
+      ...(role ? { role } : {}),
+    };
+  });
+}
+
+/** The roles a table footer sums. */
+const SUMMED: ReadonlySet<FieldRole | undefined> = new Set([
+  'money',
+  'quantity',
+]);
+
+/**
+ * Footer sums over EVERY matching row, not only the page shown: the money
+ * (integer minor units) and quantity columns.
+ */
+export function recordSummaries(
+  columns: readonly RecordListColumn[],
+  rows: readonly ModelRecord[],
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const column of columns) {
+    if (!SUMMED.has(column.role)) continue;
+    out[column.key] = rows.reduce((total, row) => {
+      const value = row[column.key];
+      return numeric(value) ? total + value : total;
+    }, 0);
+  }
+  return out;
+}
+
+/** The one currency of the rows' currency field, else USD. */
+function currencyOf(model: CatalogModel, rows: readonly ModelRecord[]): string {
+  const field = currencyCodeField(screenDefinition(model));
+  const codes = new Set(
+    rows
+      .map((row) => (field ? row[field] : undefined))
+      .filter((v): v is string => typeof v === 'string' && v !== ''),
+  );
+  return codes.size === 1 ? ([...codes][0] ?? 'USD') : 'USD';
+}
+
 /**
  * `records`: the first `limit` sample rows, optionally sorted by a field;
- * each row links to its record page. A sort by a framework timestamp the
- * samples do not carry (`createdAt`, the record view's default) falls back to
- * the model's lead date, so "newest" still means newest.
+ * each row links to its record page and carries `cells` for the table's
+ * columns (raw: money in integer minor units, dates as ISO strings, a
+ * reference as its record's label). `summaries` sum the money and quantity
+ * columns over every matching row and `total` counts them, so a footer
+ * under a page of five orders still totals all of them. A sort by a
+ * framework timestamp the samples do not carry (`createdAt`, the record
+ * view's default) falls back to the model's lead date, so "newest" still
+ * means newest.
  */
 async function loadRecords(
   options: Record<string, unknown>,
@@ -237,8 +335,26 @@ async function loadRecords(
       rows = [...rows].sort((a, b) => sign * compare(a[sort], b[sort]));
     }
   }
+  const roles = deriveFieldRoles(screenDefinition(model));
+  const columns = recordColumns(model, roles, options.columns, parent?.field);
   const limit = numeric(options.limit) ? options.limit : 5;
   const shown = rows.slice(0, limit);
+  const refFields = model.fields.filter(
+    (f) => REF_TYPES.has(f.type) && columns.some((c) => c.key === f.name),
+  );
+  const labels = await relationLabels(source, refFields, shown);
+  const cellsOf = (row: ModelRecord): Record<string, unknown> =>
+    Object.fromEntries(
+      columns.map((column) => {
+        const value = row[column.key];
+        const ref = refFields.find((f) => f.name === column.key);
+        if (ref?.related && typeof value === 'string' && value) {
+          return [column.key, labels.get(labelKey(ref.related, value)) ?? ''];
+        }
+        return [column.key, value ?? null];
+      }),
+    );
+  const summaries = recordSummaries(columns, rows);
   return {
     rows: await Promise.all(
       shown.map(async (row) => ({
@@ -246,10 +362,14 @@ async function loadRecords(
         // On a record's page the parent is the page: leave its name out.
         title: await recordLabel(source, model, row, 0, parent?.field),
         href: href(recordPath(found.packageId, model.name, String(row.id))),
+        cells: cellsOf(row),
       })),
     ),
-    ...(rows.length > shown.length ? { total: rows.length } : {}),
+    total: rows.length,
     href: listHref(href, found, parent),
+    columns,
+    currency: currencyOf(model, rows),
+    ...(Object.keys(summaries).length ? { summaries } : {}),
   };
 }
 

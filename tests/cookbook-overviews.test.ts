@@ -331,6 +331,8 @@ describe('section page overview', () => {
   it('refuses an edit the definition does not allow, leaving the cookbook alone', () => {
     const store = new CookbookStore();
     const controller = createSectionOverview(definition(), store);
+    expect(controller.add('iframe').ok).toBe(false);
+    // Allowed, but `model` is required: nothing is added without it.
     expect(controller.add('chart').ok).toBe(false);
     expect(
       controller.add('metric', { model: '@evil/pkg:Secrets' }),
@@ -397,6 +399,6 @@ describe('section page overview', () => {
         .list()
         .map((w) => w.type)
         .sort(),
-    ).toEqual(['metric', 'note', 'records', 'shortcuts']);
+    ).toEqual(['chart', 'metric', 'note', 'records', 'shortcuts']);
   });
 });

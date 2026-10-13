@@ -11,6 +11,8 @@
  * it up in the catalog and asks the `DataSource` for it.
  */
 import {
+  type ChartWidgetData,
+  type CoreWidgetLoaders,
   createWidgetRegistry,
   type MetricWidgetData,
   type RecipeExportResolver,
@@ -25,7 +27,7 @@ import {
 } from '@happyvertical/smrt-svelte/overview';
 import { getModelByQualifiedName } from '../catalog/index.ts';
 import type { CatalogModel } from '../catalog/types.ts';
-import { isMoneyField } from '../data/fakes.ts';
+import { EPOCH, isMoneyField } from '../data/fakes.ts';
 import { recordCount } from '../data/format.ts';
 import { recordLabel } from '../data/labels.ts';
 import type { DataSource, ModelRecord } from '../data/source.ts';
@@ -48,13 +50,26 @@ export interface PlannerWidgetContext {
 /** The registry every planner overview uses. */
 export const overviewRegistry = createWidgetRegistry();
 
-function capabilities(ctx: WidgetLoadContext): PlannerWidgetContext {
-  const { source, sections, entries, href } = ctx as WidgetLoadContext &
+/** What every data widget reads: the sample source and the app's links. */
+function dataCapabilities(
+  ctx: WidgetLoadContext,
+): Pick<PlannerWidgetContext, 'source' | 'href'> {
+  const { source, href } = ctx as WidgetLoadContext &
     Partial<PlannerWidgetContext>;
-  if (!source || !sections || !entries || !href) {
+  if (!source || !href) {
     throw new Error('the planner widget context is missing');
   }
-  return { source, sections, entries, href };
+  return { source, href };
+}
+
+/** The shortcuts also read the shell's resolved sections and the entry index. */
+function capabilities(ctx: WidgetLoadContext): PlannerWidgetContext {
+  const { sections, entries } = ctx as WidgetLoadContext &
+    Partial<PlannerWidgetContext>;
+  if (!sections || !entries) {
+    throw new Error('the planner widget context is missing');
+  }
+  return { ...dataCapabilities(ctx), sections, entries };
 }
 
 function modelOf(qualified: unknown): {
@@ -90,7 +105,7 @@ async function loadMetric(
   options: Record<string, unknown>,
   ctx: WidgetLoadContext,
 ): Promise<MetricWidgetData> {
-  const { source, href } = capabilities(ctx);
+  const { source, href } = dataCapabilities(ctx);
   const { model, path } = modelOf(options.model);
   refuseFilter(options.filter);
   const rows = await source.list(model);
@@ -136,7 +151,7 @@ async function loadRecords(
   options: Record<string, unknown>,
   ctx: WidgetLoadContext,
 ): Promise<RecordListWidgetData> {
-  const { source, href } = capabilities(ctx);
+  const { source, href } = dataCapabilities(ctx);
   const { model, path } = modelOf(options.model);
   refuseFilter(options.filter);
   let rows: ModelRecord[] = await source.list(model);
@@ -158,6 +173,219 @@ async function loadRecords(
       })),
     ),
     ...(rows.length > shown.length ? { total: rows.length } : {}),
+    href: href(path),
+  };
+}
+
+/** The chart's `period` option: how far back from the sample clock it looks. */
+const PERIOD_DAYS: Record<string, number | null> = {
+  '7d': 7,
+  '30d': 30,
+  '90d': 90,
+  '12m': 365,
+  all: null,
+};
+
+const DAY = 24 * 60 * 60 * 1000;
+
+/** The bucket a period's date axis uses; coarser as the window widens. */
+function bucketOf(period: string): 'day' | 'week' | 'month' {
+  if (period === '7d' || period === '30d') return 'day';
+  if (period === '90d') return 'week';
+  return 'month';
+}
+
+/** The start of `date`'s bucket, as a UTC timestamp. */
+function bucketStart(ms: number, bucket: 'day' | 'week' | 'month'): number {
+  const date = new Date(ms);
+  if (bucket === 'month') {
+    return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1);
+  }
+  const day = Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+  );
+  // ISO weeks start on Monday.
+  return bucket === 'week' ? day - ((date.getUTCDay() + 6) % 7) * DAY : day;
+}
+
+function nextBucket(ms: number, bucket: 'day' | 'week' | 'month'): number {
+  if (bucket === 'month') {
+    const date = new Date(ms);
+    return Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1);
+  }
+  return ms + (bucket === 'week' ? 7 : 1) * DAY;
+}
+
+/** A deterministic, locale-free axis label: `2025-11` or `2025-11-03`. */
+function bucketLabel(ms: number, bucket: 'day' | 'week' | 'month'): string {
+  const iso = new Date(ms).toISOString();
+  return bucket === 'month' ? iso.slice(0, 7) : iso.slice(0, 10);
+}
+
+const isDateField = (field: { type: string; system?: boolean }) =>
+  field.type === 'datetime' && !field.system;
+
+/** The model's lead date, for the period window: `issueDate`-like names first. */
+function leadDateField(model: CatalogModel) {
+  const dated = model.fields.filter(isDateField);
+  return (
+    dated.find((f) => /^(issue|order|start|created)/i.test(f.name)) ?? dated[0]
+  );
+}
+
+function dateOf(value: unknown): number | undefined {
+  if (typeof value !== 'string' && typeof value !== 'number') return undefined;
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : undefined;
+}
+
+/**
+ * `chart`: one measure of the model's sample rows grouped by a field. This is
+ * the IN-BROWSER STAND-IN for a runtime report: a generated app's chart
+ * loader hands these same options to the runtime report compiler and renders
+ * what it returns; the planner groups the seeded rows itself so the widget
+ * can be tried before a server exists.
+ *
+ * `groupBy` names a field: a date field is bucketed (days for `7d`/`30d`,
+ * weeks for `90d`, months for `12m`/`all`) with empty buckets kept so a line
+ * stays continuous; any other field groups by value, largest first. Absent,
+ * the model's lead date field is used. `period` is a window back from the
+ * sample clock (`EPOCH`, the fixed "now" of the seeded data) over the
+ * grouped date field, else the lead date field; a model with no date field
+ * ignores it. `measure` is `count`, or `sum` / `avg` of a numeric `field`;
+ * money stays integer minor units. The widget's `style` (bar or line) is
+ * rendered by the widget itself, not here.
+ */
+async function loadChart(
+  options: Record<string, unknown>,
+  ctx: WidgetLoadContext,
+): Promise<ChartWidgetData> {
+  const { source, href } = dataCapabilities(ctx);
+  const { model, path } = modelOf(options.model);
+  refuseFilter(options.filter);
+  const groupName = typeof options.groupBy === 'string' ? options.groupBy : '';
+  const groupField = groupName
+    ? model.fields.find((f) => f.name === groupName)
+    : leadDateField(model);
+  if (!groupField) {
+    throw new Error(
+      groupName
+        ? `${model.name} has no field ${groupName}`
+        : `${model.name} has no date field to chart; choose a group-by field`,
+    );
+  }
+  const measure = typeof options.measure === 'string' ? options.measure : '';
+  let valueField: CatalogModel['fields'][number] | undefined;
+  if (measure && measure !== 'count') {
+    if (measure !== 'sum' && measure !== 'avg') {
+      throw new Error(`unknown measure ${measure}`);
+    }
+    valueField = model.fields.find((f) => f.name === options.field);
+    if (
+      !valueField ||
+      (valueField.type !== 'integer' && valueField.type !== 'decimal')
+    ) {
+      throw new Error(`${measure} needs a numeric field of ${model.name}`);
+    }
+  }
+  const period = typeof options.period === 'string' ? options.period : '30d';
+  if (!Object.hasOwn(PERIOD_DAYS, period)) {
+    throw new Error(`unknown period ${period}`);
+  }
+  const days = PERIOD_DAYS[period];
+  const byDate = isDateField(groupField);
+  const windowField = byDate ? groupField : leadDateField(model);
+  const since =
+    days !== null && windowField
+      ? EPOCH - days * DAY
+      : Number.NEGATIVE_INFINITY;
+
+  let rows = await source.list(model);
+  if (windowField && since !== Number.NEGATIVE_INFINITY) {
+    rows = rows.filter((row) => {
+      const at = dateOf(row[windowField.name]);
+      return at !== undefined && at >= since && at <= EPOCH;
+    });
+  }
+
+  // Group: each bucket keeps the count and the sum, so `avg` is sum / count.
+  const groups = new Map<
+    string,
+    { key: number | string; sum: number; n: number }
+  >();
+  const add = (label: string, key: number | string, row: ModelRecord) => {
+    const group = groups.get(label) ?? { key, sum: 0, n: 0 };
+    if (valueField) {
+      const value = row[valueField.name];
+      if (!numeric(value)) return;
+      group.sum += value;
+    }
+    group.n += 1;
+    groups.set(label, group);
+  };
+  const bucket = bucketOf(period);
+  if (byDate) {
+    // Every bucket of the window, in order, empty ones included.
+    const start =
+      since !== Number.NEGATIVE_INFINITY
+        ? since
+        : Math.min(
+            ...rows.map((row) => dateOf(row[groupField.name]) ?? EPOCH),
+            EPOCH,
+          );
+    for (
+      let at = bucketStart(start, bucket);
+      at <= EPOCH;
+      at = nextBucket(at, bucket)
+    ) {
+      groups.set(bucketLabel(at, bucket), { key: at, sum: 0, n: 0 });
+    }
+    for (const row of rows) {
+      const at = dateOf(row[groupField.name]);
+      if (at === undefined) continue;
+      const startOfBucket = bucketStart(at, bucket);
+      add(bucketLabel(startOfBucket, bucket), startOfBucket, row);
+    }
+  } else {
+    for (const row of rows) {
+      const value = row[groupField.name];
+      const label =
+        value === null || value === undefined || value === ''
+          ? '(none)'
+          : String(value);
+      add(label, label, row);
+    }
+  }
+
+  const money = valueField ? isMoneyField(valueField) : false;
+  const measureOf = (group: { sum: number; n: number }): number => {
+    if (!valueField) return group.n;
+    const value =
+      measure === 'avg' && group.n ? group.sum / group.n : group.sum;
+    return money ? Math.round(value) : value;
+  };
+  let points = [...groups.entries()].map(([label, group]) => ({
+    label,
+    value: measureOf(group),
+    key: group.key,
+  }));
+  points = byDate
+    ? points.sort((a, b) => Number(a.key) - Number(b.key))
+    : points.sort(
+        (a, b) => b.value - a.value || a.label.localeCompare(b.label),
+      );
+  return {
+    points: points.map(({ label, value }) => ({ label, value })),
+    format: !valueField
+      ? 'integer'
+      : money
+        ? 'money'
+        : valueField.type === 'integer'
+          ? 'integer'
+          : 'decimal',
+    ...(money ? { currency: 'USD' } : {}),
     href: href(path),
   };
 }
@@ -201,9 +429,19 @@ async function loadShortcuts(
   return { items };
 }
 
-registerCoreWidgets(overviewRegistry, {
+/**
+ * The data loaders over the sample source, for a host that registers its own
+ * core widgets (the mounted `Planner`'s `CookbookApp`). The shortcuts loader
+ * stays here: it needs the planner's entry index for its record counts.
+ */
+export const plannerLoaders: Omit<CoreWidgetLoaders, 'shortcuts'> = {
   metric: loadMetric,
   records: loadRecords,
+  chart: loadChart,
+};
+
+registerCoreWidgets(overviewRegistry, {
+  ...plannerLoaders,
   shortcuts: loadShortcuts,
 });
 
@@ -212,6 +450,7 @@ export const CORE_WIDGET_TYPES = [
   'shortcuts',
   'metric',
   'records',
+  'chart',
   'note',
 ] as const;
 

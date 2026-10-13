@@ -52,11 +52,11 @@
   },
   "dependencies": {
     "@happyvertical/ai": "^0.103.1",
-    "@happyvertical/smrt-assets": "^0.55.12",
-    "@happyvertical/smrt-chat": "^0.55.12",
-    "@happyvertical/smrt-core": "^0.55.12",
-    "@happyvertical/smrt-svelte": "^0.55.12",
-    "@happyvertical/smrt-ui": "^0.55.12",
+    "@happyvertical/smrt-assets": "^0.55.17",
+    "@happyvertical/smrt-chat": "^0.55.17",
+    "@happyvertical/smrt-core": "^0.55.17",
+    "@happyvertical/smrt-svelte": "^0.55.17",
+    "@happyvertical/smrt-ui": "^0.55.17",
     "@happyvertical/speech": "^0.103.1",
     "@huggingface/transformers": "^4.3.0",
     "@mlc-ai/web-llm": "^0.2.85"

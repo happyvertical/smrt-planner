@@ -40,17 +40,23 @@ describe('Planner component', () => {
     expect(body).toContain('Back to documentation');
   });
 
-  it('has an assistant icon and dock only when the host gives it a model', () => {
+  it('has an assistant toggle and dock only when the host gives it a model', () => {
     const plain = render(Planner, { props: { basePath: '/planner' } }).body;
     expect(plain).not.toContain('data-dock-tool="assistant"');
     const { body } = render(Planner, {
       props: { basePath: '/planner', inference: { mode: 'byo' } },
     });
-    // No model is ready yet: the icon leads to the AI models page in the mount.
+    // The shell's own `dock:assistant` button; the dock it opens shows the
+    // setup until a model is ready (there is no planner-side toggle any more).
     expect(body).toContain('data-dock-tool="assistant"');
-    expect(body).toContain('data-assistant-setup');
-    expect(body).toContain('href="#/ai/"');
-    expect(body).toContain('Set up the assistant');
+    expect(body).toContain('aria-label="Assistant"');
+    expect(body).not.toContain('data-assistant-setup');
+  });
+
+  it('renders the shell account item for the visitor', () => {
+    const { body } = render(Planner, { props: { basePath: '/planner' } });
+    expect(body).not.toContain('User menu');
+    expect(body).toContain('>You<');
   });
 
   it('builds its links from basePath, not from SvelteKit', () => {

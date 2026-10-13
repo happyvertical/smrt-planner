@@ -9,7 +9,6 @@ import {
 import {
   ShellDockTool,
   ShellSectionIcon,
-  WorkspaceAccountMenu,
 } from '@happyvertical/smrt-svelte/workspace';
 import type { DataSurfaceRegistry } from '@happyvertical/smrt-ui/data-surface';
 import { type ComponentProps, onMount, tick } from 'svelte';
@@ -17,7 +16,6 @@ import smrtMark from '../assets/smrt-mark.svg';
 import { catalog, getModel } from '../catalog/index.ts';
 import AdvancedStyles from '../components/AdvancedStyles.svelte';
 import AiModelsPage from '../components/AiModelsPage.svelte';
-import AssistantToggle from '../components/AssistantToggle.svelte';
 import BrowserAssistant from '../components/BrowserAssistant.svelte';
 import ModelWorkspace from '../components/ModelWorkspace.svelte';
 import ThemeBridge from '../components/ThemeBridge.svelte';
@@ -32,7 +30,7 @@ import { recipeState } from '../recipes/state.svelte.ts';
 import { DEFAULT_PRESET } from '../theme/theme.ts';
 import PlannerControls from './PlannerControls.svelte';
 import PlannerLifecycle from './PlannerLifecycle.svelte';
-import { plannerShellProps } from './shell.ts';
+import { PLANNER_ASSISTANT_TOGGLE, plannerShellProps } from './shell.ts';
 import { currentPlannerTitle } from './title.svelte.ts';
 import type { PlannerProps } from './types.ts';
 
@@ -47,7 +45,7 @@ let {
   onready,
 }: PlannerProps = $props();
 
-/** The AI models page inside the mount; the dock and the header icon link here. */
+/** The AI models page inside the mount; the dock links here. */
 const AI_HREF = '#/ai/';
 /** The assistant exists only when the host gave the planner a model. */
 const assistant = $derived(inference !== undefined);
@@ -156,23 +154,10 @@ const slotItems = $derived<ShellSlotItem[]>([
     slot: 'header.end' as const,
     render: customize,
   },
-  ...(assistant
-    ? [
-        {
-          id: 'planner-assistant',
-          label: 'Assistant',
-          slot: 'header.end' as const,
-          render: assistantToggle,
-        },
-      ]
-    : []),
-  {
-    id: 'user-menu',
-    label: 'User menu',
-    slot: 'leftSidebar.footer' as const,
-    render: userMenu,
-  },
 ]);
+// The shell's own `dock:assistant` button (header end, the dock tab on phones)
+// opens the assistant dock; before a model is ready the dock shows the setup.
+const dockToggles = $derived(assistant ? [PLANNER_ASSISTANT_TOGGLE] : []);
 </script>
 
 {#snippet back()}
@@ -180,13 +165,6 @@ const slotItems = $derived<ShellSlotItem[]>([
     <span aria-hidden="true">←</span>
     <span>{backLink?.label}</span>
   </a>
-{/snippet}
-
-{#snippet assistantToggle()}
-  <!-- smrt#3853 (header slice) folds this into AppShell's `dock:assistant`
-       item, keeping `header.start` free for `backLink`; this snippet and the
-       `planner-assistant` slot item go then. -->
-  <AssistantToggle settingsHref={AI_HREF} />
 {/snippet}
 
 {#snippet assistantDock(registry: DataSurfaceRegistry)}
@@ -203,10 +181,6 @@ const slotItems = $derived<ShellSlotItem[]>([
   </a>
 {/snippet}
 
-{#snippet userMenu()}
-  <WorkspaceAccountMenu userName="User menu" disabled />
-{/snippet}
-
 <CookbookApp
   cookbook={cookbook as ComponentProps<typeof CookbookApp>['cookbook']}
   catalog={shellCatalog}
@@ -217,6 +191,7 @@ const slotItems = $derived<ShellSlotItem[]>([
   storageKey={SHELL_STORAGE_KEY}
   logoSrc={smrtMark}
   {slotItems}
+  {dockToggles}
   dock={assistant ? assistantDock : undefined}
   oncookbookchange={updateCookbook}
   {...plannerShellProps()}
@@ -240,8 +215,8 @@ const slotItems = $derived<ShellSlotItem[]>([
 
 <style>
   /* `view-transition-name`s: one per surface per screen (a duplicate aborts
-     the transition). AppShell will name brand/nav/dock itself (smrt#3850);
-     these are the planner's own. */
+     the transition). AppShell names its brand, nav and dock (`smrt-shell-*`,
+     reserved); these are the planner's own. */
   .content { width: min(100%, 72rem); margin-inline: auto; padding: var(--smrt-spacing-6); view-transition-name: planner-content; }
   .customize { display: inline-grid; place-items: center; inline-size: 2rem; block-size: 2rem; color: inherit; border-radius: var(--smrt-radius-medium, 0.5rem); view-transition-name: planner-customize; }
   .customize:hover { background: var(--smrt-color-surface-container-high); }

@@ -118,8 +118,8 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   (confirm when non-empty), `state.svelte.ts` remembers the last applied id in
   localStorage (not in the document). Applying regenerates the sample records from the cookbook's pack (the panel says so). Add a
   library cookbook by adding an entry; use only existing recipe ids.
-- `src/lib/sections/` and `src/routes/s/[section]/`: the sidebar is `navMode="sections"`, so it lists only
-  sections (icon + name); each opens its own page at `/s/<slug>/` (`path.ts`: `section:sales` ->
+- `src/lib/sections/` and `src/routes/s/[section]/`: the sidebar is `navMode="sections-with-items"`: sections
+  (icon + name) with their entries beneath when expanded, icons only in the rail; each section opens its own page at `/s/<slug>/` (`path.ts`: `section:sales` ->
   `section-sales`; `entries()` prerenders recipe sections, More and the cookbooks' custom sections, the
   static fallback serves the rest, e.g. visitor-made ones). `components/SectionPage.svelte` shows the
   icon, title (the layout's rename wins), description (`info.ts`: recipe `section.icon/description`,
@@ -257,11 +257,13 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `needsFirstRunSetup`); `icons.ts` the three icon paths. The sidebar icons
   (`AiStatusIcons`, a `slotItems` entry `ai-status` in `leftSidebar.footer`), the
   `/ai/` page (`AiModelsPage.svelte`, which a mounted `Planner` serves at `#/ai/`) and the
-  assistant dock all render `AiSetup.svelte` / read `aiState`. `AssistantToggle.svelte` is the
-  chat icon in `header.end` (the app's layout and `Planner` both mount it as a slot item): with
+  assistant dock all render `AiSetup.svelte` / read `aiState`. The assistant's header control is
+  the shell's own `dock:assistant` item (`dockToggles={[PLANNER_ASSISTANT_TOGGLE]}`, `planner/shell.ts`;
+  the app's layout and `Planner` both pass it): it toggles the `assistant` dock, which shows the
+  setup (`BrowserAssistant`'s not-ready panel, with a link to the AI models page) until
   `aiState.assistantReady` (think `ready`: a loaded browser model, the host's server, a connected
-  BYO endpoint) it toggles the `assistant` dock through `useShellDock()`, otherwise it is a link
-  to the AI models page. A mounted `Planner` configures `aiState` from its `inference` prop
+  BYO endpoint). The shell's `DockToggle` has no "navigate instead" hook, so there is no
+  planner-side toggle. A mounted `Planner` configures `aiState` from its `inference` prop
   (`PlannerLifecycle`: `configure(configFromProp(...))`, or `useChat` for `{ chat }`) and only
   then renders the dock and the icon; without the prop it has no assistant.
   First visit: `aiState.hydrate` decides once (nothing downloaded, no read-aloud,

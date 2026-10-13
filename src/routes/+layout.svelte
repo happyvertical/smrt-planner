@@ -4,7 +4,6 @@ import {
   ShellDockTool,
   type ShellNavGroup,
   type ShellNavItem,
-  WorkspaceAccountMenu,
 } from '@happyvertical/smrt-svelte/workspace';
 import { afterNavigate, goto, onNavigate, replaceState } from '$app/navigation';
 import { base } from '$app/paths';
@@ -13,7 +12,6 @@ import { aiState } from '$lib/ai/instance.ts';
 import smrtMark from '$lib/assets/smrt-mark.svg';
 import { exposedModels, getPackage } from '$lib/catalog/index.ts';
 import AiStatusIcons from '$lib/components/AiStatusIcons.svelte';
-import AssistantToggle from '$lib/components/AssistantToggle.svelte';
 import BrowserAssistant from '$lib/components/BrowserAssistant.svelte';
 import PlannerEditBridge from '$lib/components/PlannerEditBridge.svelte';
 import PlannerPalette from '$lib/components/PlannerPalette.svelte';
@@ -44,7 +42,10 @@ import { appHref, appQuery, setBasePath } from '$lib/planner/app.svelte.ts';
 import { plannerRuntime } from '$lib/planner/instance.ts';
 import { hasAppState, withTab } from '$lib/planner/query.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
-import { plannerShellProps } from '$lib/planner/shell.ts';
+import {
+  PLANNER_ASSISTANT_TOGGLE,
+  plannerShellProps,
+} from '$lib/planner/shell.ts';
 import { plannerTab } from '$lib/planner/tab.svelte.ts';
 import { currentPlannerTitle } from '$lib/planner/title.svelte.ts';
 import { FEATURE_SECTION, featureNavItems } from '$lib/recipes/features.ts';
@@ -84,12 +85,10 @@ plannerRuntime.openSection = (id) => {
 const nav: ShellNavItem[] = [];
 const shellProps = plannerShellProps();
 
-// The sidebar lists these sections (`navMode="sections"`); each opens its own
-// page (`/s/<section>/`) listing the entries. The mounted Planner goes through
-// `CookbookApp`, whose default is `sections-with-items` (entries beneath each
-// section when expanded, icons only in the collapsed rail); this standalone
-// shell adopts that value once the installed smrt-svelte carries it (#3847) --
-// a raw `AppShell` defaults to `items`, so the prop stays explicit.
+// The sidebar lists these sections with their entries beneath them when
+// expanded and icons only in the collapsed rail (`navMode="sections-with-items"`,
+// the value `CookbookApp` defaults to; a raw `AppShell` defaults to `items`, so
+// the prop stays explicit). Each section opens its own page (`/s/<section>/`).
 // Navigation sections belong to the app: a recipe only suggests one
 // (`recipe.section`, else its group, else itself), and the user overrides it in
 // the Layout tab. Recipes suggesting the same section share it, entries
@@ -371,17 +370,6 @@ function flushOnHide() {
   <PlannerPalette />
 {/snippet}
 
-{#snippet assistantToggle()}
-  <!-- smrt#3853 (header slice) folds this into AppShell's `dock:assistant`
-       item and keeps `header.start` for `backLink`; this snippet and the
-       `assistant-toggle` slot item go then. -->
-  <AssistantToggle settingsHref={appHref('/ai/')} />
-{/snippet}
-
-{#snippet userMenu()}
-  <WorkspaceAccountMenu userName="User menu" disabled />
-{/snippet}
-
 <div class="shell-host" inert={liveLocked}>
 <AppShell
   storageKey={SHELL_STORAGE_KEY}
@@ -402,27 +390,16 @@ function flushOnHide() {
       render: aiStatus,
     },
     {
-      id: 'user-menu',
-      label: 'User menu',
-      slot: 'leftSidebar.footer',
-      render: userMenu,
-    },
-    {
       id: 'palette',
       label: 'Search',
       slot: 'header.center',
       render: palette,
     },
-    {
-      id: 'assistant-toggle',
-      label: 'Assistant',
-      slot: 'header.end',
-      render: assistantToggle,
-    },
   ]}
+  dockToggles={[PLANNER_ASSISTANT_TOGGLE]}
   {...shellProps}
   layoutEditing={{ slot: 'header.start' }}
-  navMode="sections"
+  navMode="sections-with-items"
   sectionHref={(id) => appHref(sectionPath(id))}
 >
   {#snippet sectionActions({ sectionId: navSectionId, label })}

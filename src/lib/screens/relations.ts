@@ -3,8 +3,12 @@
  * (smrt#3718 record view): `children` are the models whose rows point at the
  * record (a customer's orders, quotes and invoices; an order's line items),
  * `reference` the records the record itself points at (an order's customer).
- * Only models in the visitor's app count: an added recipe's models and the
- * added features. Generic for every model; nothing here names one.
+ * Children count only from models in the visitor's app (an added recipe's
+ * models and the added features); references list every target the catalog
+ * has, so a field pointing outside the app (a customer's Profile) still
+ * shows its record's name. Whether a reference links is the view's call
+ * (`RecordView` links only targets in the app). Generic for every model;
+ * nothing here names one.
  *
  * The planner derives these from the catalog rather than through the
  * framework's `deriveScreenRelations`, which reads a definition's
@@ -43,9 +47,9 @@ export function referenceLabel(field: string): string {
 
 /**
  * The record screen's relations for `modelId`, children first (catalog
- * order), then references, confined to `inApp`. A child pointing at the
- * model through several fields gets one relation per field, told apart by
- * the field's name.
+ * order, confined to `inApp`), then references (every catalog target). A
+ * child pointing at the model through several fields gets one relation per
+ * field, told apart by the field's name.
  */
 export function screenRelations(
   catalog: Catalog,
@@ -70,7 +74,6 @@ export function screenRelations(
     kind: 'children',
   }));
   for (const link of forwardLinks(catalog, modelId)) {
-    if (!link.model.exposed || !inApp.has(link.model.id)) continue;
     relations.push({
       model: link.model.id,
       field: link.fk,

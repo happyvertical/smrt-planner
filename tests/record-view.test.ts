@@ -198,7 +198,16 @@ describe('screen relations', () => {
     for (const relation of children)
       expect(inApp.has(relation.model)).toBe(true);
     // Nothing in the app points at a customer except through sales.
-    expect(screenRelations(catalog, CUSTOMER, new Set())).toEqual([]);
+    const none = screenRelations(catalog, CUSTOMER, new Set());
+    expect(none.filter((r) => r.kind === 'children')).toEqual([]);
+    // References name every target, in the app or not: a customer's Profile
+    // (smrt-profiles) still gets its label on an app without profiles.
+    expect(none).toContainEqual({
+      model: '@happyvertical/smrt-profiles:Profile',
+      field: 'profileId',
+      label: 'Profile',
+      kind: 'reference',
+    });
   });
 
   it('label children by their plural name and references by their field', () => {

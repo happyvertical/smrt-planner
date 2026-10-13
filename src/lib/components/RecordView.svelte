@@ -168,9 +168,15 @@ function targetOf(field: ScreenField): ScreenRelation | undefined {
   );
 }
 
+/**
+ * A referenced record's view page, when its model is in the app; a target
+ * outside it (a customer's Profile in an app without profiles) shows its
+ * label without a link.
+ */
 function hrefFor(field: ScreenField, id: string): string | undefined {
   const target = targetOf(field);
-  const found = target ? getModelByQualifiedName(target.model) : undefined;
+  if (!target || !inApp.has(target.model)) return undefined;
+  const found = getModelByQualifiedName(target.model);
   return found?.model.exposed
     ? href(recordPath(found.pkg.id, found.model.name, id))
     : undefined;

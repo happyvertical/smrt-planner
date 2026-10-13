@@ -299,8 +299,9 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `/<id>/edit/` is the same page in edit mode (the form beside the header on desktop, a sheet on
   phones). Nothing is hand-written per model: `src/lib/screens/` turns a catalog model into the
   framework's `ScreenCollectionDefinition` / `ScreenPolicy` (`definition.ts`) and its relations
-  (`relations.ts`: `reverseLinks` / `forwardLinks` from `recipes/plumbing.ts`, confined to the
-  models in the app; derived here rather than through `deriveScreenRelations` because the
+  (`relations.ts`: `reverseLinks` / `forwardLinks` from `recipes/plumbing.ts`; children confined
+  to the models in the app, references to every catalog target so `data/labels.ts` names them,
+  e.g. a customer's Profile, while `RecordView`'s `hrefFor` links only targets in the app); derived here rather than through `deriveScreenRelations` because the
   catalog knows STI parents). The overview is `detail:<pkg>.<Model>` (`overviews/definitions.ts`
   `detailOverview`: the framework's `recordOverview` over the whole catalog's relations, so widget
   ids are stable whichever recipes are on; `detailOverviewFor` narrows the defaults to the app),

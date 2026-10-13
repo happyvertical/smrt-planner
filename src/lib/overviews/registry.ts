@@ -243,7 +243,8 @@ async function loadRecords(
     rows: await Promise.all(
       shown.map(async (row) => ({
         id: String(row.id),
-        title: await recordLabel(source, model, row),
+        // On a record's page the parent is the page: leave its name out.
+        title: await recordLabel(source, model, row, 0, parent?.field),
         href: href(recordPath(found.packageId, model.name, String(row.id))),
       })),
     ),

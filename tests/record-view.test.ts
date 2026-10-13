@@ -10,6 +10,7 @@ import {
   relatedIndex,
   sampleRowCount,
 } from '../src/lib/data/fakes.ts';
+import { recordLabel } from '../src/lib/data/labels.ts';
 import { createMemoryDataSource } from '../src/lib/data/source.ts';
 import {
   detailOverview,
@@ -387,7 +388,7 @@ describe('detail overviews', () => {
       context(must(customer).id),
       records,
     )) as {
-      rows: { id: string; href?: string }[];
+      rows: { id: string; title: string; href?: string }[];
       href: string;
     };
     expect(data.rows.length).toBeGreaterThan(0);
@@ -400,8 +401,12 @@ describe('detail overviews', () => {
       'customerId',
       must(customer).id,
     );
+    // The page is the customer's: its rows leave the customer's name out.
+    const name = await recordLabel(ctx.source, model(CUSTOMER), must(customer));
     for (const row of data.rows) {
       expect(orders.some((o) => o.id === row.id)).toBe(true);
+      expect(row.title).not.toContain(name);
+      expect(row.title.length).toBeGreaterThan(0);
     }
     const metric = must(
       definition.defaults.find(

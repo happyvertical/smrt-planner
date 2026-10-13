@@ -389,28 +389,46 @@ describe('detail overviews', () => {
     const framework = 'detail:happyvertical.smrt-commerce.Customer';
     expect(detailOverviewModel(framework)?.model.id).toBe(CUSTOMER);
     expect(isOverviewId(framework)).toBe(true);
-    const removed = { version: 1, removed: ['records-Order-customerId'] };
+    const removed = { version: 1, removed: ['related'] };
     expect(checkStoredOverride(framework, removed).override).toEqual(removed);
     expect(isOverviewId('detail:commerce')).toBe(false);
     expect(detailOverview('detail:commerce.Nope')).toBeUndefined();
     expect(overviewDefinition(id)?.id).toBe(id);
   });
 
-  it('default to one newest-records panel per relation, confined to the app', () => {
+  it('default to a summary strip and related tabs, confined to the app', () => {
     const full = must(detailOverview(id));
     const orders = full.defaults.filter((w) => w.options.model === ORDER);
-    expect(orders.map((w) => w.type)).toEqual(['records']);
-    expect(orders.find((w) => w.type === 'records')?.options).toMatchObject({
+    // A count and the sum of the orders' total, both under the parent filter.
+    expect(orders.map((w) => [w.type, w.options.measure])).toEqual([
+      ['metric', 'count'],
+      ['metric', 'sum'],
+    ]);
+    expect(orders[1]?.options).toMatchObject({
+      field: 'totalAmount',
+      parentField: 'customerId',
       filter: 'parent',
-      field: 'customerId',
     });
-    const narrowed = must(detailOverviewFor(id, appModels([sales], [])));
+    expect(full.defaults.at(-1)?.type).toBe('related');
+    // A customer has no line items.
+    expect(full.defaults.some((w) => w.type === 'line-items')).toBe(false);
+    const inApp = appModels([sales], []);
+    const narrowed = must(detailOverviewFor(id, inApp));
     expect(narrowed.defaults.length).toBeLessThan(full.defaults.length);
-    for (const widget of narrowed.defaults) {
-      expect(appModels([sales], []).has(String(widget.options.model))).toBe(
-        true,
-      );
+    const tiles = narrowed.defaults.filter((w) => w.type === 'metric');
+    expect(tiles.length).toBeGreaterThan(0);
+    expect(tiles.length).toBeLessThanOrEqual(4);
+    for (const widget of tiles) {
+      expect(inApp.has(String(widget.options.model))).toBe(true);
     }
+    expect(narrowed.defaults.map((w) => w.type)).toContain('related');
+    // Nothing in the app: no tiles, no tabs.
+    expect(must(detailOverviewFor(id, new Set())).defaults).toEqual([]);
+    // An order has its line items.
+    const order = must(
+      detailOverviewFor(detailOverviewId('commerce', 'Order'), inApp),
+    );
+    expect(order.defaults.map((w) => w.type)).toContain('line-items');
     // The same ids whichever recipes are on.
     const ids = new Set(full.defaults.map((w) => w.id));
     for (const widget of narrowed.defaults)
@@ -421,11 +439,19 @@ describe('detail overviews', () => {
     const definition = must(detailOverview(id));
     const ctx = context('');
     const [customer] = await ctx.source.list(model(CUSTOMER));
-    const records = must(
-      definition.defaults.find(
-        (w) => w.type === 'records' && w.options.model === ORDER,
-      ),
-    );
+    // A panel a visitor adds (or a host's `related: 'panels'` default).
+    const records = {
+      id: 'records',
+      type: 'records',
+      span: 2,
+      options: {
+        title: 'Orders',
+        model: ORDER,
+        field: 'customerId',
+        filter: 'parent',
+        limit: 5,
+      },
+    };
     const data = (await loadSectionWidget(
       definition,
       context(must(customer).id),

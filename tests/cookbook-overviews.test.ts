@@ -393,12 +393,22 @@ describe('section page overview', () => {
     ).rejects.toThrow();
   });
 
-  it('the registry offers exactly the core widgets the planner can load', () => {
+  it('the registry offers exactly the widgets the planner can load', () => {
+    // The core widgets, plus the record page's (`related`, `line-items`),
+    // which only a record overview allows.
     expect(
       overviewRegistry
         .list()
         .map((w) => w.type)
         .sort(),
-    ).toEqual(['chart', 'metric', 'note', 'records', 'shortcuts']);
+    ).toEqual([
+      'chart',
+      'line-items',
+      'metric',
+      'note',
+      'records',
+      'related',
+      'shortcuts',
+    ]);
   });
 });

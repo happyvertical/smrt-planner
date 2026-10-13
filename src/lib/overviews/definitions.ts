@@ -14,6 +14,7 @@ import {
   OVERVIEW_PAGE_ID_PATTERN,
   type OverviewDefinition,
   type OverviewWidget,
+  RECORD_OVERVIEW_MAX_METRICS,
   recordOverview,
   recordOverviewId,
 } from '@happyvertical/smrt-svelte/overview';
@@ -163,23 +164,27 @@ const detailCache = new Map<string, OverviewDefinition>();
 
 /**
  * The overview a record's view page renders (smrt#3718): the framework's
- * `recordOverview` over the model's definition and its relations, one
- * `records` panel per model whose rows point at it (its widget ids come from
- * the relation, so they are the same in the narrowed page). Static per model kind
- * over the whole catalog, so a stored override always resolves against the
- * same widget ids whichever recipes are on; {@link detailOverviewFor} is the
- * same definition narrowed to the models in the visitor's app.
+ * `recordOverview` over the model's definition and its relations: a summary
+ * strip of `metric` tiles (a count and a money sum per related model), the
+ * `line-items` table and totals when the model has line items, then one
+ * tabbed `related` widget. Widget ids come from the relation, so they are the
+ * same in the narrowed page. Static per model kind over the whole catalog
+ * (every relation's tiles, not only the first four), so a stored override
+ * always resolves against the same widget ids whichever recipes are on;
+ * {@link detailOverviewFor} is the same definition narrowed to the models in
+ * the visitor's app.
  */
 export function detailOverview(id: string): OverviewDefinition | undefined {
   let definition = detailCache.get(id);
   if (definition) return definition;
   const found = detailOverviewModel(id);
   if (!found) return undefined;
-  const base = recordOverview(
-    screenDefinition(found.model),
-    screenRelations(catalog, found.model.id, EXPOSED),
-    { id },
-  );
+  const relations = screenRelations(catalog, found.model.id, EXPOSED);
+  const base = recordOverview(screenDefinition(found.model), relations, {
+    id,
+    // Every relation's tiles: the narrowed page keeps the first four in the app.
+    maxMetrics: 2 * relations.length,
+  });
   // The whole catalog relates more models to a customer than one app ever
   // shows; the defaults must fit, and the visitor still gets room to add.
   definition = defineOverview({
@@ -194,21 +199,33 @@ export function detailOverview(id: string): OverviewDefinition | undefined {
 }
 
 /**
- * {@link detailOverview} with only the default widgets over models in the
- * app (`inApp`): the ids and the allowed set stay those of the static one.
+ * {@link detailOverview} with only the default widgets the app can fill
+ * (`inApp`): tiles over its models (the first four), the line items when
+ * the app has them, the related tabs when any related model is in it. The
+ * ids and the allowed set stay those of the static one.
  */
 export function detailOverviewFor(
   id: string,
   inApp: ReadonlySet<string>,
 ): OverviewDefinition | undefined {
   const full = detailOverview(id);
-  if (!full) return undefined;
-  return defineOverview({
-    ...full,
-    defaults: full.defaults.filter((widget) =>
-      inApp.has(String(widget.options.model)),
-    ),
+  const found = detailOverviewModel(id);
+  if (!full || !found) return undefined;
+  const relations = screenRelations(catalog, found.model.id, inApp);
+  let tiles = 0;
+  const defaults = full.defaults.filter((widget) => {
+    if (widget.type === 'line-items') {
+      return relations.some((r) => r.kind === 'items');
+    }
+    if (widget.type === 'related') {
+      return relations.some((r) => r.kind === 'children');
+    }
+    if (!inApp.has(String(widget.options.model))) return false;
+    if (widget.type !== 'metric') return true;
+    tiles += 1;
+    return tiles <= RECORD_OVERVIEW_MAX_METRICS;
   });
+  return defineOverview({ ...full, defaults });
 }
 
 /** The definition behind any overview id: a section's or a record view's. */

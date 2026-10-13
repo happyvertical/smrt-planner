@@ -98,7 +98,9 @@ export function screenRelations(
       columns:
         kind === 'items'
           ? lineItemColumns(definition, roles, { exclude })
-          : relatedColumns(definition, roles, { exclude }),
+          : // Identifier, status, date, party and the amount: the framework's
+            // default four would drop the amount for a second party.
+            relatedColumns(definition, roles, { exclude, max: 5 }),
       // Lines keep the order they were entered in.
       ...(kind === 'items' && 'sortOrder' in definition.fields
         ? { sort: 'sortOrder' }

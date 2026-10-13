@@ -3,15 +3,31 @@
  * identifier, the records loader's table cells and totals, and the sample
  * documents' line items and totals.
  */
+import {
+  type LineItemsWidgetData,
+  lineItemTotals,
+  type RelatedWidgetData,
+} from '@happyvertical/smrt-svelte/overview';
+import { relationKey } from '@happyvertical/smrt-svelte/screens';
 import { describe, expect, it } from 'vitest';
 import { catalog } from '../src/lib/catalog/index.ts';
+import { MISMATCH_AMOUNT, MISMATCH_ROW } from '../src/lib/data/children.ts';
 import {
   identifierField,
   recordHeading,
   recordName,
 } from '../src/lib/data/display.ts';
 import { createMemoryDataSource } from '../src/lib/data/source.ts';
+import {
+  detailOverviewFor,
+  detailOverviewId,
+} from '../src/lib/overviews/definitions.ts';
+import { loadSectionWidget } from '../src/lib/overviews/page.ts';
 import { plannerLoaders } from '../src/lib/overviews/registry.ts';
+import { recipes, recipesById } from '../src/lib/recipes/index.ts';
+import { childLinks } from '../src/lib/recipes/plumbing.ts';
+import { appModels, screenRelations } from '../src/lib/screens/relations.ts';
+import { documentTotals } from '../src/lib/screens/totals.ts';
 
 const C = '@happyvertical/smrt-commerce:';
 const CUSTOMER = `${C}Customer`;
@@ -98,6 +114,7 @@ describe('the records loader as a table', () => {
       ['status', 'status'],
       ['issueDate', 'date'],
       ['vendorId', 'party'],
+      ['totalAmount', 'money'],
     ]);
     expect(data.total).toBe(all.length);
     const row = must(data.rows[0]);
@@ -150,5 +167,168 @@ describe('the records loader as a table', () => {
     await expect(
       records({ ...options, columns: 'nope' }, ctx as never),
     ).rejects.toThrow(/no field nope/);
+  });
+});
+
+describe('the record page widgets', () => {
+  const href = (path: string) => `#${path}`;
+  const inApp = appModels(
+    [must(recipesById.get('commerce.sales'), 'commerce.sales')],
+    [],
+  );
+
+  async function orderPage(index: number) {
+    // Sample parents come with their line items, as in the app.
+    const source = createMemoryDataSource({
+      children: {
+        models: catalog.packages.flatMap((p) => p.models),
+        links: (id) => childLinks(catalog, recipes, id),
+      },
+    });
+    const orders = await source.list(model(ORDER));
+    const order = must(orders[index], `order ${index}`);
+    const relations = screenRelations(catalog, ORDER, inApp);
+    const items = must(relations.find((r) => r.kind === 'items'));
+    const lines = await source.listWhere(
+      model(items.model),
+      items.field,
+      order.id,
+    );
+    const definition = must(
+      detailOverviewFor(detailOverviewId('commerce', 'Order'), inApp),
+    );
+    const ctx = {
+      source,
+      sections: [],
+      entries: new Map(),
+      href,
+      record: { model: ORDER, id: order.id },
+      relations,
+      totals: () => documentTotals(model(ORDER), order, lines),
+      currency: () => 'USD',
+    };
+    const widget = (type: string) =>
+      must(
+        definition.defaults.find((w) => w.type === type),
+        type,
+      );
+    return { source, order, lines, definition, ctx, widget };
+  }
+
+  it('lists the lines with the record totals, which agree with them', async () => {
+    const page = await orderPage(0);
+    const data = (await loadSectionWidget(
+      page.definition,
+      page.ctx,
+      page.widget('line-items'),
+    )) as LineItemsWidgetData;
+    expect(page.lines.length).toBeGreaterThan(0);
+    expect(data.rows).toHaveLength(page.lines.length);
+    expect(data.columns.map((c) => c.key)).toEqual([
+      'description',
+      'quantity',
+      'unitPrice',
+      'amount',
+    ]);
+    const amounts = page.lines.reduce((t, l) => t + Number(l.amount), 0);
+    expect(data.summaries?.amount).toBe(amounts);
+    expect(data.totals?.subtotal).toBe(page.order.subtotal);
+    expect(data.totals?.tax).toBe(page.order.taxAmount);
+    expect(data.totals?.total).toBe(page.order.totalAmount);
+    expect(lineItemTotals(data.totals, amounts).mismatch).toBeNull();
+  });
+
+  it('flags the seeded order whose subtotal disagrees with its lines', async () => {
+    const page = await orderPage(MISMATCH_ROW);
+    const data = (await loadSectionWidget(
+      page.definition,
+      page.ctx,
+      page.widget('line-items'),
+    )) as LineItemsWidgetData;
+    const result = lineItemTotals(data.totals, data.summaries?.amount ?? null);
+    expect(result.mismatch).toEqual({
+      field: 'subtotal',
+      recorded: Number(page.order.subtotal),
+      lines: Number(page.order.subtotal) - MISMATCH_AMOUNT,
+    });
+  });
+
+  it('shows a discount from the lines when the document has no field for it', () => {
+    const totals = documentTotals(
+      model(ORDER),
+      { id: 'o', subtotal: 2000, taxAmount: 90, totalAmount: 1890 },
+      [{ quantity: 2, unitPrice: 1000, discount: 200, taxRate: 0.05 }],
+    );
+    expect(totals).toEqual({
+      subtotal: 2000,
+      discount: 200,
+      tax: 90,
+      total: 1890,
+    });
+    expect(lineItemTotals(totals, 2000).mismatch).toBeNull();
+  });
+
+  it('tabs the related records with columns and totals over every row', async () => {
+    const source = createMemoryDataSource();
+    const [customer] = await source.list(model(CUSTOMER));
+    const relations = screenRelations(catalog, CUSTOMER, inApp);
+    const definition = must(
+      detailOverviewFor(detailOverviewId('commerce', 'Customer'), inApp),
+    );
+    const related = must(definition.defaults.find((w) => w.type === 'related'));
+    const data = (await loadSectionWidget(
+      definition,
+      {
+        source,
+        sections: [],
+        entries: new Map(),
+        href,
+        record: { model: CUSTOMER, id: must(customer).id },
+        relations,
+      },
+      related,
+    )) as RelatedWidgetData;
+    const tab = must(data.tabs.find((t) => t.key === 'Order-customerId'));
+    const orders = await source.listWhere(
+      model(ORDER),
+      'customerId',
+      must(customer).id,
+    );
+    expect(tab.total).toBe(orders.length);
+    expect(tab.columns.map((c) => c.key)).toEqual([
+      'reference',
+      'status',
+      'issueDate',
+      'vendorId',
+      'totalAmount',
+    ]);
+    expect(tab.summaries?.totalAmount).toBe(
+      orders.reduce((t, o) => t + Number(o.totalAmount), 0),
+    );
+    // Every tab is one of the app's related models; no line items here.
+    for (const t of data.tabs) {
+      expect(relations.some((r) => relationKey(r) === t.key)).toBe(true);
+    }
+    // The money tile of the strip sums every order's total.
+    const sum = must(
+      definition.defaults.find(
+        (w) => w.options.model === ORDER && w.options.measure === 'sum',
+      ),
+    );
+    const tile = (await loadSectionWidget(
+      definition,
+      {
+        source,
+        sections: [],
+        entries: new Map(),
+        href,
+        record: { model: CUSTOMER, id: must(customer).id },
+      },
+      sum,
+    )) as { value: number; format: string };
+    expect(tile).toMatchObject({
+      value: tab.summaries?.totalAmount,
+      format: 'money',
+    });
   });
 });

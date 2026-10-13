@@ -13,7 +13,12 @@
 import {
   type ChartWidgetData,
   type CoreWidgetLoaders,
+  createLineItemsLoader,
+  createLineItemsWidget,
+  createRelatedLoader,
+  createRelatedWidget,
   createWidgetRegistry,
+  type LineItemsTotals,
   lineItemColumns,
   type MetricWidgetData,
   parseColumnsOption,
@@ -34,6 +39,7 @@ import {
   deriveFieldRoles,
   type FieldRole,
   type ScreenFieldRoles,
+  type ScreenRelation,
 } from '@happyvertical/smrt-svelte/screens';
 import { getModelByQualifiedName } from '../catalog/index.ts';
 import type { CatalogModel } from '../catalog/types.ts';
@@ -63,6 +69,17 @@ export interface PlannerWidgetContext {
    * page.
    */
   record?: { model: string; id: string };
+  /**
+   * A record page's relations in the visitor's app (`screenRelations`): the
+   * tabs of its `related` widget and the lines of its `line-items` widget.
+   */
+  relations?: readonly ScreenRelation[];
+  /** A related tab's "View all" link. */
+  viewAllHref?: (relation: ScreenRelation) => string | undefined;
+  /** The record's own subtotal / discount / tax / total (`documentTotals`). */
+  totals?: () => LineItemsTotals | undefined;
+  /** The record's currency code. */
+  currency?: () => string | undefined;
 }
 
 /** The registry every planner overview uses. */
@@ -110,7 +127,8 @@ function modelOf(qualified: unknown): {
 const REF_TYPES = new Set(['foreignKey', 'crossPackageRef']);
 
 /**
- * The one named filter the sample data knows: `parent`, with `field` the
+ * The one named filter the sample data knows: `parent`, with `field` (a
+ * metric's `parentField`, when its `field` is the one measured) the
  * reference field on the widget's model that points at the record the
  * overview is rendered on (`ctx.record`, a detail overview). Any other
  * name is an error tile, as is `parent` outside a record view.
@@ -125,7 +143,12 @@ function parentFilter(
   if (filter !== 'parent') throw new Error(`unknown filter ${filter}`);
   const { record } = ctx as WidgetLoadContext & Partial<PlannerWidgetContext>;
   if (!record?.id) throw new Error('the parent filter needs a record');
-  const field = typeof options.field === 'string' ? options.field : '';
+  // A metric measuring `field` names the reference as `parentField`.
+  const named =
+    typeof options.parentField === 'string' && options.parentField
+      ? options.parentField
+      : options.field;
+  const field = typeof named === 'string' ? named : '';
   const target = model.fields.find((f) => f.name === field);
   if (!target || !REF_TYPES.has(target.type)) {
     throw new Error(`${model.name} has no reference field ${field}`);
@@ -238,7 +261,8 @@ function cellRole(roles: readonly FieldRole[] = []): FieldRole | undefined {
  * The columns a `records` table shows: the `columns` option's field names
  * when given (unknown names are an error tile), else the framework's
  * `relatedColumns` by role (identifier, status, lead date, a party, the
- * amount), leaving out the field pointing at the page's record.
+ * amount: five, as `screenRelations` asks), leaving out the field pointing
+ * at the page's record.
  */
 function recordColumns(
   model: CatalogModel,
@@ -249,7 +273,9 @@ function recordColumns(
   const definition = screenDefinition(model);
   const exclude = parentField ? [parentField] : [];
   const keys = parseColumnsOption(option);
-  if (keys.length === 0) return relatedColumns(definition, roles, { exclude });
+  if (keys.length === 0) {
+    return relatedColumns(definition, roles, { exclude, max: 5 });
+  }
   // The framework's own column for a key where it has one (a line's unit
   // price is not summed), else one by the field's roles.
   const known = [
@@ -649,6 +675,32 @@ registerCoreWidgets(overviewRegistry, {
   ...plannerLoaders,
   shortcuts: loadShortcuts,
 });
+
+/**
+ * The record page's own widgets (smrt#3718), registered once on the shared
+ * registry so a cookbook's stored record overview validates like a
+ * section's. The framework builds them from one record view's relations;
+ * the planner hands those over in the load context (`relations`, `totals`,
+ * `currency`, `viewAllHref`), and every tab or line list is one call of
+ * {@link loadRecords} with the parent filter.
+ */
+function recordWidgetOptions(ctx: WidgetLoadContext) {
+  const { relations, viewAllHref, totals, currency } =
+    ctx as WidgetLoadContext & Partial<PlannerWidgetContext>;
+  if (!relations) throw new Error('the record page context is missing');
+  return { relations, records: loadRecords, viewAllHref, totals, currency };
+}
+
+overviewRegistry.register(
+  createRelatedWidget((options, ctx) =>
+    createRelatedLoader(recordWidgetOptions(ctx))(options, ctx),
+  ),
+);
+overviewRegistry.register(
+  createLineItemsWidget((options, ctx) =>
+    createLineItemsLoader(recordWidgetOptions(ctx))(options, ctx),
+  ),
+);
 
 /** The core widget types a section overview offers. */
 export const CORE_WIDGET_TYPES = [

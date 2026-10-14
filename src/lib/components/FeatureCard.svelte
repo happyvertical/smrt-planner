@@ -195,5 +195,14 @@ const id = $derived(`feature-${card.id}`);
   .summary {
     font-size: var(--smrt-typography-body-medium-size);
   }
+
+  /* Forced colours: a switched-on feature's border colour is replaced, so it
+     gets a Highlight frame. */
+  @media (forced-colors: active) {
+    .card.selected {
+      border-color: Highlight;
+      outline: 0.125rem solid Highlight;
+    }
+  }
 }
 </style>

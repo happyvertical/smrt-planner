@@ -246,5 +246,13 @@ const cssPending = $derived.by(() => {
   .advanced strong, .advanced small { display: block; }
   .advanced small { margin-top: .15rem; color: var(--smrt-color-on-surface-variant); }
   .arrow { margin-inline-start: auto; font-size: 1.3rem; }
+  /* Forced colours: backgrounds and shadows are replaced by system colours, so
+     the selected card shows a Highlight frame, and the colour swatches (the
+     preset previews and the wheel) keep their real colours: they show
+     colours by design. */
+  @media (forced-colors: active) {
+    .choice.selected { border-color: Highlight; outline: 0.125rem solid Highlight; outline-offset: 0.125rem; }
+    .preview, .wheel { forced-color-adjust: none; }
+  }
 }
 </style>

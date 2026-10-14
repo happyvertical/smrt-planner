@@ -319,5 +319,13 @@ function commit() {
     align-items: center;
     gap: var(--smrt-spacing-3);
   }
+
+  /* Forced colours: the selected cookbook keeps a Highlight frame. */
+  @media (forced-colors: active) {
+    .card.selected {
+      border-color: Highlight;
+      outline-color: Highlight;
+    }
+  }
 }
 </style>

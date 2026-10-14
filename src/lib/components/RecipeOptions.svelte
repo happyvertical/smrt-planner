@@ -159,5 +159,14 @@ const requiredHref = (id: string) => {
     cursor: not-allowed;
     opacity: 0.6;
   }
+
+  /* Forced colours: a disabled button reads as GrayText, not by opacity. */
+  @media (forced-colors: active) {
+    button:disabled {
+      border-color: GrayText;
+      color: GrayText;
+      opacity: 1;
+    }
+  }
 }
 </style>

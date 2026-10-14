@@ -241,5 +241,14 @@ function toggle(entry: FeatureEntry, on: boolean) {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  /* Forced colours: the selected tint is dropped, so a switched-on row gets a
+     Highlight frame. */
+  @media (forced-colors: active) {
+    .rows li.selected {
+      outline: 0.125rem solid Highlight;
+      outline-offset: -0.125rem;
+    }
+  }
 }
 </style>

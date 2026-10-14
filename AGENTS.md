@@ -354,6 +354,10 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
 - Fully static: `adapter-static`, `prerender = true`, `trailingSlash = 'always'`.
   Never read `url.searchParams` during prerender; the selection is read in the
   browser after navigation.
+- Forced colours (Windows High Contrast): where a custom style shows selected, pressed, current or
+  disabled state only by colour or background, add an `@media (forced-colors: active)` rule using
+  `Highlight` / `HighlightText` (selected, current) or `GrayText` (disabled); colour swatches use
+  `forced-color-adjust: none`. Use rem lengths there: the style-literal allowlist counts px.
 - Money fields are integer minor units everywhere (fakes, form state, storage);
   they are formatted as currency only for display.
 - Fakes are deterministic: seeded, fixed clock, no `Math.random()`/`Date.now()`.

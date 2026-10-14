@@ -97,5 +97,14 @@ const helpHref = $derived(
     width: 1.75rem;
     height: 1.75rem;
   }
+
+  /* Forced colours: the current page's background is replaced, so it is drawn
+     as a selected item. */
+  @media (forced-colors: active) {
+    a[aria-current='page'] {
+      background: Highlight;
+      color: HighlightText;
+    }
+  }
 }
 </style>

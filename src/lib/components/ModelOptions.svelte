@@ -238,5 +238,13 @@ function setOrder(name: string, raw: string) {
     background: transparent;
     color: var(--smrt-color-on-surface);
   }
+
+  /* Forced colours: a disabled default reads as GrayText, not by opacity. */
+  @media (forced-colors: active) {
+    fieldset.default:disabled {
+      color: GrayText;
+      opacity: 1;
+    }
+  }
 }
 </style>

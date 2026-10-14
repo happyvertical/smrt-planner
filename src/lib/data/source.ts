@@ -374,7 +374,7 @@ export function createMemoryDataSource(
     const made: ModelRecord[] =
       empty.has(model.id) || owned.length || allocation
         ? []
-        : fakeRecords(model, sampleRowCount(model.id, rows), seed);
+        : fakeRecords(model, sampleRowCount(model.id, rows), seed, rows);
     // Registered before the other side is built so each finds this table.
     tables.set(model.id, made);
     for (const link of linksOf(model.id)) table(link.model);
@@ -403,10 +403,11 @@ export function createMemoryDataSource(
         // through the form would, before its parent's totals are summed.
         const carried = options.defaults?.(model) ?? {};
         table(parent).forEach((row, index) => {
-          const items = fakeChildrenOf(model, fk, row, seed).map((item) =>
-            isLineModel(model)
-              ? settleLine({ ...item, ...carried })
-              : { ...item, ...carried },
+          const items = fakeChildrenOf(model, fk, row, seed, rows).map(
+            (item) =>
+              isLineModel(model)
+                ? settleLine({ ...item, ...carried })
+                : { ...item, ...carried },
           );
           made.push(...items);
           syncTotals(row, parent, items);

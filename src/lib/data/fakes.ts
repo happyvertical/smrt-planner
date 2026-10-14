@@ -278,8 +278,7 @@ export function sampleRowCount(modelId: string, fallback: number): number {
     getSamplePack().rowCounts?.[modelId] ??
     SAMPLE_ROW_COUNTS[modelId] ??
     (isCustomerLinked(modelId)
-      ? customerSlots(sampleRowCount(CUSTOMER_MODEL, DEFAULT_SAMPLE_ROWS))
-          .length
+      ? customerSlots(sampleRowCount(CUSTOMER_MODEL, fallback)).length
       : fallback)
   );
 }
@@ -293,8 +292,9 @@ export function sampleRowCount(modelId: string, fallback: number): number {
  */
 export function relatedIndex(
   field: CatalogField,
-  context: { modelId: string; index: number },
+  context: FakeContext,
 ): number {
+  const rows = context.rows ?? DEFAULT_SAMPLE_ROWS;
   const instructors = getSamplePack().instructors;
   if (field.name === 'organizerId' && instructors?.length) {
     // Organizers lead classes and jobs; they are staff, never customers.
@@ -311,24 +311,30 @@ export function relatedIndex(
   const target = field.related ?? '';
   if (target === CUSTOMER_MODEL) {
     // Several rows per customer, 3 to 6 each (see `customerSlots`).
-    const slots = customerSlots(
-      sampleRowCount(CUSTOMER_MODEL, DEFAULT_SAMPLE_ROWS),
-    );
+    const slots = customerSlots(sampleRowCount(CUSTOMER_MODEL, rows));
     return slots[context.index % slots.length] ?? 0;
   }
   return (
-    context.index %
-    (target.includes(':')
-      ? sampleRowCount(target, DEFAULT_SAMPLE_ROWS)
-      : DEFAULT_SAMPLE_ROWS)
+    context.index % (target.includes(':') ? sampleRowCount(target, rows) : rows)
   );
+}
+
+/**
+ * Where a fake value is made: the model, the row's index and the data
+ * source's rows per model (default {@link DEFAULT_SAMPLE_ROWS}), so a
+ * reference points at a row the source actually made.
+ */
+export interface FakeContext {
+  modelId: string;
+  index: number;
+  rows?: number;
 }
 
 /** One fake value for a field. Money is an integer number of minor units. */
 export function fakeValue(
   field: CatalogField,
   random: () => number,
-  context: { modelId: string; index: number },
+  context: FakeContext,
 ): unknown {
   // A declared enumeration: only its values are valid.
   if (field.enum && field.enum.length > 0) {
@@ -594,6 +600,7 @@ export function fakeRecord(
   model: CatalogModel,
   index: number,
   seed: number,
+  rows?: number,
 ): ModelRecord {
   const random = createRandom(hashString(`${seed}:${model.id}:${index}`));
   const record: ModelRecord = { id: fakeId(`${model.id}:${index}`) };
@@ -602,6 +609,7 @@ export function fakeRecord(
     record[field.name] = fakeValue(field, random, {
       modelId: model.id,
       index,
+      rows,
     });
   }
   orderDates(
@@ -613,11 +621,14 @@ export function fakeRecord(
   return record;
 }
 
-/** `count` seeded records for a model. */
+/** `count` seeded records for a model; `rows` is the source's rows per model. */
 export function fakeRecords(
   model: CatalogModel,
   count: number,
   seed = 1,
+  rows?: number,
 ): ModelRecord[] {
-  return Array.from({ length: count }, (_, i) => fakeRecord(model, i, seed));
+  return Array.from({ length: count }, (_, i) =>
+    fakeRecord(model, i, seed, rows),
+  );
 }

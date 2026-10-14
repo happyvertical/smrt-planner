@@ -35,6 +35,7 @@ export function fakeChildrenOf(
   fk: string,
   parent: ModelRecord,
   seed: number,
+  rows?: number,
 ): ModelRecord[] {
   const random = createRandom(hashString(`${seed}:${child.id}:${parent.id}`));
   const ledger = hasField(child, 'debit') && hasField(child, 'credit');
@@ -46,7 +47,7 @@ export function fakeChildrenOf(
   return Array.from({ length: count }, (_, i) => {
     const index = hashString(`${parent.id}:${i}`) % 997;
     const record: ModelRecord = {
-      ...fakeRecord(child, index, seed),
+      ...fakeRecord(child, index, seed, rows),
       id: fakeId(`${child.id}:${parent.id}:${i}`),
       [fk]: parent.id,
     };
@@ -61,7 +62,7 @@ export function fakeChildrenOf(
       // The same row the line's `productId` was pointed at (`relatedIndex`).
       const item = productField
         ? products[
-            relatedIndex(productField, { modelId: child.id, index }) %
+            relatedIndex(productField, { modelId: child.id, index, rows }) %
               products.length
           ]
         : products[index % products.length];

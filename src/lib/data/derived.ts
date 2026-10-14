@@ -1,21 +1,23 @@
 /**
  * Amounts a document's lines derive rather than take as input, in integer
- * minor units, the way a record page reads them (smrt-svelte's `line-items`
- * widget: subtotal = the lines' amounts, total = subtotal - discount + tax):
+ * minor units, mirrored from smrt-commerce's `ContractLineItem.calculateAmount`
+ * (a line's `amount` is tax-inclusive) and read the way smrt-svelte 0.55.24's
+ * `line-items` widget reads them (lines that add up to the recorded total
+ * agree with the record):
  *
- *   line amount   = round(quantity * unitPrice)                (before discount and tax)
- *   line tax      = round((line amount - discount) * taxRate)  (taxRate is a fraction)
+ *   line price    = round(quantity * unitPrice)                (before discount and tax)
+ *   line tax      = round((line price - discount) * taxRate)   (taxRate is a fraction)
+ *   line amount   = line price - discount + line tax           (tax-inclusive)
  *
- *   subtotal      = sum of line amounts
+ *   subtotal      = sum of line prices
  *   discount      = sum of line discounts (no document field: the totals block)
  *   taxAmount     = sum of line taxes
- *   totalAmount   = subtotal - discount + taxAmount
+ *   totalAmount   = subtotal - discount + taxAmount = sum of line amounts
  *
  * A parent with line items takes `subtotal`, `taxAmount` and `totalAmount`
- * from its lines, ignoring what a form sent. NOTE: smrt-commerce's
- * `ContractLineItem.calculateAmount` folds the discount and tax into the
- * line's `amount`; the record page's line table and totals block read
- * `amount` as the pre-tax line price, which is what the sample data follows.
+ * from its lines, ignoring what a form sent. INTERIM: smrt#3931 (the money
+ * model) will add an explicit tax-exclusive mode; until it ships the planner
+ * follows the released, tax-inclusive reading (see AGENTS.md).
  */
 import type { CatalogModel } from '../catalog/types.ts';
 
@@ -36,16 +38,18 @@ export function isLineModel(model: CatalogModel): boolean {
 
 export interface LineAmounts {
   /** Quantity times unit price, before discount and tax. */
-  amount: number;
+  price: number;
   discount: number;
   tax: number;
+  /** What the line comes to: price - discount + tax (tax-inclusive). */
+  amount: number;
 }
 
 export function lineAmounts(line: Row): LineAmounts {
-  const amount = Math.round(num(line.quantity) * num(line.unitPrice));
+  const price = Math.round(num(line.quantity) * num(line.unitPrice));
   const discount = num(line.discount);
-  const tax = Math.round((amount - discount) * num(line.taxRate));
-  return { amount, discount, tax };
+  const tax = Math.round((price - discount) * num(line.taxRate));
+  return { price, discount, tax, amount: price - discount + tax };
 }
 
 /** The line with its `amount` brought in line with its other fields. */
@@ -67,7 +71,7 @@ export function totalsOf(lines: readonly Row[]): ParentTotals {
   let taxAmount = 0;
   for (const line of lines) {
     const parts = lineAmounts(line);
-    subtotal += parts.amount;
+    subtotal += parts.price;
     discount += parts.discount;
     taxAmount += parts.tax;
   }

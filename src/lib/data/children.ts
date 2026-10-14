@@ -26,8 +26,9 @@ const hasField = (model: CatalogModel, name: string) =>
  * Sample child rows for one parent record: one to four (journals, an even
  * number of balanced entries), each pointing at the parent through `fk`. Ids
  * and values are seeded from the parent's id, so the same parent always gets
- * the same children. A line item's `amount` is `quantity * unitPrice`
- * (`lineAmounts`), its discount and tax counted in the parent's totals.
+ * the same children. A line item's `amount` is tax-inclusive, `quantity *
+ * unitPrice - discount + tax` (`lineAmounts`), so the lines add up to the
+ * parent's total.
  */
 export function fakeChildrenOf(
   child: CatalogModel,

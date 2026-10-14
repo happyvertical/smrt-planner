@@ -125,11 +125,12 @@ export interface DataSource {
 }
 
 /**
- * Prefix of the localStorage keys rows are kept under, one per model. v4:
- * a line's `amount` is its pre-tax price (`derived.ts`); rows kept under v3
- * hold tax-inclusive amounts, so they are left behind for fresh samples.
+ * Prefix of the localStorage keys rows are kept under, one per model. v5:
+ * a line's `amount` is tax-inclusive again, as smrt-commerce and the
+ * released line-items widget read it (`derived.ts`); rows kept under v4 hold
+ * pre-tax amounts, so they are left behind for fresh samples.
  */
-export const DATA_STORAGE_PREFIX = 'smrt-planner:data:v4:';
+export const DATA_STORAGE_PREFIX = 'smrt-planner:data:v5:';
 const CREATED_KEY = `${DATA_STORAGE_PREFIX}_created`;
 
 /** Remove every stored row. Never throws. */

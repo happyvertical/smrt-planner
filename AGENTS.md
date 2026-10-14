@@ -339,11 +339,19 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   Sample foreign keys spread over every row of their target (`fakes.ts` `relatedIndex`), so each
   record has related rows; a customer-linked model (a FK to Customer) gets 3-6 rows per customer
   (`customerSlots`, seeded by the customer's index), so related lists hold several records. Sample
-  lines (`data/derived.ts`): `amount` = quantity x unit price; the document's subtotal is the lines'
-  amounts, total = subtotal - discount + tax, taxed at the app's setting, else the pack's, else 5%;
+  lines (`data/derived.ts`): `amount` is tax-inclusive, quantity x unit price - discount + tax, as
+  smrt-commerce's `ContractLineItem.calculateAmount` computes it and as smrt-svelte 0.55.24's
+  `line-items` widget reads it (smrt#3954: lines adding up to the recorded total agree). INTERIM:
+  the money-model epic smrt#3931 will add an explicit tax-exclusive mode (amount excludes tax);
+  until it ships, follow the released reading, and if the widget changes, re-check
+  `tests/record-page.test.ts` (only the seeded documents flag) before changing the sample data.
+  The document's subtotal is the lines' prices (quantity x unit price), total = subtotal - discount
+  + tax = the lines' amounts, taxed at the app's setting, else the pack's, else 5%;
   about a third of documents discount a line (only where the app shows the line's discount: generated
   lines take the hidden fields' background values first); the third Order and Invoice keep a stale subtotal and
-  total (`children.ts` `MISMATCH_*`) so the line-items mismatch flag shows.
+  total (`children.ts` `MISMATCH_*`) so the line-items mismatch flag shows (the widget compares
+  the recorded subtotal with the lines' tax-inclusive sum, so the note names the subtotal).
+  Stored sample rows live under `smrt-planner:data:v5:`; bump it when line amounts change meaning.
 - `src/routes/`: `/` Planner with `?tab=cookbooks|recipes|features|layout|export` tabs (`planner/tab.svelte.ts`; a visitor with nothing built lands on Cookbooks; smrt-ui `Tabs`: Cookbooks cards + preview, Recipes cards with switches only, Features the browsable catalogue of every recipe with its demo label, providers and what it adds, Layout `ShellLayoutEditor`, Export / Import / Reset in `ExportPanel`), `/ai/` the AI models page (Set up your assistant), `/cookbook/` a client-side redirect to `/?tab=export`, `/recipes/[id]/` Options and `/recipes/[id]/help/` Help, where `id` is a section id (`recipes/sections.ts`: the group id, or the recipe id when ungrouped) so recipes of one group share one page each, reached by the `SectionIcons` help and settings icons in page headers (no Options/Help nav items),
   `/packages/` and `/packages/[id]/` the package browser, `/m/[package]/[model]/` (and `/[view]/`:
   a keyed nav entry, else a record's view page; `/[view]/edit/` its edit page).

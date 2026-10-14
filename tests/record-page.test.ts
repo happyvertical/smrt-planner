@@ -251,11 +251,42 @@ describe('the record page widgets', () => {
       page.widget('line-items'),
     )) as LineItemsWidgetData;
     const result = lineItemTotals(data.totals, data.summaries?.amount ?? null);
+    // The lines add up to the true (tax-inclusive) total, not the stale one,
+    // so the widget checks the recorded subtotal against them and flags it.
+    expect(data.summaries?.amount).toBe(
+      Number(page.order.totalAmount) - MISMATCH_AMOUNT,
+    );
     expect(result.mismatch).toEqual({
       field: 'subtotal',
       recorded: Number(page.order.subtotal),
-      lines: Number(page.order.subtotal) - MISMATCH_AMOUNT,
+      lines: Number(page.order.totalAmount) - MISMATCH_AMOUNT,
     });
+  });
+
+  it('flags only the seeded stale Order and Invoice, never a correct one', async () => {
+    // smrt-svelte 0.55.24's widget reads commerce line amounts as
+    // tax-inclusive (smrt#3954): lines adding up to the recorded total agree.
+    const source = createMemoryDataSource({
+      children: {
+        models: catalog.packages.flatMap((p) => p.models),
+        links: (id) => childLinks(catalog, recipes, id),
+      },
+    });
+    for (const [parentId, lineId, fk] of [
+      [ORDER, `${C}ContractLineItem`, 'contractId'],
+      [INVOICE, `${C}InvoiceLineItem`, 'invoiceId'],
+    ] as const) {
+      const parents = await source.list(model(parentId));
+      const lines = await source.list(model(lineId));
+      const flagged = parents.flatMap((parent, index) => {
+        const mine = lines.filter((l) => l[fk] === parent.id);
+        const sum = mine.reduce((t, l) => t + Number(l.amount), 0);
+        const totals = documentTotals(model(parentId), parent, mine);
+        return lineItemTotals(totals, sum).mismatch ? [index] : [];
+      });
+      expect(parents.length).toBeGreaterThan(MISMATCH_ROW + 1);
+      expect(flagged, parentId).toEqual([MISMATCH_ROW]);
+    }
   });
 
   it('reads a discounted order discount from its lines at load time', async () => {

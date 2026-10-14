@@ -149,12 +149,14 @@ describe('sample records come with their line items', () => {
     const invoices = await a.list(invoice);
     invoices.forEach((record, index) => {
       const mine = rowsOf(first, 'invoiceId', record.id);
-      // The subtotal is the lines' amounts; the total takes off their
-      // discounts and adds their tax. One invoice is seeded with stale
-      // totals, so the record page's mismatch flag can be seen.
+      // Line amounts are tax-inclusive: they add up to the total. The
+      // subtotal is the lines' prices; the total takes off their discounts
+      // and adds their tax. One invoice is seeded with stale totals, so the
+      // record page's mismatch flag can be seen.
       const stale = index === MISMATCH_ROW ? MISMATCH_AMOUNT : 0;
       const totals = totalsOf(mine);
-      expect(record.subtotal).toBe(
+      expect(record.subtotal).toBe(totals.subtotal + stale);
+      expect(record.totalAmount).toBe(
         mine.reduce((total, r) => total + Number(r.amount), 0) + stale,
       );
       expect(record.totalAmount).toBe(totals.totalAmount + stale);

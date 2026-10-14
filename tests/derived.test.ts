@@ -41,7 +41,7 @@ const source = () =>
   });
 
 describe('line and parent amounts', () => {
-  it('prices a line as quantity x unit price; discount and tax apart', () => {
+  it('prices a line tax-inclusive: quantity x unit price - discount + tax', () => {
     expect(lineAmounts({ quantity: 3, unitPrice: 1000 }).amount).toBe(3000);
     expect(
       lineAmounts({
@@ -50,7 +50,16 @@ describe('line and parent amounts', () => {
         discount: 500,
         taxRate: 0.1,
       }),
-    ).toEqual({ amount: 2000, discount: 500, tax: 150 });
+    ).toEqual({ price: 2000, discount: 500, tax: 150, amount: 1650 });
+  });
+
+  it('adds lines up to the total, as the line-items widget reads them', () => {
+    const lines = [
+      { quantity: 1, unitPrice: 1000, taxRate: 0.05, discount: 200 },
+      { quantity: 3, unitPrice: 333, taxRate: 0.0825 },
+    ];
+    const amounts = lines.reduce((t, l) => t + lineAmounts(l).amount, 0);
+    expect(amounts).toBe(totalsOf(lines).totalAmount);
   });
 
   it('sums lines into subtotal, discount, tax and total', () => {
@@ -90,8 +99,8 @@ describe('line and parent amounts', () => {
       unitPrice: 500,
       taxRate: 0.2,
     });
-    // The line's amount is its price; the tax goes to the document's total.
-    expect(b.amount).toBe(500);
+    // The line's amount includes its tax, as smrt-commerce's does.
+    expect(b.amount).toBe(600);
     expect((await data.get(agreement, parent.id))?.totalAmount).toBe(3600);
     await data.update(lineItem, a.id, { quantity: 1 });
     expect((await data.get(agreement, parent.id))?.totalAmount).toBe(1600);

@@ -23,14 +23,22 @@ export const PLANNER_SHELL_PANEL_DEFAULTS: ShellPanelDefaults = {
 /**
  * The shell's assistant control: the built-in `dock:assistant` item (a
  * chat-bubble `header.end` button, the dock tab on phones) toggling the
- * `assistant` `ShellDockTool`. Before a model is ready the dock itself shows
- * the setup (`BrowserAssistant`): the shell's dock toggle has no "navigate
- * instead" hook, so the setup comes to the visitor rather than the reverse.
+ * `assistant` `ShellDockTool`. Until the assistant can answer (`ready`, from
+ * `aiState.assistantReady`) the shell renders it as a link to `href`, the AI
+ * setup page, instead of opening an empty dock.
  */
-export const PLANNER_ASSISTANT_TOGGLE: DockToggle = {
-  tool: 'assistant',
-  label: 'Assistant',
-};
+export function plannerAssistantToggle(
+  href: string,
+  ready: boolean,
+): DockToggle {
+  return {
+    tool: 'assistant',
+    label: 'Assistant',
+    labelNotReady: 'Set up the assistant',
+    href,
+    ready,
+  };
+}
 
 type ShellUser = NonNullable<ComponentProps<typeof AppShell>['user']>;
 

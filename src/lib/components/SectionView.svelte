@@ -1,10 +1,11 @@
 <script lang="ts">
-// A navigation section's page body, shared by the static app's section route
+// A navigation section's page body for the static app's section route
 // (`SectionPage.svelte`, which adds the Help/Options icons and the New
-// buttons) and the mounted `Planner` (which routes by URL fragment and has
-// no SvelteKit). It needs no `$app` import: the shell's layout context gives
-// it the section, the cookbook store its overview and the data source its
-// counts.
+// buttons). The static app's shell is a plain `AppShell`, not `CookbookApp`,
+// so it cannot use the framework's `CookbookSectionPage` (the mounted
+// `Planner` does, with the same `SectionHeading`). It needs no `$app`
+// import: the shell's layout context gives it the section, the cookbook store
+// its overview and the data source its counts.
 //
 // The page is an editable overview (smrt#3727): by default the entries as
 // shortcut cards (with record counts), then the section's lead model as a
@@ -14,7 +15,6 @@
 // rename and hide controls. A section id no overview can have shows the menu.
 import { tryGetCookbookContext } from '@happyvertical/smrt-svelte/cookbook';
 import {
-  ShellSectionIcon,
   ShellSectionMenu,
   type ShellSectionMenuEntry,
   useShellLayout,
@@ -35,6 +35,7 @@ import {
   sectionInfo,
   sectionTitle,
 } from '../sections/info.ts';
+import SectionHeading from './SectionHeading.svelte';
 import SectionOverview from './SectionOverview.svelte';
 
 interface SectionViewProps {
@@ -117,14 +118,9 @@ $effect(() => source.onReset?.(() => void loadCounts()));
 {#if cookbookStore.loaded}
   <main class="section-view">
     {#if section}
-      <header>
-        <span class="mark"><ShellSectionIcon name={icon} size={28} /></span>
-        <div class="heading">
-          <h1>{title}</h1>
-          {#if description}<p>{description}</p>{/if}
-        </div>
-        {@render headerActions?.({ title, itemIds })}
-      </header>
+      <SectionHeading {icon} {title} {description}>
+        {#snippet actions()}{@render headerActions?.({ title, itemIds })}{/snippet}
+      </SectionHeading>
       {#if overview}
         {#key sectionId}
           <SectionOverview
@@ -160,37 +156,6 @@ $effect(() => source.onReset?.(() => void loadCounts()));
     width: min(100%, 64rem);
     margin-inline: auto;
     padding: var(--smrt-spacing-6);
-  }
-
-  header {
-    display: flex;
-    align-items: center;
-    gap: var(--smrt-spacing-4);
-  }
-
-  .mark {
-    display: inline-grid;
-    place-items: center;
-    flex: 0 0 auto;
-    inline-size: 3rem;
-    block-size: 3rem;
-    border-radius: var(--smrt-radius-large, 0.75rem);
-    background: var(--smrt-color-primary-container);
-    color: var(--smrt-color-on-primary-container);
-  }
-
-  .heading {
-    flex: 1 1 auto;
-    min-inline-size: 0;
-  }
-
-  h1 {
-    margin: 0;
-  }
-
-  .heading p {
-    margin: var(--smrt-spacing-1) 0 0;
-    color: var(--smrt-color-on-surface-variant);
   }
 
   .entries {

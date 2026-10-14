@@ -375,7 +375,7 @@ describe('detail overviews', () => {
   const context = (recordId: string) => ({
     source: createMemoryDataSource(),
     sections: [],
-    entries: new Map(),
+    entryIndex: new Map(),
     href,
     record: { model: CUSTOMER, id: recordId },
   });

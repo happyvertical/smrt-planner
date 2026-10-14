@@ -53,11 +53,31 @@ describe('Planner component', () => {
     const { body } = render(Planner, {
       props: { basePath: '/planner', inference: { mode: 'byo' } },
     });
-    // The shell's own `dock:assistant` button; the dock it opens shows the
-    // setup until a model is ready (there is no planner-side toggle any more).
+    // The shell's own `dock:assistant` control; there is no planner-side
+    // toggle.
     expect(body).toContain('data-dock-tool="assistant"');
-    expect(body).toContain('aria-label="Assistant"');
     expect(body).not.toContain('data-assistant-setup');
+  });
+
+  it('makes the assistant control a link to the AI setup page until the assistant is ready', () => {
+    try {
+      // Nothing is loaded on the server, so the assistant is not ready: the
+      // shell renders its control as a real link to the mount's AI page, not
+      // a dock toggle.
+      const { body } = render(Planner, {
+        props: { basePath: '/planner', inference: { mode: 'byo' } },
+      });
+      const control = body.match(
+        /<a[^>]*data-dock-tool="assistant"[^>]*>/,
+      )?.[0];
+      expect(control).toBeDefined();
+      expect(control).toContain('href="#/ai/"');
+      expect(control).toContain('aria-label="Set up the assistant"');
+      expect(control).not.toContain('aria-pressed');
+      expect(body).not.toMatch(/<button[^>]*data-dock-tool="assistant"/);
+    } finally {
+      setBasePath('');
+    }
   });
 
   it('renders the shell account item for the visitor', () => {
@@ -120,17 +140,20 @@ describe('Planner component', () => {
       const { body } = render(Planner, { props: { basePath: '/planner' } });
       // The shell's layout pencil (`layoutEditing`, start of the header).
       expect(body).toContain('Edit layout');
-      // The first section page is the default route: its overview is drawn as
-      // page sections, not a card holding cards.
-      expect(body).toMatch(
-        /data-presentation="plain"[^>]*data-smrt-component="OverviewGrid"/,
-      );
-      expect(body).toContain('class="section-view');
-      // The loaders the mount hands `CookbookApp`: every data widget.
+      // The first section page is the default route: the framework's own
+      // section page, with the planner's heading. Its overview grid renders
+      // after hydration (tests/planner-section.dom.test.ts).
+      expect(body).toContain('data-smrt-component="CookbookSectionPage"');
+      expect(body).not.toContain('class="section-view');
+      expect(body).toMatch(/<header class="section-heading[^"]*">/);
+      expect(body).toMatch(/<h1[^>]*>Sales<\/h1>/);
+      // The loaders the mount hands `CookbookApp`: every data widget, and the
+      // shortcuts' record counts.
       expect(Object.keys(plannerLoaders).sort()).toEqual([
         'chart',
         'metric',
         'records',
+        'shortcuts',
       ]);
     } finally {
       cookbookStore.apply(previous.snapshot());

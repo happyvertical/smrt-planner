@@ -44,7 +44,7 @@ import { hasAppState, withTab } from '$lib/planner/query.ts';
 import { recordFilter, recordFilterQuery } from '$lib/planner/routes.ts';
 import { selection } from '$lib/planner/selection.svelte.ts';
 import {
-  PLANNER_ASSISTANT_TOGGLE,
+  plannerAssistantToggle,
   plannerShellProps,
 } from '$lib/planner/shell.ts';
 import { plannerTab } from '$lib/planner/tab.svelte.ts';
@@ -405,7 +405,7 @@ function flushOnHide() {
       render: palette,
     },
   ]}
-  dockToggles={[PLANNER_ASSISTANT_TOGGLE]}
+  dockToggles={[plannerAssistantToggle(appHref('/ai/'), aiState.assistantReady)]}
   {...shellProps}
   layoutEditing={{ slot: 'header.start' }}
   navMode="sections-with-items"

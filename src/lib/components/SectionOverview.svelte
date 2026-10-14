@@ -52,7 +52,7 @@ const source = useDataSource();
 const controller = createSectionOverview(
   untrack(() => definition),
   cookbookStore,
-  () => ({ source, sections: shell.sections, entries, href }),
+  () => ({ source, sections: shell.sections, entryIndex: entries, href }),
 );
 
 function reloadAll() {

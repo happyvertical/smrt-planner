@@ -204,7 +204,7 @@ describe('the record page widgets', () => {
     const ctx = {
       source,
       sections: [],
-      entries: new Map(),
+      entryIndex: new Map(),
       href,
       record: { model: ORDER, id: order.id },
       relations,
@@ -309,7 +309,7 @@ describe('the record page widgets', () => {
       {
         source,
         sections: [],
-        entries: new Map(),
+        entryIndex: new Map(),
         href,
         record: { model: CUSTOMER, id: must(customer).id },
         relations,
@@ -348,7 +348,7 @@ describe('the record page widgets', () => {
       {
         source,
         sections: [],
-        entries: new Map(),
+        entryIndex: new Map(),
         href,
         record: { model: CUSTOMER, id: must(customer).id },
       },

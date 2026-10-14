@@ -127,22 +127,27 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   and the section's editable overview (`SectionOverview.svelte`, see `src/lib/overviews/`; its
   `shortcuts` widget replaces the menu cards; the grid is `presentation="plain"`, page sections rather
   than cards in a card); in edit mode the entries follow as smrt-svelte's `ShellSectionMenu` list.
-  `SectionView.svelte` is the `$app`-free body the route page and the mounted `Planner` share. A section id outside the overview id pattern keeps the `ShellSectionMenu`
-  cards with "N records" (`entryIndex` + the entry's own scope) and "New <noun>". New asks the entry page to open its create form through `planner/create.ts` (a
+  `SectionView.svelte` is the route page's body (the static shell is a plain `AppShell`, so it cannot
+  use `CookbookSectionPage`); `SectionHeading.svelte` is the icon/title/description heading it shares
+  with the mount. A section id outside the overview id pattern keeps the `ShellSectionMenu`
+  cards with "N records" and "New <noun>". New asks the entry page to open its create form through `planner/create.ts` (a
   one-shot, page-named, expiring request; the URL carries only the shareable state). In edit mode the
   rows get the grip/rename/hide chrome, so `PlannerEditBridge` does not leave a section page. Every
   recipe `section` and every cookbook custom section (`layout.sections[id].icon`) must have an icon from
   smrt-svelte's shell icon set (tests/section-pages.test.ts); visitor sections get `folder`.
 - `src/lib/overviews/`: section pages as customisable overviews (smrt-svelte `./overview`, smrt#3727).
   `definitions.ts`: one `defineOverview` per section, id = the section's layout id, static (never
-  depends on which recipes are on): `shortcuts` (the section's entries with record counts) then the
+  depends on which recipes are on): `shortcuts` (the section's entries with record counts: the framework's entries through
+  `composeShortcutsLoader(loadShortcutCounts)`, counting rows in each entry's scope from the
+  `entryIndex` in the load context) then the
   section's lead model as a `metric` count and a `records` list; `allowed` = the core types the planner
   loads plus recipe `widget` surfaces, `models` = the catalog. `isOverviewId` is what a cookbook may
   key: recipe sections, More, and the document's own `layout.customSections`. `registry.ts`: the one
   registry, core widgets with loaders over the in-browser `DataSource` (capabilities in the load
   context, never in options; a named `filter` is an error tile, the sample data has none; `chart`
-  groups the sample rows itself, the in-browser stand-in for a runtime report), `plannerLoaders`
-  (metric, records, chart) for the mounted `Planner`'s `CookbookApp`, and
+  groups the sample rows itself, the in-browser stand-in for a runtime report, for every chart style:
+  bar, line, table, pie and stat read the same points), `plannerLoaders` (metric, records, chart, and
+  `shortcuts` = `loadShortcutCounts`) for the mounted `Planner`'s `CookbookApp`, and
   `registerRecipeWidgets` with a static, currently empty, module map. `models.ts`: the option
   editor's model choices, shared by the page and the mount. `validate.ts`: the cookbook's
   `overviews` field; every override goes through `checkOverviewOverride` on load and import, bad
@@ -177,8 +182,9 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   `src/lib/ai/`); the static app's Planner page renders the same one (`layout="shell"`,
   `persistence="host"`). The mount is a `CookbookApp` with `layoutEditing`, `plannerLoaders`,
   `widgetContext` and `resolveExport`, routed by URL fragment (`setBasePath(base, 'hash')` makes
-  `appHref` write `#/...`); it renders the planner's own `SectionView` and `PackagePage` because
-  0.55.17's `CookbookSectionPage` forwards no `presentation` and takes no shortcuts loader.
+  `appHref` write `#/...`); section pages are the framework's `CookbookSectionPage`
+  (`presentation="plain"`, a `heading` snippet drawing `SectionHeading`, the record counts from
+  `loaders.shortcuts`; remounted on a data reset), packages the planner's `PackagePage`.
   `assistant.ts` builds a chat transport over any controller. The stores (`cookbookStore`,
   `recipeState`) are still module singletons: one planner per page. Still planner-side and NOT yet
   deleted because the UI uses them directly (follow-up: route the UI through commands):
@@ -265,12 +271,12 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   (`AiStatusIcons`, a `slotItems` entry `ai-status` in `leftSidebar.footer`), the
   `/ai/` page (`AiModelsPage.svelte`, which a mounted `Planner` serves at `#/ai/`) and the
   assistant dock all render `AiSetup.svelte` / read `aiState`. The assistant's header control is
-  the shell's own `dock:assistant` item (`dockToggles={[PLANNER_ASSISTANT_TOGGLE]}`, `planner/shell.ts`;
-  the app's layout and `Planner` both pass it): it toggles the `assistant` dock, which shows the
-  setup (`BrowserAssistant`'s not-ready panel, with a link to the AI models page) until
-  `aiState.assistantReady` (think `ready`: a loaded browser model, the host's server, a connected
-  BYO endpoint). The shell's `DockToggle` has no "navigate instead" hook, so there is no
-  planner-side toggle. A mounted `Planner` configures `aiState` from its `inference` prop
+  the shell's own `dock:assistant` item (`plannerAssistantToggle(appHref('/ai/'),
+  aiState.assistantReady)`, `planner/shell.ts`; the app's layout and `Planner` both pass it): it
+  toggles the `assistant` dock once `aiState.assistantReady` (think `ready`: a loaded browser model,
+  the host's server, a connected BYO endpoint); until then the shell renders it as a link to the AI
+  setup page ("Set up the assistant"). There is no planner-side toggle; `BrowserAssistant`'s
+  not-ready panel only covers a dock left open when the model goes away. A mounted `Planner` configures `aiState` from its `inference` prop
   (`PlannerLifecycle`: `configure(configFromProp(...))`, or `useChat` for `{ chat }`) and only
   then renders the dock and the icon; without the prop it has no assistant.
   First visit: `aiState.hydrate` decides once (nothing downloaded, no read-aloud,

@@ -4,6 +4,8 @@ import {
   applyCookbookTheme,
   buildCookbookShell,
   CookbookApp,
+  type CookbookSectionHeadingInfo,
+  CookbookSectionPage,
 } from '@happyvertical/smrt-svelte/cookbook';
 import {
   ShellDockTool,
@@ -11,6 +13,7 @@ import {
 } from '@happyvertical/smrt-svelte/workspace';
 import type { DataSurfaceRegistry } from '@happyvertical/smrt-ui/data-surface';
 import { type ComponentProps, onMount, tick, untrack } from 'svelte';
+import { aiState } from '../ai/instance.ts';
 import smrtMark from '../assets/smrt-mark.svg';
 import { catalog, getModel } from '../catalog/index.ts';
 import AdvancedStyles from '../components/AdvancedStyles.svelte';
@@ -19,7 +22,7 @@ import BrowserAssistant from '../components/BrowserAssistant.svelte';
 import ModelWorkspace from '../components/ModelWorkspace.svelte';
 import PackagePage from '../components/PackagePage.svelte';
 import RecordView from '../components/RecordView.svelte';
-import SectionView from '../components/SectionView.svelte';
+import SectionHeading from '../components/SectionHeading.svelte';
 import ThemeBridge from '../components/ThemeBridge.svelte';
 import { cookbookStore, SHELL_STORAGE_KEY } from '../cookbook/store.svelte.ts';
 import type { Cookbook } from '../cookbook/types.ts';
@@ -28,16 +31,23 @@ import { createPlannerDataSource } from '../data/planner-source.ts';
 import { activeForms } from '../forms/active.ts';
 import { runViewTransition } from '../motion/view-transition.ts';
 import { plannerLoaders, resolveRecipeExport } from '../overviews/registry.ts';
-import { hasNavKey, recipeNav, recipes } from '../recipes/index.ts';
+import {
+  hasNavKey,
+  recipeNav,
+  recipes,
+  recipesById,
+} from '../recipes/index.ts';
 import { pageScope, scopePreset } from '../recipes/scope.ts';
 import { recipeState } from '../recipes/state.svelte.ts';
+import { entryIndex } from '../sections/entries.ts';
+import { sectionInfo, sectionTitle } from '../sections/info.ts';
 import { sectionIdFromSlug } from '../sections/path.ts';
 import { DEFAULT_PRESET } from '../theme/theme.ts';
-import { setBasePath } from './app.svelte.ts';
+import { appHref, setBasePath } from './app.svelte.ts';
 import PlannerControls from './PlannerControls.svelte';
 import PlannerLifecycle from './PlannerLifecycle.svelte';
 import { parseModelRoute, recordFilter, splitRoute } from './routes.ts';
-import { PLANNER_ASSISTANT_TOGGLE, plannerShellProps } from './shell.ts';
+import { plannerAssistantToggle, plannerShellProps } from './shell.ts';
 import { currentPlannerTitle } from './title.svelte.ts';
 import type { PlannerProps } from './types.ts';
 
@@ -57,8 +67,6 @@ const hashHref = (path: string) => `#${path}`;
 // Before anything below renders a link: the planner-wide `appHref` writes
 // fragments too (`PlannerLifecycle` follows `basePath` when it changes).
 setBasePath(untrack(() => basePath) ?? '', 'hash');
-/** The AI models page inside the mount; the dock links here. */
-const AI_HREF = hashHref('/ai/');
 /** The assistant exists only when the host gave the planner a model. */
 const assistant = $derived(inference !== undefined);
 
@@ -107,10 +115,33 @@ const defaultRoute = $derived.by(() => {
 });
 const source =
   tryUseDataSource() ?? provideDataSource(createPlannerDataSource());
+// The app's menu entries with the model and scope each lists, for the
+// shortcuts' record counts.
+const sectionEntries = $derived(
+  entryIndex(
+    recipeState.ids.flatMap((id) => {
+      const recipe = recipesById.get(id);
+      return recipe ? [recipe] : [];
+    }),
+    recipeState.features,
+  ),
+);
 // What the overview widgets' loaders read when they run in this browser: the
-// sample source and the mount's links. The shell adds the resolved sections
-// and entries for its shortcuts.
-const widgetContext = () => ({ source, href: hashHref });
+// sample source, the mount's links and the entry index. The shell adds the
+// resolved sections and its own entries for its shortcuts.
+const widgetContext = () => ({
+  source,
+  href: hashHref,
+  entryIndex: sectionEntries,
+});
+// A reset (a cookbook applied, the app reset) swaps the rows underneath the
+// section page; remounting it reloads its widgets.
+let dataGeneration = $state(0);
+$effect(() =>
+  source.onReset?.(() => {
+    dataGeneration += 1;
+  }),
+);
 let route = $state('');
 // The mount's own hash router. Each change morphs through a view transition
 // (the chrome named below stays put, the content crossfades); the first read
@@ -205,8 +236,13 @@ const slotItems = $derived<ShellSlotItem[]>([
   },
 ]);
 // The shell's own `dock:assistant` button (header end, the dock tab on phones)
-// opens the assistant dock; before a model is ready the dock shows the setup.
-const dockToggles = $derived(assistant ? [PLANNER_ASSISTANT_TOGGLE] : []);
+// opens the assistant dock; until the assistant can answer it is a link to the
+// mount's AI setup page.
+const dockToggles = $derived(
+  assistant
+    ? [plannerAssistantToggle(appHref('/ai/'), aiState.assistantReady)]
+    : [],
+);
 </script>
 
 {#snippet back()}
@@ -219,9 +255,17 @@ const dockToggles = $derived(assistant ? [PLANNER_ASSISTANT_TOGGLE] : []);
 {#snippet assistantDock(registry: DataSurfaceRegistry)}
   <ShellDockTool id="assistant" label="Assistant">
     {#snippet render()}
-      <BrowserAssistant {registry} settingsHref={AI_HREF} />
+      <BrowserAssistant {registry} settingsHref={appHref('/ai/')} />
     {/snippet}
   </ShellDockTool>
+{/snippet}
+
+{#snippet sectionHeading({ section }: { section: CookbookSectionHeadingInfo })}
+  <SectionHeading
+    icon={section.icon}
+    title={sectionTitle(section.title)}
+    description={sectionInfo(section.id).description ?? section.description}
+  />
 {/snippet}
 
 {#snippet customize()}
@@ -236,10 +280,8 @@ const dockToggles = $derived(assistant ? [PLANNER_ASSISTANT_TOGGLE] : []);
   `oncookbookchange` and lands in the cookbook's `layout` / `overviews`, so it
   is saved, exported and imported with the rest of the plan. `loaders`,
   `widgetContext` and `resolveExport` wire the framework's own section pages
-  (`CookbookSectionPage`) to the sample data; the mount renders the planner's
-  `SectionView` instead because 0.55.17's `CookbookSectionPage` forwards no
-  `presentation` (its overview is framed cards in a card) and takes no
-  shortcuts loader (no record counts).
+  (`CookbookSectionPage`, drawn `plain` with the planner's heading) to the
+  sample data; `loaders.shortcuts` adds the record counts.
 -->
 <CookbookApp
   cookbook={cookbook as ComponentProps<typeof CookbookApp>['cookbook']}
@@ -264,9 +306,15 @@ const dockToggles = $derived(assistant ? [PLANNER_ASSISTANT_TOGGLE] : []);
   <PlannerLifecycle {controller} {basePath} {inference} {persistence} {onready} links="hash" />
   <main class="content">
     {#if sectionSlug}
-      {#key sectionSlug}
-        <SectionView sectionId={sectionIdFromSlug(sectionSlug)} href={hashHref} />
-      {/key}
+      {#if cookbookStore.loaded}
+        {#key `${sectionSlug}:${dataGeneration}`}
+          <CookbookSectionPage
+            sectionId={sectionIdFromSlug(sectionSlug)}
+            presentation="plain"
+            heading={sectionHeading}
+          />
+        {/key}
+      {/if}
     {:else if packageId}
       <PackagePage id={packageId} backHref="#/configure/" />
     {:else if pathParts[0] === 'advanced-styles'}

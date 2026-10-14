@@ -11,6 +11,10 @@
  * it up in the catalog and asks the `DataSource` for it.
  */
 import {
+  type CookbookShortcutsLoader,
+  composeShortcutsLoader,
+} from '@happyvertical/smrt-svelte/cookbook';
+import {
   type ChartWidgetData,
   type CoreWidgetLoaders,
   createLineItemsLoader,
@@ -30,8 +34,6 @@ import {
   registerRecipeWidgets,
   relatedColumns,
   type ShortcutNavSection,
-  type ShortcutsWidgetData,
-  shortcutsFromNav,
   type WidgetLoadContext,
 } from '@happyvertical/smrt-svelte/overview';
 import {
@@ -44,7 +46,7 @@ import {
 import { getModelByQualifiedName } from '../catalog/index.ts';
 import type { CatalogModel } from '../catalog/types.ts';
 import { EPOCH, isMoneyField } from '../data/fakes.ts';
-import { humanize, labelKey, recordCount } from '../data/format.ts';
+import { humanize, labelKey } from '../data/format.ts';
 import { recordLabel, relationLabels } from '../data/labels.ts';
 import type { DataSource, ModelRecord } from '../data/source.ts';
 import { filteredListPath, modelPath, recordPath } from '../planner/routes.ts';
@@ -61,8 +63,12 @@ export interface PlannerWidgetContext {
   source: DataSource;
   /** The shell's resolved sections (renames and hides applied). */
   sections: readonly ShortcutNavSection[];
-  /** Layout item id -> the model and scope it lists, for record counts. */
-  entries: ReadonlyMap<string, SectionEntry>;
+  /**
+   * Layout item id -> the model and scope it lists, for the shortcuts' record
+   * counts. Its own key: under `CookbookApp` the shell sets `entries` to its
+   * own entry map, which knows no scopes.
+   */
+  entryIndex: ReadonlyMap<string, SectionEntry>;
   /** An in-app path with the app query (`appHref`). */
   href: (path: string) => string;
   /**
@@ -93,16 +99,6 @@ function dataCapabilities(
     throw new Error('the planner widget context is missing');
   }
   return { source, href };
-}
-
-/** The shortcuts also read the shell's resolved sections and the entry index. */
-function capabilities(ctx: WidgetLoadContext): PlannerWidgetContext {
-  const { sections, entries } = ctx as WidgetLoadContext &
-    Partial<PlannerWidgetContext>;
-  if (!sections || !entries) {
-    throw new Error('the planner widget context is missing');
-  }
-  return { ...dataCapabilities(ctx), sections, entries };
 }
 
 function modelOf(qualified: unknown): {
@@ -492,8 +488,10 @@ function dateOf(value: unknown): number | undefined {
  * sample clock (`EPOCH`, the fixed "now" of the seeded data) over the
  * grouped date field, else the lead date field; a model with no date field
  * ignores it. `measure` is `count`, or `sum` / `avg` of a numeric `field`;
- * money stays integer minor units. The widget's `style` (bar or line) is
- * rendered by the widget itself, not here.
+ * money stays integer minor units. The widget's `style` (bar, line, table,
+ * pie or stat) is rendered by the widget itself from these points: `stat`
+ * headlines the last point against the one before, which on a date axis is
+ * the latest bucket.
  */
 async function loadChart(
   options: Record<string, unknown>,
@@ -629,58 +627,53 @@ async function loadChart(
 }
 
 /**
- * `shortcuts`: the section's menu entries as cards, as the shell resolves them
- * (renames, hides, moves), each with its record count. `section` names another
- * section by its id without the `section:` / `custom:` prefix; absent, the
- * overview's own section.
+ * The shortcuts' record counts: a `CookbookShortcutsLoader` that gives each of
+ * the shell's default entries (the section's menu as resolved: renames, hides,
+ * moves) its count of sample rows, in the entry's own scope. The framework
+ * composes it with its entries (`composeShortcutsLoader`): under the mounted
+ * `Planner`'s `CookbookApp` as `loaders.shortcuts`, on the static app's
+ * section pages through {@link overviewRegistry}. An entry the index does not
+ * know (no model) keeps no count.
  */
-async function loadShortcuts(
-  options: Record<string, unknown>,
-  ctx: WidgetLoadContext,
-): Promise<ShortcutsWidgetData> {
-  const { source, sections, entries } = capabilities(ctx);
-  const named = typeof options.section === 'string' ? options.section : '';
-  const sectionId = named
-    ? sections.find(
-        (s) => s.id === `section:${named}` || s.id === `custom:${named}`,
-      )?.id
-    : ctx.overviewId;
-  if (!sectionId) throw new Error(`unknown section ${named}`);
-  const data = shortcutsFromNav(sections, sectionId);
-  const items = await Promise.all(
-    data.items.map(async (item) => {
-      const entry = entries.get(item.id);
+export const loadShortcutCounts: CookbookShortcutsLoader = async (
+  ctx,
+  defaults,
+) => {
+  const { source, entryIndex } = ctx as WidgetLoadContext &
+    Partial<PlannerWidgetContext>;
+  if (!source || !entryIndex) {
+    throw new Error('the planner widget context is missing');
+  }
+  return Promise.all(
+    defaults.map(async (item) => {
+      const entry = entryIndex.get((item as { id?: string }).id ?? '');
       if (!entry) return item;
       const rows = await source.list(entry.model);
-      const count = recordCount(
-        rows.filter((row) => inScope(entry.scope, row)).length,
-      );
       return {
         ...item,
-        // The count first: a long description is clipped.
-        description: item.description
-          ? `${count} · ${item.description}`
-          : count,
+        count: rows.filter((row) => inScope(entry.scope, row)).length,
       };
     }),
   );
-  return { items };
-}
+};
 
 /**
- * The data loaders over the sample source, for a host that registers its own
- * core widgets (the mounted `Planner`'s `CookbookApp`). The shortcuts loader
- * stays here: it needs the planner's entry index for its record counts.
+ * The data loaders over the sample source and the shortcuts' counts, for the
+ * mounted `Planner`'s `CookbookApp`, whose registry composes `shortcuts` with
+ * the shell's entries.
  */
-export const plannerLoaders: Omit<CoreWidgetLoaders, 'shortcuts'> = {
+export const plannerLoaders = {
   metric: loadMetric,
   records: loadRecords,
   chart: loadChart,
+  shortcuts: loadShortcutCounts,
+} satisfies Omit<CoreWidgetLoaders, 'shortcuts'> & {
+  shortcuts: CookbookShortcutsLoader;
 };
 
 registerCoreWidgets(overviewRegistry, {
   ...plannerLoaders,
-  shortcuts: loadShortcuts,
+  shortcuts: composeShortcutsLoader(loadShortcutCounts),
 });
 
 /**

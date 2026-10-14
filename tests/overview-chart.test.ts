@@ -52,7 +52,7 @@ async function load(rows: ModelRecord[], options: Record<string, unknown>) {
     {
       source: sourceOf(rows),
       sections: [],
-      entries: new Map(),
+      entryIndex: new Map(),
       href: (p) => p,
     },
     chart(options),
@@ -85,6 +85,7 @@ describe('chart loader', () => {
       'chart',
       'metric',
       'records',
+      'shortcuts',
     ]);
     expect(getModelByQualifiedName(ORDER)?.model.name).toBe('Order');
   });

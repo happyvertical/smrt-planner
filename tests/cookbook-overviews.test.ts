@@ -16,7 +16,10 @@ import {
   createSectionOverview,
   loadSectionWidget,
 } from '../src/lib/overviews/page.ts';
-import { overviewRegistry } from '../src/lib/overviews/registry.ts';
+import {
+  loadShortcutCounts,
+  overviewRegistry,
+} from '../src/lib/overviews/registry.ts';
 import { checkStoredOverride } from '../src/lib/overviews/validate.ts';
 import {
   buildNavSections,
@@ -367,7 +370,7 @@ describe('section page overview', () => {
           ],
         },
       ],
-      entries: new Map(),
+      entryIndex: new Map(),
       href: (path: string) => path,
     };
     const rows = await source.list(lead.model);
@@ -391,6 +394,67 @@ describe('section page overview', () => {
         options: { ...count.options, filter: 'overdue' },
       }),
     ).rejects.toThrow();
+  });
+
+  it("gives each shortcut its record count, in the entry's own scope", async () => {
+    const source = createMemoryDataSource();
+    const def = definition();
+    const model = def.defaults[1]?.options.model;
+    const lead =
+      typeof model === 'string' ? getModelByQualifiedName(model) : undefined;
+    if (!lead) throw new Error('no lead model');
+    const rows = await source.list(lead.model);
+    const status = lead.model.fields.find((f) => f.name === 'status');
+    const first = rows[0]?.status;
+    const scoped =
+      status && typeof first === 'string'
+        ? rows.filter((row) => row.status === first).length
+        : rows.length;
+    const scope =
+      status && typeof first === 'string'
+        ? { field: 'status', equals: first }
+        : undefined;
+    const entryIndex = new Map([
+      ['item:x', { id: 'item:x', model: lead.model, path: '/x/' }],
+      ['item:y', { id: 'item:y', model: lead.model, path: '/y/', scope }],
+    ]);
+    const context = {
+      source,
+      sections: [
+        {
+          id: SALES,
+          items: [
+            { id: 'item:x', label: 'All', item: { href: '/x/' } },
+            { id: 'item:y', label: 'Some', item: { href: '/y/' } },
+            { id: 'item:z', label: 'Elsewhere', item: { href: '/z/' } },
+          ],
+        },
+      ],
+      entryIndex,
+      href: (path: string) => path,
+    };
+    // Through the registry the static app's section pages use: the
+    // framework's shortcuts composed with the planner's counts.
+    const shortcuts = def.defaults[0];
+    if (!shortcuts) throw new Error('defaults');
+    await expect(loadSectionWidget(def, context, shortcuts)).resolves.toEqual({
+      items: [
+        { id: 'item:x', label: 'All', href: '/x/', count: rows.length },
+        { id: 'item:y', label: 'Some', href: '/y/', count: scoped },
+        // An entry the index does not know keeps no count.
+        { id: 'item:z', label: 'Elsewhere', href: '/z/' },
+      ],
+    });
+    // The host loader on its own, as the mounted Planner hands it to
+    // `CookbookApp` (`loaders.shortcuts`).
+    await expect(
+      loadShortcutCounts(
+        { ...context, overviewId: SALES, locale: 'en-US' } as never,
+        [{ id: 'item:x', label: 'All', href: '/x/' }] as never,
+      ),
+    ).resolves.toEqual([
+      { id: 'item:x', label: 'All', href: '/x/', count: rows.length },
+    ]);
   });
 
   it('the registry offers exactly the widgets the planner can load', () => {

@@ -110,7 +110,10 @@ Every field but `reply` is optional:
 - `reply`: the sentence shown (and read aloud when Speak is on), about 200
   characters at most.
 - `add` / `remove`: recipe ids; unknown ids are dropped client-side.
-- `settings.taxRate` is in percent. `theme` is tokens only, never CSS.
+- `settings.taxRate` is in percent. `theme` is tokens only, never CSS: `preset`
+  or `primary`, `colorScheme` (light or dark), and optionally `borderRadius`
+  (none, sm, md, lg, xl, full), `density` (comfortable, touch) and `contrast`
+  (auto, standard, more), the names `set_theme` takes.
 - `commands`: up to 8 planner commands (`commandTools` / `commandSchemas` in
   `./commands`), run in order through the controller, which validates each.
   The first refused one stops the rest and is reported in the chat. They apply

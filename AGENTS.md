@@ -73,15 +73,20 @@ here. Never add a shim or a hand-maintained copy of what a manifest says.
   carries the gear to its own group/recipe options page. `group` is the Planner card + Options/Help
   pages only. `cookbook/migrate.ts` rewrites pre-section layout ids in the loader.
 - `src/lib/theme/`: the app's look, stored in the cookbook as `theme?: { preset?, colorScheme?,
-  fontFamily?, custom?: { primary, fontFamily? }, customCss? }` (absent = default `glass`/`system`).
-  `theme.ts` validates known presets, hex colours, allowed font keys and CSS text length.
+  borderRadius?, density?, contrast?, fontFamily?, custom?: { primary, fontFamily? }, customCss? }`
+  (absent = default `glass`/`system`, the preset's own radius, comfortable, contrast following the
+  device). `theme.ts` validates known presets, hex colours, the radius/density/contrast enums (smrt-core's
+  cookbook schema, the same names as `set_theme`'s inputs and `AppShell`'s props), allowed font keys and
+  CSS text length.
   `runtime.ts` registers a brand-colour theme or a font variant of a built-in preset; ids include
   the colour/font because `ThemeProvider` looks each preset up once. The top-level font keeps the
   preset palette; the nested font remains readable for older cookbooks. `ThemeBridge.svelte` (in the
   layout, and inside `Planner`'s `CookbookApp` so hosted controls reach the plan; `deferInitial`
   lets the plan theme win over AppShell's browser-stored one) applies the cookbook theme and custom
-  CSS to the shell. `ThemeSection.svelte` shows visual preset and
-  appearance choices, a colour picker and font control; `AdvancedStyles.svelte` edits the CSS on
+  CSS to the shell, and radius, density and contrast through the provider's `updateConfig` (the mount's
+  `CookbookApp` also passes them to `AppShell`; the static layout passes them as props).
+  `ThemeSection.svelte` shows visual preset and appearance choices, corner radius / density / contrast
+  selects (choosing the default removes the field), a colour picker and font control; `AdvancedStyles.svelte` edits the CSS on
   its own page. Cookbook CSS is untrusted (`theme/custom-css.svelte.ts`): it applies only once the
   visitor approves that exact text (SHA-256; typing it counts), is re-serialized by the browser
   inside an `@scope` rooted at this Planner's own shell (`data-smrt-planner-scope`), keeping only style,

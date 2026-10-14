@@ -406,6 +406,9 @@ function flushOnHide() {
     },
   ]}
   dockToggles={[plannerAssistantToggle(appHref('/ai/'), aiState.assistantReady)]}
+  borderRadius={cookbookStore.theme?.borderRadius}
+  density={cookbookStore.theme?.density}
+  contrast={cookbookStore.theme?.contrast}
   {...shellProps}
   layoutEditing={{ slot: 'header.start' }}
   navMode="sections-with-items"

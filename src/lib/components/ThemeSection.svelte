@@ -8,9 +8,13 @@ import {
 import { cookbookStore } from '../cookbook/store.svelte.ts';
 import { customCssApproved } from '../theme/custom-css.svelte.ts';
 import {
+  type BorderRadiusSetting,
   type ColorSchemeSetting,
+  type ContrastSetting,
+  type DensitySetting,
   normalizeHex,
   THEME_FONTS,
+  type ThemeSetting,
 } from '../theme/theme.ts';
 
 interface Props {
@@ -45,6 +49,42 @@ const schemes: {
   { id: 'dark', label: 'Dark', icon: '☾', hint: 'Dim all the time' },
   { id: 'system', label: 'Auto', icon: '◐', hint: 'Follow this device' },
 ];
+
+// Corner radius, density and contrast. Each control shows the effective value;
+// choosing the default (the preset's own radius, comfortable, auto) removes
+// the field so the cookbook keeps only what was changed.
+const radii: { id: BorderRadiusSetting; label: string }[] = [
+  { id: 'none', label: 'None' },
+  { id: 'sm', label: 'Small' },
+  { id: 'md', label: 'Medium' },
+  { id: 'lg', label: 'Large' },
+  { id: 'xl', label: 'Extra large' },
+  { id: 'full', label: 'Full' },
+];
+const densities: { id: DensitySetting; label: string }[] = [
+  { id: 'comfortable', label: 'Comfortable' },
+  { id: 'touch', label: 'Touch' },
+];
+const contrasts: { id: ContrastSetting; label: string }[] = [
+  { id: 'auto', label: 'Auto' },
+  { id: 'standard', label: 'Standard' },
+  { id: 'more', label: 'More' },
+];
+const DEFAULTS = {
+  borderRadius: 'md',
+  density: 'comfortable',
+  contrast: 'auto',
+} as const;
+
+function setShape<K extends keyof typeof DEFAULTS>(
+  key: K,
+  value: NonNullable<ThemeSetting[K]>,
+) {
+  cookbookStore.setTheme({
+    ...cookbookStore.theme,
+    [key]: value === DEFAULTS[key] ? undefined : value,
+  });
+}
 
 function setBrand(primary: string) {
   const normalized = normalizeHex(primary);
@@ -112,6 +152,29 @@ const cssPending = $derived.by(() => {
       {/each}
     </div>
   {/if}
+  <div class="shape" role="group" aria-label="Shape and contrast">
+    <div class="field">
+      <FieldLabel for="theme-radius" label="Corner radius" />
+      <select id="theme-radius" value={cookbookStore.theme?.borderRadius ?? DEFAULTS.borderRadius}
+        onchange={(event) => setShape('borderRadius', event.currentTarget.value as BorderRadiusSetting)}>
+        {#each radii as radius (radius.id)}<option value={radius.id}>{radius.label}</option>{/each}
+      </select>
+    </div>
+    <div class="field">
+      <FieldLabel for="theme-density" label="Density" />
+      <select id="theme-density" value={cookbookStore.theme?.density ?? DEFAULTS.density}
+        onchange={(event) => setShape('density', event.currentTarget.value as DensitySetting)}>
+        {#each densities as density (density.id)}<option value={density.id}>{density.label}</option>{/each}
+      </select>
+    </div>
+    <div class="field">
+      <FieldLabel for="theme-contrast" label="Contrast" />
+      <select id="theme-contrast" value={cookbookStore.theme?.contrast ?? DEFAULTS.contrast}
+        onchange={(event) => setShape('contrast', event.currentTarget.value as ContrastSetting)}>
+        {#each contrasts as contrast (contrast.id)}<option value={contrast.id}>{contrast.label}</option>{/each}
+      </select>
+    </div>
+  </div>
   <div class="brand">
     <div class="field">
       <FieldLabel for="theme-brand-colour" label="Brand colour" />
@@ -167,7 +230,8 @@ const cssPending = $derived.by(() => {
   .preview-body span:last-child { inline-size: 70%; opacity: .35; }
   .scheme { min-block-size: 8.5rem; }
   .choice-hint { font-size: .85rem; color: var(--smrt-color-on-surface-variant); }
-  .brand { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; }
+  .brand, .shape { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; }
+  .shape .field { min-inline-size: min(10rem, 100%); }
   .field { display: grid; gap: .4rem; }
   .pick { display: flex; gap: .65rem; align-items: center; }
   .wheel { position: relative; display: inline-grid; place-items: center; flex: none; inline-size: 3rem; block-size: 3rem; border-radius: 50%; background: conic-gradient(red, #ff0, #0f0, #0ff, #00f, #f0f, red); box-shadow: 0 0 0 1px var(--smrt-hairline-color); cursor: pointer; }

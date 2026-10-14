@@ -39,5 +39,9 @@ export function appQuery(): string {
  */
 export function appHref(path: string): string {
   if (linkMode === 'hash') return `#${path}`;
-  return `${basePath}${path}${appQuery()}`;
+  const query = appQuery();
+  // A path may carry its own query ("View all": `?customerId=<id>`).
+  const joined =
+    query && path.includes('?') ? `${path}&${query.slice(1)}` : path + query;
+  return `${basePath}${joined}`;
 }

@@ -15,6 +15,7 @@ import {
 import { PLANNER_TAB_IDS } from '../src/lib/planner/commands/index.ts';
 import Planner from '../src/lib/planner/Planner.svelte';
 import PlannerControls from '../src/lib/planner/PlannerControls.svelte';
+import { selection } from '../src/lib/planner/selection.svelte.ts';
 import { plannerTab } from '../src/lib/planner/tab.svelte.ts';
 
 describe('Planner component', () => {
@@ -92,6 +93,26 @@ describe('Planner component', () => {
     expect(appHref('/recipes/sales/')).toBe('/kitchen/recipes/sales/');
     setBasePath('');
     expect(appHref('/ai/')).toBe('/ai/');
+  });
+
+  it('adds the package selection to a path that has its own query', () => {
+    setBasePath('/planner');
+    selection.ids = ['commerce'];
+    try {
+      expect(appHref('/m/commerce/Order/')).toBe(
+        '/planner/m/commerce/Order/?p=commerce',
+      );
+      const href = appHref('/m/commerce/Order/?customerId=c%201');
+      expect(href).toBe(
+        '/planner/m/commerce/Order/?customerId=c%201&p=commerce',
+      );
+      const search = new URL(href, 'https://x.test').searchParams;
+      expect(search.get('customerId')).toBe('c 1');
+      expect(search.get('p')).toBe('commerce');
+    } finally {
+      selection.ids = [];
+      setBasePath('');
+    }
   });
 
   it('writes fragment links in the mount, so a feature or package link stays inside it', () => {
